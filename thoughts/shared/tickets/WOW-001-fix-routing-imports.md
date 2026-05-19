@@ -138,8 +138,8 @@ The app cannot build or start. Unclear which server routes are dead code vs. fut
 - [ ] Check `electron/electron-main.mjs` for old Pi repo path references → update
 
 ### P4 — Database
-- [ ] Delete `server/wayofpi.sqlite` and `server/db_data/` (stale copy from Pi repo)
-- [ ] Let server recreate on next start via `server/db.ts`
+- [x] Delete `server/wayofpi.sqlite` and `server/db_data/` (stale copy from Pi repo)
+- [x] Let server recreate on next start via `server/db.ts`
 
 ### P5 — Dead code & routing cleanup
 - [ ] Decide fate of menu files excluded from tsconfig (`FileMenu.tsx`, `EditMenu.tsx`, etc.) — delete or keep excluded
