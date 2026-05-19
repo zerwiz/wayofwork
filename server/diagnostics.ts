@@ -118,7 +118,7 @@ function probeSdk(): { available: boolean; version: string | null } {
 	let version: string | null = null;
 	if (available) {
 		try {
-			version = "@earendil-works/pi-coding-agent";
+			version = "@wayofmono/wo-agent";
 		} catch {
 			version = null;
 		}
@@ -259,14 +259,14 @@ function buildDoctorChecks(options: {
 
 	checks.push({
 		id: "pi_sdk",
-		title: "Pi SDK (@earendil-works/pi-coding-agent)",
+		title: "Wo Agent SDK (@wayofmono/wo-agent)",
 		status: sdk.available ? "ok" : "warn",
 		summary: sdk.available
 			? `SDK available — direct import replaces subprocess (WOP_CHAT_ENGINE=sdk)`
-			: `SDK not available — falling back to pi subprocess or bundled provider`,
+			: `Wo Agent SDK not available — falling back to bundled provider`,
 		hint: sdk.available
 			? undefined
-			: "Run `bun install` to install the SDK. Then set `WOP_CHAT_ENGINE=sdk` to use the direct import path.",
+			: "Run `bun install` to install @wayofmono/wo-agent.",
 	});
 
 	if (piStrictBlock) {

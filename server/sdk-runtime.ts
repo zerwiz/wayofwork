@@ -4,7 +4,7 @@
  * Instead of spawning pi or importing the old pi SDK, this module uses
  * `@wayofmono/wo-agent` directly: typed events, in-process tools, no PATH hacks.
  *
- * Pi (`@earendil-works/pi-coding-agent`) stays installed as a dev CLI tool only —
+ * Wo Agent (`@wayofmono/wo-agent`) replaces the legacy Pi CLI —
  * no runtime code imports it.
  *
  * @module wo-sdk-runtime

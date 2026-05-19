@@ -1,5 +1,5 @@
 -- Way of Pi: Multi-Tenant SQLite Schema (Phase 1)
--- Run with: bun sqlite3 db_data/db/wayofpi.sqlite < schema.sql
+-- Run with: bun sqlite3 data/wayofpi.sqlite < schema.sql
 
 -- Enable WAL mode for concurrent reads
 PRAGMA journal_mode = WAL;
