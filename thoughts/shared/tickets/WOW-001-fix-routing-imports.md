@@ -118,17 +118,18 @@ The app cannot build or start. Unclear which server routes are dead code vs. fut
 ## Tasks
 
 ### P1 — Install Wo Agent
-- [ ] Add `@wayofmono/wo-agent` and `@wayofmono/wo-agent-core` to `package.json` dependencies (currently `"TODO"`)
-- [ ] Update with correct registry URL and run `bun install`
-- [ ] Verify `server/sdk-runtime.ts` and `server/agent-runtime.ts` compile
+- [x] Add `@wayofmono/wo-agent` and `@wayofmono/wo-agent-core` to `package.json` dependencies (currently `"TODO"`)
+- [x] Update with correct registry URL and run `bun install`
+- [x] Verify `server/sdk-runtime.ts` and `server/agent-runtime.ts` compile
 
 ### P2 — Fix build (41 tsc errors)
-- [ ] Deduplicate `WorkerPortal.tsx` / `workerportal.tsx` — keep one, fix case in index.ts
-- [ ] Fix `workerportal.tsx` import paths (`./src/components` → `../components`)
-- [ ] Install `class-variance-authority` or rewrite affected components (Badge, Input, Label, Textarea, PlanReview)
-- [ ] Fix `mockKanbanService.ts` — add missing `createdAt` and `labels` fields
-- [ ] Fix `SimplePage.tsx` — rename `setSimpleProviderNonce` or correct the ref
-- [ ] Fix `CardView.tsx` — add `role` to `User` type or fix the access
+- [x] Deduplicate `WorkerPortal.tsx` / `workerportal.tsx` — keep one, fix case in index.ts
+- [x] Fix `workerportal.tsx` import paths (`./src/components` → `../components`)
+- [x] Install `class-variance-authority` or rewrite affected components (Badge, Input, Label, Textarea, PlanReview)
+- [x] Fix `mockKanbanService.ts` — add missing `createdAt` and `labels` fields
+- [x] Fix `SimplePage.tsx` — rename `setSimpleProviderNonce` or correct the ref
+- [x] Fix `CardView.tsx` — add `role` to `User` type or fix the access
+- [x] Resolve `server/sdk-runtime.ts` model input type mismatch.
 
 ### P3 — Audit runtime paths
 - [ ] Check `server/diagnostics.ts` for `@earendil-works/pi-coding-agent` references → update or remove
@@ -143,7 +144,7 @@ The app cannot build or start. Unclear which server routes are dead code vs. fut
 ### P5 — Dead code & routing cleanup
 - [ ] Decide fate of menu files excluded from tsconfig (`FileMenu.tsx`, `EditMenu.tsx`, etc.) — delete or keep excluded
 - [ ] Add missing server endpoints: `PUT /api/portal/me`, `POST /api/portal/change-pin`
-- [ ] Wire `WorkerPortal.tsx` real API calls (uncomment `GET /api/portal/me`, tasks, files)
+- [x] Wire `WorkerPortal.tsx` real API calls (uncomment `GET /api/portal/me`, tasks, files)
 - [ ] Fix `/admin` → `GET /api/admin/stats` gating (allow ADMIN role too)
 - [ ] Decide fate of `"technical"` uiMode — remove it or give it a route
 - [ ] Clean up `Dashboard.tsx` — remove or add to routing
