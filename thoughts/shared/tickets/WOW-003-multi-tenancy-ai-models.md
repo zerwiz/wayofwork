@@ -16,6 +16,12 @@ A clearly documented architecture and implementation plan for adding robust mult
 - **API Isolation:** Some endpoints in `server/index.ts` (e.g., `/api/client/projects`, `/api/client/drawings`) are already filtering results using `auth.tenantId`.
 - **AI Models:** `server/llm-models.ts` and `server/pi-ollama-env.ts` provide foundations for Ollama (local) and OpenRouter (remote) model selection.
 - **Initial Setup:** `server/db.ts` automatically creates a `default` tenant and an `admin` user if none exist.
+- **RBAC Roles (5-Tier System):**
+    - `SUPER_ADMIN`: System-wide access, can see across all tenants, manage global settings.
+    - `ADMIN`: Tenant-scoped administrator; manages users and projects within their organization.
+    - `LEADER`: Work leader/Manager; can create projects and tasks.
+    - `WORKER`: Standard field worker; logs time and views assigned tasks.
+    - `CLIENT`: External stakeholder; limited access to view project progress and drawings.
 
 ### Why This Matters
 While the architecture is partially multi-tenant, it is not consistently applied across all endpoints (e.g., many `/api/fs/*` endpoints might lack tenant scoping). AI model execution needs to be solidified into a per-tenant or per-user configurable service.
