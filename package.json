@@ -52,8 +52,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
-    "@wayofmono/wo-agent": "TODO",
-    "@wayofmono/wo-agent-core": "TODO",
+
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
     "clsx": "^2.1.1",

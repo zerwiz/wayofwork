@@ -1,0 +1,83 @@
+/**
+ * Work Button Component Styles
+ * Includes all states and hover effects
+ */
+
+/* Work Button Container */
+.work-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: none;
+}
+
+/* Pending Status (default) */
+.work-button-pending {
+  color: white;
+  background-color: #ea580c;
+}
+
+.work-button-pENDING:hover {
+  background-color: #cc4609;
+}
+
+/* Approved Status */
+.work-button-approved {
+  color: #369c44;
+  background-color: #369c44;
+}
+
+/* Rejected Status */
+.work-button-rejected {
+  color: #e74c3c;
+  background-color: #e74c3c;
+}
+
+/* Edit Button */
+.edit-button {
+  color: #fff;
+  background-color: #369c44;
+  padding: 8px 16px;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+/* Animations */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(234, 88, 12, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); }
+}
+
+/* Edit Pulse Animation */
+.edit-button.pulse {
+  animation: pulse 1s ease-out;
+}
+
+/* Utility Classes */
+.button-date {
+  white-space: nowrap;
+}
+
+.button-project {
+  white-space: nowrap;
+}
+
+.button-status {
+  white-space: nowrap;
+}
+
+.button-hours {
+  white-space: nowrap;
+}
