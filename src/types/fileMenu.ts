@@ -1,0 +1,35 @@
+/** Cursor / VS Code–style File menu actions (browser UI; paths are server-side). */
+export type FileMenuProps = {
+	switchAllowed: boolean;
+	recentFolders: string[];
+	autoSave: boolean;
+	onToggleAutoSave: () => void;
+	workspaceFolders: { label: string; path: string }[];
+	dirty: boolean;
+	hasOpenFile: boolean;
+	canSaveFile: boolean;
+	canRevertFile: boolean;
+	onRefreshWorkspaceTree: () => void;
+	onCopyWorkspacePath: () => void;
+	onNewTextFile: () => void;
+	onNewWindow: () => void;
+	onNewAgentsWindow: () => void;
+	onOpenFile: () => void;
+	onOpenFolder: () => void;
+	onAddFolderToWorkspace: () => void;
+	onOpenWorkspaceFromFile: () => void;
+	onOpenRecentFolder: (absPath: string) => void;
+	onSaveWorkspaceAs: () => void;
+	onDuplicateWorkspace: () => void;
+	onSave: () => void;
+	onSaveAs: () => void;
+	onSaveAll: () => void;
+	onRevertFile: () => void | Promise<void>;
+	onCloseEditor: () => void;
+	onCloseWorkspace: () => void;
+	onCloseWindow: () => void;
+	onExit: () => void;
+	onPreferencesOpen: () => void;
+	onShareCopyLink: () => void;
+	onRemoveWorkspaceFolder: (label: string) => void;
+};

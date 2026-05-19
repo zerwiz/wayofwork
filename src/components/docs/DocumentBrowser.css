@@ -1,0 +1,128 @@
+.document-browser-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #1e1e1e;
+  color: #cccccc;
+}
+
+.document-browser-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  border-bottom: 1px solid #3c3c3c;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.breadcrumb-item {
+  color: #cccccc;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.breadcrumb-item:hover {
+  background-color: #2d2d2d;
+}
+
+.breadcrumb-separator {
+  color: #585858;
+}
+
+.document-browser-filters {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid #3c3c3c;
+}
+
+.filter-btn {
+  padding: 4px 12px;
+  border: 1px solid #3c3c3c;
+  background: transparent;
+  color: #cccccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.filter-btn.active {
+  background: #ea580c;
+  border-color: #ea580c;
+}
+
+.filter-btn:hover:not(.active) {
+  background: #2d2d2d;
+}
+
+.search-box {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #3c3c3c;
+  background: #252526;
+  color: #cccccc;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.search-box::placeholder {
+  color: #858585;
+}
+
+.document-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.document-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.document-item:hover {
+  background-color: #2d2d2d;
+}
+
+.document-item.selected {
+  background-color: rgba(234, 88, 12, 0.2);
+}
+
+.document-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.document-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #858585;
+  font-size: 13px;
+}
+
+/* Docs Mode specific tweaks */
+.docs-mode footer {
+  background-color: #0f172a;
+}

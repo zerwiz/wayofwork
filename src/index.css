@@ -1,0 +1,154 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Scrollbars: Electron (especially Windows) often uses classic OS scrollbars unless
+ * we theme them. Chrome in the browser may look “nicer” via overlay/thin defaults.
+ * Match the shell grays (#252526 / #3c3c3c) so web + Electron look the same.
+ */
+html {
+	scrollbar-color: #5a5a5a #252526;
+	scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+::-webkit-scrollbar-track {
+	background: #252526;
+}
+::-webkit-scrollbar-thumb {
+	background: #5a5a5a;
+	border-radius: 6px;
+	border: 2px solid #252526;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: #6e6e6e;
+}
+::-webkit-scrollbar-corner {
+	background: #252526;
+}
+/* Drop Windows-style arrow buttons on scrollbars (Chromium). */
+::-webkit-scrollbar-button {
+	display: none;
+	width: 0;
+	height: 0;
+}
+
+/* xterm viewport scrolls independently; keep it aligned with the terminal theme. */
+.xterm .xterm-viewport {
+	scrollbar-color: #5a5a5a #1e1e1e;
+	scrollbar-width: thin;
+}
+.xterm .xterm-viewport::-webkit-scrollbar-track {
+	background: #1e1e1e;
+}
+.xterm .xterm-viewport::-webkit-scrollbar-thumb {
+	background: #5a5a5a;
+	border-radius: 6px;
+	border: 2px solid #1e1e1e;
+}
+.xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
+	background: #6e6e6e;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+	display: none;
+}
+.scrollbar-hide {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+/* Transparent editing layer over syntax-highlighted <pre> (WorkspaceTextBuffer). */
+.wop-editor-input-layer {
+	color: transparent !important;
+	-webkit-text-fill-color: transparent;
+	caret-color: #aeafaf;
+}
+.wop-editor-input-layer::selection {
+	background-color: rgba(38, 79, 120, 0.48);
+	color: transparent;
+	-webkit-text-fill-color: transparent;
+}
+
+/*
+ * VS Code Dark+–style token colors (Cursor-like) for highlight.js.
+ * Scoped under .wop-hl-pre so we do not affect other pages.
+ */
+.wop-hl-pre code.hljs {
+	color: #d4d4d4;
+}
+.wop-hl-pre .hljs-comment,
+.wop-hl-pre .hljs-quote {
+	color: #6a9955;
+	font-style: italic;
+}
+.wop-hl-pre .hljs-keyword,
+.wop-hl-pre .hljs-selector-tag,
+.wop-hl-pre .hljs-addition,
+.wop-hl-pre .hljs-meta-keyword {
+	color: #569cd6;
+}
+.wop-hl-pre .hljs-number,
+.wop-hl-pre .hljs-literal,
+.wop-hl-pre .hljs-bullet {
+	color: #b5cea8;
+}
+.wop-hl-pre .hljs-string,
+.wop-hl-pre .hljs-regexp,
+.wop-hl-pre .hljs-addition .hljs-string {
+	color: #ce9178;
+}
+.wop-hl-pre .hljs-title,
+.wop-hl-pre .hljs-section,
+.wop-hl-pre .hljs-selector-id {
+	color: #4ec9b0;
+	font-weight: 600;
+}
+.wop-hl-pre .hljs-subst,
+.wop-hl-pre .hljs-params {
+	color: #d4d4d4;
+}
+.wop-hl-pre .hljs-type,
+.wop-hl-pre .hljs-class .hljs-title,
+.wop-hl-pre .hljs-built_in,
+.wop-hl-pre .hljs-doctag {
+	color: #4ec9b0;
+}
+.wop-hl-pre .hljs-tag,
+.wop-hl-pre .hljs-name,
+.wop-hl-pre .hljs-attribute {
+	color: #92c5f7;
+}
+.wop-hl-pre .hljs-variable,
+.wop-hl-pre .hljs-template-variable,
+.wop-hl-pre .hljs-link {
+	color: #fed7aa;
+}
+.wop-hl-pre .hljs-symbol,
+.wop-hl-pre .hljs-meta {
+	color: #569cd6;
+}
+.wop-hl-pre .hljs-emphasis {
+	font-style: italic;
+	color: #d7ba7d;
+}
+.wop-hl-pre .hljs-strong {
+	font-weight: 700;
+	color: #d7ba7d;
+}
+.wop-hl-pre .hljs-link {
+	text-decoration: underline;
+}
+.wop-hl-pre .hljs-code,
+.wop-hl-pre .hljs-code .hljs-keyword {
+	color: #dcdcaa;
+}
+/* Markdown: fenced language hint, horizontal rule */
+.wop-hl-pre .hljs-meta,
+.wop-hl-pre .hljs-meta-string {
+	color: #808080;
+}
