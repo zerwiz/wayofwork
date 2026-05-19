@@ -34,7 +34,7 @@ export interface CardChecklist {
   id: string;
   title: string;
   items: CardChecklistItem[];
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface CardAttachment {
@@ -75,7 +75,7 @@ export interface BoardCard {
   estimatedTime?: number;
   estimatedTimeUnit?: 'hours' | 'days';
   assignees: CardAssignee[];
-  labels: string[];
+  labels?: string[];
   tags?: string[];
   completed?: boolean;
   enableWhatsApp?: boolean;

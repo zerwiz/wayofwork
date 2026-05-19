@@ -1,7 +1,7 @@
 /**
  * **Wo agent runtime** — routes all chat turns through `@wayofmono/wo-agent` SDK.
  *
- * Pi (`@earendil-works/pi-coding-agent`) is a dev CLI tool only.
+ * The legacy Pi (`@earendil-works/pi-coding-agent`) CLI is no longer bundled.
  * No runtime code imports pi. All runtime chat goes through Wo.
  *
  * Engine modes (`WOP_CHAT_ENGINE`):

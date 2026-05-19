@@ -29,7 +29,7 @@ export function SimplePage() {
     tree, server, session, preferences, agents, modals,
     llmModels,
     rootLabel, workspaceOperational, recentFolders,
-    simpleProviderPath, simpleProviderNonce, setSimpleProviderPath,
+    simpleProviderPath, simpleProviderNonce, setSimpleProviderPath, setSimpleProviderNonce,
     reopenLlmFixModal,
     line, col, onCursor, language, copyWorkspacePath,
     simpleMobileMenuFileFocusRev,
