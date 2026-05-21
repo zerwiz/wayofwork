@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { 
-  SimplePage, ClawPage, DocsPage, WorkPage, KanbanPage,
+  SimplePage, AtaPage, ClawPage, DocsPage, WorkPage, KanbanPage,
   UserProfile, AdminDashboard, SuperAdminDashboard,
   ClientDashboard, WorkerPortal
 } from "./pages";
@@ -13,7 +13,7 @@ import { ToastProvider } from "./contexts/ToastContext";
 const uiModeRouteMap: Record<string, string> = {
   simple: "/simple",
   work: "/workboard",
-  claw: "/ata",
+  claw: "/claw",
   docs: "/docs",
   kanban: "/kanban",
 };
@@ -22,7 +22,7 @@ const routeUiModeMap: Record<string, string> = {
   "/simple": "simple",
   "/workboard": "work",
   "/kanban": "kanban",
-  "/ata": "claw",
+  "/claw": "claw",
   "/docs": "docs",
 };
 
@@ -161,7 +161,8 @@ export default function App() {
               <Route path="/simple" element={<SimplePage />} />
               <Route path="/kanban" element={<KanbanPage />} />
               <Route path="/workboard" element={<WorkPage />} />
-              <Route path="/ata" element={<ClawPage />} />
+              <Route path="/ata" element={<AtaPage />} />
+              <Route path="/claw" element={<ClawPage />} />
               <Route path="/docs" element={<DocsPage />} />
               <Route path="/portal" element={<WorkerPortalWrapper />} />
               <Route path="/admin" element={<AdminDashboardWrapper />} />

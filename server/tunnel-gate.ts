@@ -197,7 +197,7 @@ export function tunnelGateUnauthorizedResponse(): Response {
 	return new Response("Unauthorized", {
 		status: 401,
 		headers: {
-			"WWW-Authenticate": 'Basic realm="Way of Pi (public link)"',
+			"WWW-Authenticate": 'Basic realm="Way of Work (public link)"',
 			"Cache-Control": "no-store",
 			"Content-Type": "text/plain; charset=utf-8",
 		},
@@ -330,7 +330,7 @@ export function tunnelGateAllowsNodeRequest(req: IncomingMessage): boolean {
 
 export function tunnelGateWriteUnauthorizedNode(res: ServerResponse): void {
 	res.statusCode = 401;
-	res.setHeader("WWW-Authenticate", 'Basic realm="Way of Pi (public link)"');
+	res.setHeader("WWW-Authenticate", 'Basic realm="Way of Work (public link)"');
 	res.setHeader("Cache-Control", "no-store");
 	res.setHeader("Content-Type", "text/plain; charset=utf-8");
 	res.end("Unauthorized");

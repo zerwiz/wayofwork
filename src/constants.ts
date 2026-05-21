@@ -1,4 +1,4 @@
-export const APP_NAME = "Way of Pi";
+export const APP_NAME = "Way of Work";
 export const APP_VERSION = "0.21.10";
 export const DEFAULT_WORKSPACE = "default";
 export const WOP_PUBLIC_REPO_URL = "https://github.com/zerwiz/wayofpi";

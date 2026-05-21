@@ -1,4 +1,4 @@
-# AGENTS.md — Way of Work (Way of Pi)
+# AGENTS.md — Way of Work (Way of Work)
 
 ## Quick start
 ```bash

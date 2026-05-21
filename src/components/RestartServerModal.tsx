@@ -33,12 +33,12 @@ function parseRestart403Detail(raw: string): string | null {
 function blockedLeadMessage(detail: string | null): string {
 	const d = (detail ?? "").toLowerCase();
 	if (d.includes("disables") || d.includes("disabled")) {
-		return "Restarting from this menu was turned off in the settings for Way of Pi. You can still fully quit the app and open it again the way you usually do.";
+		return "Restarting from this menu was turned off in the settings for Way of Work. You can still fully quit the app and open it again the way you usually do.";
 	}
 	if (d.includes("production") || d.includes("wop_allow_server_restart")) {
-		return "On this setup, Way of Pi is not allowed to turn itself off from the menu. Ask whoever looks after your computer or network to restart it, or fully quit Way of Pi and open it again yourself.";
+		return "On this setup, Way of Work is not allowed to turn itself off from the menu. Ask whoever looks after your computer or network to restart it, or fully quit Way of Work and open it again yourself.";
 	}
-	return "Way of Pi could not turn off from this menu. Fully quit the app and open it again the way you usually do.";
+	return "Way of Work could not turn off from this menu. Fully quit the app and open it again the way you usually do.";
 }
 
 export function RestartServerModal({
@@ -115,12 +115,12 @@ export function RestartServerModal({
 	const border = borderClass(appearanceDark);
 	const codeBg = appearanceDark ? "bg-[#3c3c3c]" : "bg-[#ececec]";
 
-	let title = "Turn Way of Pi off so it can start fresh?";
+	let title = "Turn Way of Work off so it can start fresh?";
 	if (phase === "pending") title = "Please wait";
 	else if (phase === "result") {
-		if (resultKind === "exiting") title = "Way of Pi is turning off";
+		if (resultKind === "exiting") title = "Way of Work is turning off";
 		else if (resultKind === "blocked") title = "This cannot be done from the menu";
-		else title = "Way of Pi did not respond";
+		else title = "Way of Work did not respond";
 	}
 
 	return (
@@ -163,16 +163,16 @@ export function RestartServerModal({
 					{phase === "confirm" ? (
 						<>
 							<p className="m-0 mb-3">
-								This fully stops the background part of Way of Pi on your computer—similar to closing a program
+								This fully stops the background part of Way of Work on your computer—similar to closing a program
 								so updates can apply. Nothing is deleted; you are only switching it off so you can open it again.
 							</p>
 							<p className={`m-0 mb-3 ${muted}`}>
-								After it stops, open Way of Pi again the same way you did today (your shortcut, script, or
+								After it stops, open Way of Work again the same way you did today (your shortcut, script, or
 								installer). The screen may briefly say it cannot connect until you start it again—that is normal.
 							</p>
 							<details className={muted}>
 								<summary className="cursor-pointer select-none text-[12px]">
-									If you build Way of Pi from source (optional steps)
+									If you build Way of Work from source (optional steps)
 								</summary>
 								<p className="mt-2 text-[12px] leading-relaxed">
 									From the{" "}
@@ -186,13 +186,13 @@ export function RestartServerModal({
 					) : null}
 
 					{phase === "pending" ? (
-						<p className={`m-0 ${muted}`}>Way of Pi is being asked to turn off…</p>
+						<p className={`m-0 ${muted}`}>Way of Work is being asked to turn off…</p>
 					) : null}
 
 					{phase === "result" && resultKind === "exiting" ? (
 						<>
 							<p className="m-0 mb-3">
-								Way of Pi is switching off now. When you are ready, open it again the same way you usually do.
+								Way of Work is switching off now. When you are ready, open it again the same way you usually do.
 							</p>
 							{technicalDetail ? (
 								<details className={muted}>
@@ -218,8 +218,8 @@ export function RestartServerModal({
 					{phase === "result" && resultKind === "unreachable" ? (
 						<>
 							<p className="m-0 mb-3">
-								We could not finish the request. Way of Pi may already be off, or something briefly interrupted the
-								connection. Try opening Way of Pi again. Chat and files will work again once the app is running.
+								We could not finish the request. Way of Work may already be off, or something briefly interrupted the
+								connection. Try opening Way of Work again. Chat and files will work again once the app is running.
 							</p>
 							{technicalDetail ? (
 								<details className={muted}>
@@ -250,7 +250,7 @@ export function RestartServerModal({
 								onClick={() => void runRestart()}
 								className="rounded bg-[#007acc] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#006bb3]"
 							>
-								Turn off Way of Pi
+								Turn off Way of Work
 							</button>
 						</>
 					) : null}

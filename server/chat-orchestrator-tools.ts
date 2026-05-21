@@ -211,6 +211,9 @@ export async function runOrchestratorToolLoop(
 		onAgentsCatalogChanged?: () => void;
 		/** After a successful **`write`** (new or overwrite), tell the client to focus that path in the workspace editor. */
 		onWorkspaceFileWritten?: (relPath: string) => void;
+		/** Auth context for kanban/ticket tools. */
+		tenantId?: string;
+		userId?: string;
 	},
 ): Promise<{ result: StreamChatResult; lastStreamUsage: StreamTokenUsage | null; finalAssistantText: string }> {
 	const signal = options.signal;
@@ -255,7 +258,7 @@ export async function runOrchestratorToolLoop(
 						Authorization: `Bearer ${key}`,
 						"Content-Type": "application/json",
 						"HTTP-Referer": process.env.WOP_OPENROUTER_REFERER || "https://wayofpi.local",
-						"X-Title": "Way of Pi",
+						"X-Title": "Way of Work",
 					},
 					body: JSON.stringify({
 						model,
@@ -383,7 +386,10 @@ export async function runOrchestratorToolLoop(
 			});
 			const toolOutputsThisRound: string[] = [];
 			for (const tc of round.toolCalls) {
-				const toolResult = await executeOrchestratorTool(tc.function.name, tc.function.arguments);
+				const toolResult = await executeOrchestratorTool(tc.function.name, tc.function.arguments, {
+					tenantId: options.tenantId ?? "default",
+					userId: options.userId ?? "system",
+				});
 				toolOutputsThisRound.push(toolResult.output);
 				if (toolResult.agentsCatalogChanged) {
 					try {
@@ -412,7 +418,7 @@ export async function runOrchestratorToolLoop(
 				messages.push({
 					role: "user",
 					content:
-						"[Way of Pi] At least one tool in the last batch reported a problem or non-success. **Reply now** in plain language: what failed, what is broken, what still worked, and **concrete** fixes (paths to open in Way of Pi, **Settings → …**, env vars). Do not answer with only an apology or a promise to explain later.",
+						"[Way of Work] At least one tool in the last batch reported a problem or non-success. **Reply now** in plain language: what failed, what is broken, what still worked, and **concrete** fixes (paths to open in Way of Work, **Settings → …**, env vars). Do not answer with only an apology or a promise to explain later.",
 				});
 				onLog(
 					"INFO",
@@ -432,7 +438,7 @@ export async function runOrchestratorToolLoop(
 			messages.push({
 				role: "user",
 				content:
-					"[Way of Pi] Your last reply did not include any **function tool** calls. This session ends the turn after a message without tools. Call **list_dir** (e.g. path `.`), **git_status**, and/or **read** on concrete paths now, then answer from tool output.",
+					"[Way of Work] Your last reply did not include any **function tool** calls. This session ends the turn after a message without tools. Call **list_dir** (e.g. path `.`), **git_status**, and/or **read** on concrete paths now, then answer from tool output.",
 			});
 			onLog(
 				"INFO",

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Briefcase, Calendar, CheckCircle2, Clock, Users, User, Layout, MessageSquare, AlertCircle, X, List, CalendarDays } from "lucide-react";
-import { kanbanService } from "../../services/mockKanbanService";
+import { kanbanService } from "../../services/kanbanService";
 import type { BoardCard } from "../../types/kanban";
 import { CardView } from "../kanban/CardView";
 import { WorkLogActivityModal } from "./WorkLogActivityModal";

@@ -10,7 +10,7 @@ import type { UseClawWorkspaceResult } from "../../hooks/useClawWorkspace";
 export type ClawWorkspaceOnboardingModalProps = {
 	open: boolean;
 	dark: boolean;
-	/** Absolute path to the host **`.claw/workspace/`** directory (Way of Pi checkout, not project workspace). */
+	/** Absolute path to the host **`.claw/workspace/`** directory (Way of Work checkout, not project workspace). */
 	clawWorkspaceDirAbs: string;
 	ws: UseClawWorkspaceResult;
 	onDismiss: () => void;
@@ -68,8 +68,9 @@ export function ClawWorkspaceOnboardingModal({
 							<p className={`mt-0.5 text-[11px] leading-snug ${subText}`}>
 								Create the <strong className={headerText}>Claw workspace folder</strong> (
 								<span className="font-mono text-[10px]">.claw/workspace/</span>) with the seven agent files below.
-								Claw reads
-								them each session so behaviour stays aligned with your project and preferences.
+								Claw reads them each session so behaviour stays aligned with your project and preferences.
+								You can also set up <strong className={headerText}>automated tasks</strong>, scheduled runs,
+								and more from here.
 							</p>
 						</div>
 					</div>

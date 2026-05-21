@@ -69,6 +69,7 @@ import {
 	verifyWebhookBearer,
 } from "./claw-webhook-store";
 import { getClawTelegramIntegrationStatus } from "./claw-telegram-status";
+import { getClawWhatsAppIntegrationStatus } from "./claw-whatsapp-status";
 import { collectDiagnostics, collectUpstreamSnapshot } from "./diagnostics";
 import { runWorkspaceProblemsAnalysis, type WorkspaceProblemsRunResult } from "./workspace-problems";
 import { resolveOllamaHost, resolveOllamaModelDefault } from "./pi-ollama-env";
@@ -137,6 +138,12 @@ import {
 	tunnelGateUnauthorizedResponse,
 } from "./tunnel-gate";
 import { getShareUrlHintsJson } from "./share-url-hints";
+import { json, logLine } from "./utils";
+import { Router } from "./router";
+import { registerAuthRoutes } from "./routes/auth";
+import { registerPortalRoutes } from "./routes/portal";
+import { registerAdminRoutes } from "./routes/admin";
+import { registerClientRoutes } from "./routes/client";
 
 // Integrated terminal: in production (`NODE_ENV=production`) keep opt-in via WOP_ALLOW_TERMINAL only.
 // In non-production, default on when unset so local `npm run dev` gets a real shell; disable with WOP_ALLOW_TERMINAL=0|false|no|off.
@@ -180,6 +187,8 @@ type ChatWsData = {
 	agentName: string | null;
 	/** Resolved agent markdown body (after frontmatter); mirrors last successful `agentName`. */
 	cachedAgentBody: string | null;
+	/** Comma-separated skills string from agent frontmatter, cached alongside `cachedAgentBody`. */
+	cachedAgentSkills: string | null;
 	/** Abort in-flight LLM stream (Pi-style stop generation). */
 	chatAbort: AbortController | null;
 	/** Cumulative prompt + completion tokens (Pi footer-style — sums per finished assistant turn). */
@@ -193,7 +202,17 @@ type ChatWsData = {
 
 type ServerWsData = ChatWsData | TerminalWsData;
 
-function applyLeadFromCache(
+async function resolveAgentSkillsFromName(agentName: string, tenantId: string): Promise<string | null> {
+	try {
+		const { agents } = await loadWorkspaceAgents(tenantId);
+		const hit = agents.find((a) => a.name.toLowerCase() === agentName.trim().toLowerCase());
+		return hit?.skills ?? null;
+	} catch {
+		return null;
+	}
+}
+
+async function applyLeadFromCache(
 	data: ChatWsData,
 	opts?: {
 		/**
@@ -212,35 +231,17 @@ function applyLeadFromCache(
 		plannerBody = readPlannerAgentBodySync(getPrimaryWorkspacePath(data.tenantId));
 	}
 	const piJson = shouldUsePiJsonChat();
-	applyLeadSystem(data.messages, {
+	await applyLeadSystem(data.messages, {
 		mode: data.chatMode,
 		envSystemPrompt: process.env.WOP_SYSTEM_PROMPT,
 		agentBody: data.cachedAgentBody,
+		agentSkills: data.cachedAgentSkills,
 		agentNameLower,
 		plannerAgentBody: plannerBody,
 		orchestratorPiToolsEnabled: orchestratorToolsEnabled() && !piJson,
 		piJsonChatRuntime: piJson,
 		workspaceIndexBoost: getWorkspaceIndexChatBoostSync(),
 	});
-}
-
-function json(data: unknown, status = 200): Response {
-	return new Response(JSON.stringify(data), {
-		status,
-		headers: {
-			"Content-Type": "application/json; charset=utf-8",
-			"Cache-Control": "no-store",
-		},
-	});
-}
-
-function logLine(
-	level: "INFO" | "WARN" | "SUCCESS" | "ERROR",
-	source: string,
-	msg: string,
-): string {
-	const time = new Date().toISOString().split("T")[1]?.slice(0, 12) ?? "";
-	return JSON.stringify({ type: "log", time, level, source, msg });
 }
 
 function sendQueueState(ws: { send: (data: string) => void }, queue: PendingChatItem[]) {
@@ -373,7 +374,7 @@ async function processActivateSession(
 	ws.data.cumPromptTokens = 0;
 	ws.data.cumCompletionTokens = 0;
 	sendQueueState(ws, []);
-	applyLeadFromCache(ws.data);
+	await applyLeadFromCache(ws.data);
 
 	if (sessionKey) {
 		try {
@@ -437,7 +438,7 @@ async function applySlashMutations(
 	}
 	if (mutation.setChatMode) {
 		data.chatMode = mutation.setChatMode;
-		applyLeadFromCache(data);
+		await applyLeadFromCache(data);
 		ws.send(JSON.stringify({ type: "chat_mode", mode: mutation.setChatMode }));
 		ws.send(
 			logLine(
@@ -449,17 +450,35 @@ async function applySlashMutations(
 			),
 		);
 	}
+	if (mutation.reload) {
+		// Re-scan cache: if an agent is active, refresh its body and skills from disk
+		if (data.agentName) {
+			const freshBody = await getAgentBodyByName(data.agentName, data.tenantId);
+			if (freshBody) {
+				data.cachedAgentBody = freshBody;
+				data.cachedAgentSkills = await resolveAgentSkillsFromName(data.agentName, data.tenantId);
+			}
+		}
+		await applyLeadFromCache(data);
+		try {
+			ws.send(JSON.stringify({ type: "agents_catalog_changed" }));
+		} catch {
+			/* ignore */
+		}
+	}
 	if (mutation.setAgentName !== undefined) {
 		const name = mutation.setAgentName;
 		if (name) {
 			const body = await getAgentBodyByName(name, ws.data.tenantId);
 			data.agentName = name;
 			data.cachedAgentBody = body ?? null;
+			data.cachedAgentSkills = await resolveAgentSkillsFromName(name, ws.data.tenantId);
 		} else {
 			data.agentName = null;
 			data.cachedAgentBody = null;
+			data.cachedAgentSkills = null;
 		}
-		applyLeadFromCache(data);
+		await applyLeadFromCache(data);
 		ws.send(JSON.stringify({ type: "agent", name: data.agentName }));
 		ws.send(
 			logLine(
@@ -498,7 +517,7 @@ async function runChatTurn(
 				data.cumPromptTokens = 0;
 				data.cumCompletionTokens = 0;
 				sendQueueState(ws, []);
-				applyLeadFromCache(data);
+				await applyLeadFromCache(data);
 				if (data.wopSessionKey) {
 					try {
 						await syncWayofpiSessionFile(data.wopSessionKey, data.messages);
@@ -555,7 +574,7 @@ async function runChatTurn(
 			}
 
 			/** Re-merge lead system from disk + env (planner.md, WOP_SYSTEM_PROMPT) before phrase-dispatch and the model. */
-			applyLeadFromCache(data);
+			await applyLeadFromCache(data);
 
 			const sendLog = (level: "INFO" | "WARN" | "ERROR", source: string, m: string) => {
 				ws.send(logLine(level, source, m));
@@ -594,7 +613,7 @@ async function runChatTurn(
 		}
 
 		/** Re-merge lead `system` from disk + env (planner.md, WOP_SYSTEM_PROMPT) before phrase-dispatch and the model. */
-		applyLeadFromCache(data);
+		await applyLeadFromCache(data);
 
 		const sendLog = (level: "INFO" | "WARN" | "ERROR", source: string, m: string) => {
 			ws.send(logLine(level, source, m));
@@ -610,8 +629,9 @@ async function runChatTurn(
 			if (disp.kind === "orchestrator") {
 				data.agentName = null;
 				data.cachedAgentBody = null;
+				data.cachedAgentSkills = null;
 				phraseDispatchRestoreCached = undefined;
-				applyLeadFromCache(data);
+				await applyLeadFromCache(data);
 				ws.send(JSON.stringify({ type: "agent", name: data.agentName }));
 				sendLog(
 					"INFO",
@@ -622,7 +642,7 @@ async function runChatTurn(
 			} else if (disp.kind === "agent") {
 				phraseDispatchRestoreCached = data.cachedAgentBody;
 				data.cachedAgentBody = disp.body;
-				applyLeadFromCache(data, { effectiveAgentNameLower: disp.canonicalName.trim().toLowerCase() });
+				await applyLeadFromCache(data, { effectiveAgentNameLower: disp.canonicalName.trim().toLowerCase() });
 				try {
 					ws.send(JSON.stringify({ type: "dispatch_turn", agent: disp.canonicalName }));
 				} catch {
@@ -750,6 +770,8 @@ async function runChatTurn(
 								/* closing */
 							}
 						},
+						tenantId: data.tenantId,
+						userId: data.userId,
 					},
 				);
 				result = o.result;
@@ -860,7 +882,7 @@ async function runChatTurn(
 		if (phraseDispatchRestoreCached !== undefined) {
 			data.cachedAgentBody = phraseDispatchRestoreCached;
 			phraseDispatchRestoreCached = undefined;
-			applyLeadFromCache(data);
+			await applyLeadFromCache(data);
 		}
 		data.chatAbort = null;
 		data.busy = false;
@@ -916,9 +938,24 @@ function applySessionRuntimePostBody(body: Record<string, unknown>): Response {
 	});
 }
 
+const apiRouter = new Router();
+registerAuthRoutes(apiRouter);
+registerPortalRoutes(apiRouter);
+registerAdminRoutes(apiRouter);
+registerClientRoutes(apiRouter);
+
 async function handleApi(url: URL, req: Request): Promise<Response> {
 	/** Collapse duplicate slashes; strip trailing slash (except root). */
 	const p = url.pathname.replace(/\/{2,}/g, "/").replace(/\/+$/, "") || "/";
+
+	// Extract auth before any route handling so router-based routes get it too
+	const authHeader = req.headers.get("Authorization");
+	const token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
+	let auth = token ? await verifyToken(token) : null;
+
+	// Check router-based routes first (login portals) — passes auth so portal/admin routes work
+	const routerRes = await apiRouter.handle(url, req, auth);
+	if (routerRes) return routerRes;
 
 	if (req.method === "OPTIONS" && p.startsWith("/api/")) {
 		return new Response(null, {
@@ -932,82 +969,12 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 		});
 	}
 
-	if (p === "/api/login" && req.method === "POST") {
-		let body: { username?: string; password?: string };
-		try {
-			body = (await req.json()) as { username?: string; password?: string };
-		} catch {
-			return json({ error: "Invalid JSON" }, 400);
-		}
-		const { username, password } = body;
-		if (!username || !password) {
-			return json({ error: "Username and password required" }, 400);
-		}
-
-		const user = db.query("SELECT * FROM users WHERE username = ?").get(username) as any;
-		if (!user || !(await Bun.password.verify(password, user.password_hash))) {
-			return json({ error: "Invalid credentials" }, 401);
-		}
-
-		const token = await createToken(user.id, user.tenant_id);
-		return json({
-			token,
-			user: {
-				id: user.id,
-				username: user.username,
-				role: user.role,
-				tenantId: user.tenant_id,
-			},
-		});
-	}
-
-	// Worker Portal login (ID + PIN)
-	if (p === "/api/portal/login" && req.method === "POST") {
-		let body: { workerId?: string; pin?: string };
-		try {
-			body = (await req.json()) as { workerId?: string; pin?: string };
-		} catch {
-			return json({ error: "Invalid JSON" }, 400);
-		}
-		const { workerId, pin } = body;
-		if (!workerId || !pin) {
-			return json({ error: "Worker ID and PIN required" }, 400);
-		}
-
-		const user = db.query("SELECT * FROM users WHERE username = ? AND pin = ?").get(workerId, pin) as any;
-		if (!user) {
-			return json({ error: "Invalid credentials" }, 401);
-		}
-
-		const token = await createToken(user.id, user.tenant_id);
-		return json({
-			token,
-			user: {
-				id: user.id,
-				username: user.username,
-				role: user.role,
-				tenantId: user.tenant_id,
-			},
-		});
-	}
-
-	// Auth check for all other /api routes
-	const authHeader = req.headers.get("Authorization");
-	const token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
-	let auth = token ? await verifyToken(token) : null;
-
-	// DEV MODE: Allow requests without auth when WOP_DEV_MODE=true
-	const isDevMode = process.env.WOP_DEV_MODE === "true";
 	const isPublicRoute = p === "/api/manifest" || p === "/api/config" || p === "/api/health";
 
-	if (!auth && !isDevMode) {
+	if (!auth) {
 		if (!isPublicRoute) {
 			return json({ error: "Unauthorized" }, 401);
 		}
-	}
-	// In dev mode, create a fake auth for compatibility
-	if (!auth && isDevMode) {
-		auth = { userId: "dev-user", tenantId: "dev-tenant", role: "SUPER_ADMIN" };
 	}
 
 	if (p === "/api/health") {
@@ -1092,6 +1059,218 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	}
 
 	// Worker Portal APIs
+	if (p === "/api/projects" && req.method === "GET") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		try {
+			const projects = db.query("SELECT * FROM projects WHERE tenant_id = ?").all(auth.tenantId) as any[];
+			return json(projects || []);
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to fetch projects", details: message }, 500);
+		}
+	}
+
+	if (p === "/api/projects" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: { name?: string; description?: string; budget_allocated?: number; status?: string };
+		try {
+			body = (await req.json()) as any;
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		if (!body.name) return json({ error: "Name required" }, 400);
+		try {
+			const id = `proj_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+			db.query(`
+				INSERT INTO projects (id, tenant_id, name, description, budget_allocated, status, created_by)
+				VALUES (?, ?, ?, ?, ?, ?, ?)
+			`).run(id, auth.tenantId, body.name, body.description || null, body.budget_allocated || 0, body.status || "active", auth.userId);
+			const project = db.query("SELECT * FROM projects WHERE id = ?").get(id);
+			return json(project);
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to create project", details: message }, 500);
+		}
+	}
+
+	if (p.startsWith("/api/projects/") && req.method === "PUT") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[3];
+		let body: any;
+		try {
+			body = await req.json();
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		try {
+			const existing = db.query("SELECT * FROM projects WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
+			if (!existing) return json({ error: "Project not found" }, 404);
+			
+			db.query(`
+				UPDATE projects 
+				SET name = COALESCE(?, name), 
+				    description = COALESCE(?, description), 
+				    budget_allocated = COALESCE(?, budget_allocated), 
+				    status = COALESCE(?, status)
+				WHERE id = ? AND tenant_id = ?
+			`).run(body.name, body.description, body.budget_allocated, body.status, id, auth.tenantId);
+			
+			const project = db.query("SELECT * FROM projects WHERE id = ?").get(id);
+			return json(project);
+		} catch (e) {
+			return json({ error: "Failed to update project" }, 500);
+		}
+	}
+
+	if (p.startsWith("/api/projects/") && req.method === "DELETE") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[3];
+		try {
+			const existing = db.query("SELECT * FROM projects WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
+			if (!existing) return json({ error: "Project not found" }, 404);
+			db.query("DELETE FROM projects WHERE id = ? AND tenant_id = ?").run(id, auth.tenantId);
+			db.query("UPDATE tasks SET project_id = NULL WHERE project_id = ?").run(id);
+			return json({ ok: true });
+		} catch (e) {
+			return json({ error: "Failed to delete project" }, 500);
+		}
+	}
+
+	if (p === "/api/notes" && req.method === "GET") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		try {
+			const notes = db.query("SELECT * FROM notes WHERE tenant_id = ?").all(auth.tenantId) as any[];
+			return json(notes || []);
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to fetch notes", details: message }, 500);
+		}
+	}
+
+	if (p === "/api/notes" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: { title?: string; content?: string; project_id?: string };
+		try {
+			body = (await req.json()) as any;
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		if (!body.title) return json({ error: "Title required" }, 400);
+		try {
+			const id = `note_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+			db.query(`
+				INSERT INTO notes (id, tenant_id, project_id, title, content, created_by)
+				VALUES (?, ?, ?, ?, ?, ?)
+			`).run(id, auth.tenantId, body.project_id || null, body.title, body.content || null, auth.userId);
+			const note = db.query("SELECT * FROM notes WHERE id = ?").get(id);
+			return json(note);
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to create note", details: message }, 500);
+		}
+	}
+
+	if (p.startsWith("/api/notes/") && req.method === "PUT") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[3];
+		let body: any;
+		try {
+			body = await req.json();
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		try {
+			db.query(`
+				UPDATE notes 
+				SET title = COALESCE(?, title), 
+				    content = COALESCE(?, content),
+				    updated_at = datetime('now')
+				WHERE id = ? AND tenant_id = ?
+			`).run(body.title, body.content, id, auth.tenantId);
+			const note = db.query("SELECT * FROM notes WHERE id = ?").get(id);
+			return json(note);
+		} catch (e) {
+			return json({ error: "Failed to update note" }, 500);
+		}
+	}
+
+	if (p === "/api/calendar/events" && req.method === "GET") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		try {
+			const events = db.query("SELECT * FROM calendar_events WHERE tenant_id = ? AND (user_id = ? OR created_by = ?)").all(auth.tenantId, auth.userId, auth.userId) as any[];
+			return json(events || []);
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to fetch events", details: message }, 500);
+		}
+	}
+
+	if (p === "/api/calendar/events" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: { title?: string; description?: string; start_date?: string; end_date?: string; all_day?: boolean; project_id?: string };
+		try {
+			body = (await req.json()) as any;
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		if (!body.title || !body.start_date || !body.end_date) return json({ error: "Title, start_date and end_date required" }, 400);
+		try {
+			const id = `event_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+			db.query(`
+				INSERT INTO calendar_events (id, tenant_id, user_id, project_id, title, description, start_date, end_date, all_day, created_by)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`).run(id, auth.tenantId, auth.userId, body.project_id || null, body.title, body.description || null, body.start_date, body.end_date, body.all_day ? 1 : 0, auth.userId);
+			const event = db.query("SELECT * FROM calendar_events WHERE id = ?").get(id);
+			return json(event);
+		} catch (e) {
+			return json({ error: "Failed to create event" }, 500);
+		}
+	}
+
+	// PUT /api/calendar/events/:id
+	const calendarEventMatch = p.match(/^\/api\/calendar\/events\/(.+)$/);
+	if (calendarEventMatch && req.method === "PUT") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const eventId = calendarEventMatch[1];
+		let body: { title?: string; description?: string; start_date?: string; end_date?: string; all_day?: boolean; project_id?: string };
+		try {
+			body = (await req.json()) as any;
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		try {
+			const existing = db.query("SELECT * FROM calendar_events WHERE id = ? AND tenant_id = ?").get(eventId, auth.tenantId) as any;
+			if (!existing) return json({ error: "Event not found" }, 404);
+			const title = body.title ?? existing.title;
+			const description = body.description !== undefined ? body.description : existing.description;
+			const start_date = body.start_date ?? existing.start_date;
+			const end_date = body.end_date ?? existing.end_date;
+			const all_day = body.all_day !== undefined ? (body.all_day ? 1 : 0) : existing.all_day;
+			const project_id = body.project_id !== undefined ? body.project_id : existing.project_id;
+			db.query(`
+				UPDATE calendar_events SET title = ?, description = ?, start_date = ?, end_date = ?, all_day = ?, project_id = ?
+				WHERE id = ? AND tenant_id = ?
+			`).run(title, description, start_date, end_date, all_day, project_id, eventId, auth.tenantId);
+			const updated = db.query("SELECT * FROM calendar_events WHERE id = ?").get(eventId);
+			return json(updated);
+		} catch (e) {
+			return json({ error: "Failed to update event" }, 500);
+		}
+	}
+
+	if (calendarEventMatch && req.method === "DELETE") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const eventId = calendarEventMatch[1];
+		try {
+			const existing = db.query("SELECT * FROM calendar_events WHERE id = ? AND tenant_id = ?").get(eventId, auth.tenantId) as any;
+			if (!existing) return json({ error: "Event not found" }, 404);
+			db.query("DELETE FROM calendar_events WHERE id = ? AND tenant_id = ?").run(eventId, auth.tenantId);
+			return json({ ok: true });
+		} catch (e) {
+			return json({ error: "Failed to delete event" }, 500);
+		}
+	}
+
 	if (p === "/api/portal/me" && req.method === "GET") {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
 		const user = db.query("SELECT id, username, role, tenant_id FROM users WHERE id = ?").get(auth.userId) as any;
@@ -1099,11 +1278,51 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 		return json({ id: user.id, username: user.username, role: user.role, tenantId: user.tenant_id });
 	}
 
+	if (p === "/api/portal/me" && req.method === "PUT") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: any;
+		try {
+			body = await req.json();
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		try {
+			db.query(`
+				UPDATE users 
+				SET full_name = COALESCE(?, full_name), 
+				    email = COALESCE(?, email),
+				    phone = COALESCE(?, phone)
+				WHERE id = ? AND tenant_id = ?
+			`).run(body.full_name, body.email, body.phone, auth.userId, auth.tenantId);
+			const user = db.query("SELECT id, username, role, tenant_id, full_name, email, phone FROM users WHERE id = ?").get(auth.userId);
+			return json(user);
+		} catch (e) {
+			return json({ error: "Failed to update profile" }, 500);
+		}
+	}
+
+	if (p === "/api/portal/change-pin" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: { pin?: string };
+		try {
+			body = await req.json();
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		if (!body.pin || body.pin.length !== 4) return json({ error: "4-digit PIN required" }, 400);
+		try {
+			db.query("UPDATE users SET pin = ? WHERE id = ? AND tenant_id = ?").run(body.pin, auth.userId, auth.tenantId);
+			return json({ ok: true });
+		} catch (e) {
+			return json({ error: "Failed to update PIN" }, 500);
+		}
+	}
+
 	if (p === "/api/portal/tasks" && req.method === "GET") {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
 		try {
 			// Workers see only their tasks, Leaders/Admins see all tasks for the tenant
-			const isLeader = auth.role === "leader" || auth.role === "admin" || auth.role === "super_admin";
+			const isLeader = auth.role === "LEADER" || auth.role === "ADMIN" || auth.role === "SUPER_ADMIN";
 			
 			if (isLeader) {
 				const tasks = db.query(`
@@ -1112,7 +1331,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 					LEFT JOIN users u ON t.assigned_to = u.id
 					LEFT JOIN projects p ON t.project_id = p.id
 					WHERE t.tenant_id = ?
-					ORDER BY t.deadline ASC, t.created_at DESC
+					ORDER BY t.due_date ASC, t.created_at DESC
 				`).all(auth.tenantId) as any[];
 				return json(tasks || []);
 			} else {
@@ -1121,7 +1340,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 					FROM tasks t
 					LEFT JOIN projects p ON t.project_id = p.id
 					WHERE t.tenant_id = ? AND t.assigned_to = ?
-					ORDER BY t.deadline ASC, t.created_at DESC
+					ORDER BY t.due_date ASC, t.created_at DESC
 				`).all(auth.tenantId, auth.userId) as any[];
 				return json(tasks || []);
 			}
@@ -1144,6 +1363,53 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ error: "Failed to fetch files", details: message }, 500);
+		}
+	}
+
+	if (p.startsWith("/api/portal/files/") && req.method === "GET") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		try {
+			const file = db.query("SELECT * FROM workspace_files WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
+			if (!file) return json({ error: "File not found" }, 404);
+			return json(file);
+		} catch (e) {
+			return json({ error: "Failed to fetch file" }, 500);
+		}
+	}
+
+	if (p.startsWith("/api/portal/files/") && req.method === "PUT") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		let body: any;
+		try {
+			body = await req.json();
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		try {
+			db.query(`
+				UPDATE workspace_files 
+				SET kanban_card_id = COALESCE(?, kanban_card_id), 
+				    kanban_board_id = COALESCE(?, kanban_board_id)
+				WHERE id = ? AND tenant_id = ?
+			`).run(body.kanban_card_id, body.kanban_board_id, id, auth.tenantId);
+			const file = db.query("SELECT * FROM workspace_files WHERE id = ?").get(id);
+			return json(file);
+		} catch (e) {
+			return json({ error: "Failed to update file" }, 500);
+		}
+	}
+
+	if (p.startsWith("/api/portal/files/") && req.method === "DELETE") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		try {
+			const result = db.query("DELETE FROM workspace_files WHERE id = ? AND tenant_id = ?").run(id, auth.tenantId);
+			if (result.changes === 0) return json({ error: "File not found" }, 404);
+			return json({ ok: true });
+		} catch (e) {
+			return json({ error: "Failed to delete file" }, 500);
 		}
 	}
 
@@ -1197,6 +1463,65 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 		}
 	}
 
+	if (p.startsWith("/api/portal/time/") && req.method === "GET") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		if (id === "approve" || id === "reject") {
+			// handled by other regexes
+		} else {
+			try {
+				const entry = db.query("SELECT * FROM time_entries WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
+				if (!entry) return json({ error: "Entry not found" }, 404);
+				return json(entry);
+			} catch (e) {
+				return json({ error: "Failed to fetch time entry" }, 500);
+			}
+		}
+	}
+
+	if (p.startsWith("/api/portal/time/") && req.method === "PUT") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		if (id === "approve" || id === "reject") {
+			// handled by other regexes
+		} else {
+			let body: any;
+			try {
+				body = await req.json();
+			} catch {
+				return json({ error: "Invalid JSON" }, 400);
+			}
+			try {
+				db.query(`
+					UPDATE time_entries 
+					SET hours = COALESCE(?, hours), 
+					    date = COALESCE(?, date),
+					    description = COALESCE(?, description),
+					    drawing_ref = COALESCE(?, drawing_ref),
+					    project_id = COALESCE(?, project_id),
+					    task_id = COALESCE(?, task_id)
+					WHERE id = ? AND tenant_id = ?
+				`).run(body.hours, body.date, body.description, body.drawing_ref, body.project_id, body.task_id, id, auth.tenantId);
+				const entry = db.query("SELECT * FROM time_entries WHERE id = ?").get(id);
+				return json(entry);
+			} catch (e) {
+				return json({ error: "Failed to update time entry" }, 500);
+			}
+		}
+	}
+
+	if (p.startsWith("/api/portal/time/") && req.method === "DELETE") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		try {
+			const result = db.query("DELETE FROM time_entries WHERE id = ? AND tenant_id = ?").run(id, auth.tenantId);
+			if (result.changes === 0) return json({ error: "Entry not found" }, 404);
+			return json({ ok: true });
+		} catch (e) {
+			return json({ error: "Failed to delete time entry" }, 500);
+		}
+	}
+
 	// Time Entry Approve
 	if (p.match(/^\/api\/portal\/time\/[^/]+\/approve$/) && req.method === "POST") {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
@@ -1236,25 +1561,92 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	// Task Management - Create task
 	if (p === "/api/portal/tasks" && req.method === "POST") {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
-		let body: { title?: string; assignedTo?: string; projectId?: string; estimatedHours?: number; deadline?: string };
+		let body: { title?: string; assigned_to?: string; project_id?: string; estimated_hours?: number; due_date?: string; kanban_card_id?: string; kanban_board_id?: string };
 		try {
-			body = (await req.json()) as { title?: string; assignedTo?: string; projectId?: string; estimatedHours?: number; deadline?: string };
+			body = (await req.json()) as any;
 		} catch {
 			return json({ error: "Invalid JSON" }, 400);
 		}
-		if (!body.title || !body.assignedTo) {
-			return json({ error: "Title and assignedTo required" }, 400);
+		if (!body.title) {
+			return json({ error: "Title required" }, 400);
 		}
 		try {
 			const id = `task_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 			db.query(`
-				INSERT INTO tasks (id, tenant_id, title, assigned_to, project_id, estimated_hours, deadline, status, created_by)
-				VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?)
-			`).run(id, auth.tenantId, body.title, body.assignedTo, body.projectId || null, body.estimatedHours || null, body.deadline || null, auth.userId);
-			return json({ ok: true, id });
+				INSERT INTO tasks (id, tenant_id, title, assigned_to, project_id, estimated_hours, due_date, status, created_by, kanban_card_id, kanban_board_id)
+				VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)
+			`).run(id, auth.tenantId, body.title, body.assigned_to || null, body.project_id || null, body.estimated_hours || null, body.due_date || null, auth.userId, body.kanban_card_id || null, body.kanban_board_id || null);
+			const task = db.query("SELECT * FROM tasks WHERE id = ?").get(id);
+			return json(task);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ error: "Failed to create task", details: message }, 500);
+		}
+	}
+
+	if (p.startsWith("/api/portal/tasks/") && req.method === "GET") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		if (id === "status") {
+			// handled by regex
+		} else {
+			try {
+				const task = db.query("SELECT * FROM tasks WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
+				if (!task) return json({ error: "Task not found" }, 404);
+				return json(task);
+			} catch (e) {
+				return json({ error: "Failed to fetch task" }, 500);
+			}
+		}
+	}
+
+	if (p.startsWith("/api/portal/tasks/") && req.method === "PUT") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		if (id === "status") {
+			// handled below
+		} else {
+			let body: any;
+			try {
+				body = await req.json();
+			} catch {
+				return json({ error: "Invalid JSON" }, 400);
+			}
+			try {
+				const existing = db.query("SELECT * FROM tasks WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
+				if (!existing) return json({ error: "Task not found" }, 404);
+				
+				db.query(`
+					UPDATE tasks 
+					SET title = COALESCE(?, title), 
+					    assigned_to = COALESCE(?, assigned_to),
+					    project_id = COALESCE(?, project_id),
+					    estimated_hours = COALESCE(?, estimated_hours),
+					    due_date = COALESCE(?, due_date),
+					    status = COALESCE(?, status),
+					    kanban_card_id = COALESCE(?, kanban_card_id),
+					    kanban_board_id = COALESCE(?, kanban_board_id),
+					    updated_at = datetime('now')
+					WHERE id = ? AND tenant_id = ?
+				`).run(body.title, body.assigned_to, body.project_id, body.estimated_hours, body.due_date, body.status, body.kanban_card_id, body.kanban_board_id, id, auth.tenantId);
+				
+				const task = db.query("SELECT * FROM tasks WHERE id = ?").get(id);
+				return json(task);
+			} catch (e) {
+				return json({ error: "Failed to update task" }, 500);
+			}
+		}
+	}
+
+	if (p.startsWith("/api/portal/tasks/") && req.method === "DELETE") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		try {
+			const result = db.query("DELETE FROM tasks WHERE id = ? AND tenant_id = ?").run(id, auth.tenantId);
+			if (result.changes === 0) return json({ error: "Task not found" }, 404);
+			return json({ ok: true });
+		} catch (e) {
+			return json({ error: "Failed to delete task" }, 500);
 		}
 	}
 
@@ -1432,18 +1824,66 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	}
 
 	if (p === "/api/admin/users" && req.method === "GET") {
-		if (!auth || auth.role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const isSuper = auth.role === "SUPER_ADMIN";
+		const isAdmin = auth.role === "ADMIN";
+		if (!isSuper && !isAdmin) return json({ error: "Forbidden" }, 403);
+		
 		try {
-			const users = db.query(`
-				SELECT u.*, t.name as tenant_name
-				FROM users u
-				LEFT JOIN tenants t ON u.tenant_id = t.id
-				ORDER BY u.created_at DESC
-			`).all() as any[];
+			let users;
+			if (isSuper) {
+				users = db.query(`
+					SELECT u.id, u.username, u.role, u.tenant_id, u.full_name, u.job_title, u.email, u.phone, t.name as tenant_name
+					FROM users u
+					LEFT JOIN tenants t ON u.tenant_id = t.id
+					ORDER BY u.created_at DESC
+				`).all() as any[];
+			} else {
+				users = db.query(`
+					SELECT id, username, role, tenant_id, full_name, job_title, email, phone
+					FROM users
+					WHERE tenant_id = ?
+					ORDER BY created_at DESC
+				`).all(auth.tenantId) as any[];
+			}
 			return json(users || []);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ error: "Failed to fetch users", details: message }, 500);
+		}
+	}
+
+	if (p === "/api/admin/users" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const isSuper = auth.role === "SUPER_ADMIN";
+		const isAdmin = auth.role === "ADMIN";
+		if (!isSuper && !isAdmin) return json({ error: "Forbidden" }, 403);
+
+		let body: any;
+		try {
+			body = await req.json();
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+
+		if (!body.username || !body.password || !body.role) {
+			return json({ error: "Username, password and role required" }, 400);
+		}
+
+		const targetTenantId = isSuper ? (body.tenantId || auth.tenantId) : auth.tenantId;
+
+		try {
+			const id = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+			const hash = await Bun.password.hash(body.password);
+			db.query(`
+				INSERT INTO users (id, tenant_id, username, password_hash, role, full_name, job_title, email, phone, pin)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`).run(id, targetTenantId, body.username, hash, body.role, body.full_name || null, body.job_title || null, body.email || null, body.phone || null, body.pin || null);
+			
+			const user = db.query("SELECT id, username, role, tenant_id, full_name FROM users WHERE id = ?").get(id);
+			return json(user);
+		} catch (e) {
+			return json({ error: "Failed to create user (username might already exist)" }, 400);
 		}
 	}
 
@@ -1680,7 +2120,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 				v === "0" || v === "false" || v === "no" || v === "off"
 					? "WOP_ALLOW_SERVER_RESTART disables this exit. Unset it for the usual dev default (on), or set it to 1, then use Settings → Restart server again."
 					: process.env.NODE_ENV === "production"
-						? "Set WOP_ALLOW_SERVER_RESTART=1 on the Way of Pi Bun process, then use Settings → Restart server again. Otherwise stop and start your dev command in the terminal (e.g. npm run dev from apps/wayofwork-ui)."
+						? "Set WOP_ALLOW_SERVER_RESTART=1 on the Way of Work Bun process, then use Settings → Restart server again. Otherwise stop and start your dev command in the terminal (e.g. npm run dev from apps/wayofwork-ui)."
 						: `Unrecognized WOP_ALLOW_SERVER_RESTART value. Use 1, true, yes, or on; unset for the dev default. Current: ${raw || "(empty)"}`;
 			return json(
 				{
@@ -1698,7 +2138,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 			ok: true,
 			exiting: true,
 			message:
-				"Way of Pi server process will exit. Start it again from the terminal (npm run dev / bun run server/index.ts).",
+				"Way of Work server process will exit. Start it again from the terminal (npm run dev / bun run server/index.ts).",
 		});
 	}
 
@@ -2040,7 +2480,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 		return json({
 			provider,
 			chatEngine,
-			/** Absolute Way of Pi checkout root where host-scoped **`.claw/`** lives (not `WOP_WORKSPACE`). */
+			/** Absolute Way of Work checkout root where host-scoped **`.claw/`** lives (not `WOP_WORKSPACE`). */
 			clawHostRepoRoot: getClawHostRepoRoot(),
 			/** Absolute path to host **`.claw/`** (e.g. optional `telegram.json`). */
 			clawDotDirAbs: getClawDotDirAbs(),
@@ -2063,6 +2503,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 				configRuntimePost: true,
 				clawHostTreeGet: true,
 				clawTelegramStatusGet: true,
+				clawWhatsAppStatusGet: true,
 			},
 			manifestUrl: "/api/manifest",
 			ollamaHost: resolveOllamaHost(),
@@ -2077,6 +2518,8 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 			clawAutomation: getClawAutomationStatus(),
 			/** Same payload as **`GET /api/claw/telegram/status`** — embedded so Claw Channels works even if a proxy drops that path. */
 			clawTelegramStatus: getClawTelegramIntegrationStatus(),
+			/** Same payload as **`GET /api/claw/whatsapp/status`** — embedded so Claw Channels works even if a proxy drops that path. */
+			clawWhatsAppStatus: getClawWhatsAppIntegrationStatus(),
 		});
 	}
 
@@ -2092,6 +2535,15 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	if (p === "/api/claw/telegram/status" && req.method === "GET") {
 		try {
 			return json(getClawTelegramIntegrationStatus());
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ version: 1, error: message }, 500);
+		}
+	}
+
+	if (p === "/api/claw/whatsapp/status" && req.method === "GET") {
+		try {
+			return json(getClawWhatsAppIntegrationStatus());
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ version: 1, error: message }, 500);
@@ -2127,6 +2579,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	}
 
 	if (p === "/api/claw/inbound" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
 		const secret = await readWebhookSecret();
 		if (!secret) {
 			return json({ ok: false, error: "No webhook secret — use POST /api/claw/webhook/ensure first." }, 404);
@@ -2155,17 +2608,113 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 					: null;
 		const name = String(body.name ?? "Inbound webhook").trim() || "Inbound webhook";
 		try {
-			const r = await executeClawAutomation({
-				name,
-				prompt,
-				agentName,
-				source: "webhook",
-			});
+				const r = await executeClawAutomation({
+					name,
+					prompt,
+					agentName,
+					source: "webhook",
+					tenantId: auth?.tenantId,
+					userId: auth?.userId,
+				});
 			if (r.ok) return json({ ok: true });
 			return json({ ok: false, error: r.error }, 500);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ ok: false, error: message }, 500);
+		}
+	}
+
+	// ── Self-service channel link management ──
+
+	if (p === "/api/channels/links" && req.method === "GET") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		try {
+			const links = db.query(`
+				SELECT l.*, u.username as user_name
+				FROM user_channel_links l
+				LEFT JOIN users u ON l.user_id = u.id
+				WHERE l.tenant_id = ? AND l.user_id = ?
+				ORDER BY l.created_at DESC
+			`).all(auth.tenantId, auth.userId) as any[];
+			return json(links.map((l: any) => ({
+				id: l.id,
+				channel: l.channel,
+				channelUserId: l.channel_user_id,
+				channelUsername: l.channel_username,
+				channelBotId: l.channel_bot_id,
+				active: l.active === 1,
+				lastActivityAt: l.last_activity_at,
+				createdAt: l.created_at,
+			})));
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to fetch links", details: message }, 500);
+		}
+	}
+
+	if (p === "/api/channels/link" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: { channel?: string; channelUserId?: string; channelUsername?: string; channelBotId?: string };
+		try {
+			body = (await req.json()) as any;
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		if (!body.channel || !body.channelUserId) {
+			return json({ error: "channel and channelUserId required" }, 400);
+		}
+		const id = `cl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+		const existing = db.query(
+			"SELECT id FROM user_channel_links WHERE user_id = ? AND tenant_id = ? AND channel = ?"
+		).get(auth.userId, auth.tenantId, body.channel) as { id: string } | undefined;
+		if (existing) {
+			db.query(`
+				UPDATE user_channel_links SET channel_user_id = ?, channel_username = ?, channel_bot_id = ?, active = 1 WHERE id = ?
+			`).run(body.channelUserId, body.channelUsername || null, body.channelBotId || null, existing.id);
+			return json({ ok: true, id: existing.id, updated: true });
+		}
+		try {
+			db.query(`
+				INSERT INTO user_channel_links (id, tenant_id, user_id, channel, channel_user_id, channel_username, channel_bot_id)
+				VALUES (?, ?, ?, ?, ?, ?, ?)
+			`).run(id, auth.tenantId, auth.userId, body.channel, body.channelUserId, body.channelUsername || null, body.channelBotId || null);
+			return json({ ok: true, id });
+		} catch (e) {
+			return json({ error: "Failed to create link (may already exist)" }, 409);
+		}
+	}
+
+	if (p === "/api/channels/unlink" && req.method === "DELETE") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const linkId = url.searchParams.get("id") || "";
+		if (!linkId) return json({ error: "id parameter required" }, 400);
+		try {
+			const existing = db.query("SELECT * FROM user_channel_links WHERE id = ? AND user_id = ? AND tenant_id = ?").get(linkId, auth.userId, auth.tenantId);
+			if (!existing) return json({ error: "Link not found" }, 404);
+			db.query("DELETE FROM user_channel_links WHERE id = ? AND user_id = ? AND tenant_id = ?").run(linkId, auth.userId, auth.tenantId);
+			return json({ ok: true });
+		} catch (e) {
+			return json({ error: "Failed to delete link" }, 500);
+		}
+	}
+
+	if (p === "/api/channels/log" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: { channel?: string; channelUserId?: string; direction?: string; messageText?: string; messageType?: string; handledBy?: string; botId?: string };
+		try {
+			body = (await req.json()) as any;
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		try {
+			const id = `cml_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+			db.query(`
+				INSERT INTO channel_message_logs (id, tenant_id, user_id, channel, channel_user_id, direction, message_text, message_type, handled_by, bot_id)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`).run(id, auth.tenantId, auth.userId, body.channel || "unknown", body.channelUserId || null, body.direction || "inbound", body.messageText || null, body.messageType || "text", body.handledBy || null, body.botId || null);
+			return json({ ok: true, id });
+		} catch (e) {
+			return json({ error: "Failed to log message" }, 500);
 		}
 	}
 
@@ -2641,9 +3190,6 @@ const server = Bun.serve<ServerWsData>({
 		}
 		const url = new URL(req.url);
 
-		// DEV MODE: Allow all WebSocket upgrades when WOP_DEV_MODE=true
-		const devMode = process.env.WOP_DEV_MODE === "true";
-
 		if (url.pathname === "/ws/terminal" && req.headers.get("upgrade") === "websocket") {
 			if (!terminalAllowed()) {
 				return new Response(
@@ -2668,22 +3214,17 @@ const server = Bun.serve<ServerWsData>({
                 ) {
                         let auth: any = null;
                         
-                        // In dev mode, allow WebSocket upgrades without auth
-                        if (!devMode) {
-                        	const authHeader = req.headers.get("Authorization");
-                        	let token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
+                        const authHeader = req.headers.get("Authorization");
+                        let token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
                                 
-                                // Support token in query param (common for WebSockets)
-                                if (!token) {
-                                        token = url.searchParams.get("token");
-                                }
+                        // Support token in query param (common for WebSockets)
+                        if (!token) {
+                                token = url.searchParams.get("token");
+                        }
                                 
-                        	auth = token ? await verifyToken(token) : null;
-                        	if (!auth) {
-                        		return new Response("Unauthorized", { status: 401 });
-                        	}
-                        } else {
-                                auth = { userId: "dev-user", tenantId: "dev-tenant", role: "ADMIN" };
+                        auth = token ? await verifyToken(token) : null;
+                        if (!auth) {
+                                return new Response("Unauthorized", { status: 401 });
                         }
                         
                         const upgraded = srv.upgrade(req, {
@@ -2697,6 +3238,7 @@ const server = Bun.serve<ServerWsData>({
                                         chatMode: "build",
                                         agentName: null,
                                         cachedAgentBody: null,
+                                        cachedAgentSkills: null,
                                         chatAbort: null,
                                         cumPromptTokens: 0,
                                         cumCompletionTokens: 0,
@@ -2718,13 +3260,13 @@ const server = Bun.serve<ServerWsData>({
 		return new Response("Not found", { status: 404 });
 	},
 	websocket: {
-		open(ws) {
+		async open(ws) {
 			try {
 				if (ws.data.kind === "terminal") {
 					attachTerminalSession(ws);
 					return;
 				}
-				applyLeadFromCache(ws.data);
+				await applyLeadFromCache(ws.data);
 				const provider = (process.env.WOP_LLM_PROVIDER || "ollama").toLowerCase();
 				const envOllama = resolveOllamaModelDefault();
 				const envOr = process.env.OPENROUTER_MODEL || "openrouter/auto";
@@ -2836,7 +3378,7 @@ const server = Bun.serve<ServerWsData>({
 				}
 				const next: ChatSessionMode = String(msg.mode ?? "") === "plan" ? "plan" : "build";
 				ws.data.chatMode = next;
-				applyLeadFromCache(ws.data);
+				await applyLeadFromCache(ws.data);
 				ws.send(JSON.stringify({ type: "chat_mode", mode: next }));
 				ws.send(
 					logLine(
@@ -2877,11 +3419,13 @@ const server = Bun.serve<ServerWsData>({
 					}
 					ws.data.agentName = nextName;
 					ws.data.cachedAgentBody = body;
+					ws.data.cachedAgentSkills = await resolveAgentSkillsFromName(nextName, ws.data.tenantId);
 				} else {
 					ws.data.agentName = null;
 					ws.data.cachedAgentBody = null;
+					ws.data.cachedAgentSkills = null;
 				}
-				applyLeadFromCache(ws.data);
+				await applyLeadFromCache(ws.data);
 				ws.send(JSON.stringify({ type: "agent", name: ws.data.agentName }));
 				ws.send(
 					logLine(
@@ -2923,7 +3467,7 @@ const server = Bun.serve<ServerWsData>({
 				ws.data.cumPromptTokens = 0;
 				ws.data.cumCompletionTokens = 0;
 				sendQueueState(ws, []);
-				applyLeadFromCache(ws.data);
+				await applyLeadFromCache(ws.data);
 				ws.send(JSON.stringify({ type: "session_reset" }));
 				ws.send(JSON.stringify({ type: "chat_mode", mode: ws.data.chatMode }));
 				ws.send(JSON.stringify({ type: "agent", name: ws.data.agentName }));
@@ -3018,7 +3562,7 @@ const server = Bun.serve<ServerWsData>({
 const _bootEngineMode = wopChatEngineFromEnv();
 const _bootPiDrives = shouldUsePiJsonChat();
 console.log(
-	`Way of Pi server http://127.0.0.1:${server.port} workspace=${getWorkspaceRoot()} chatEngine=${_bootEngineMode} piDrivesChat=${_bootPiDrives} manifest=/api/manifest`,
+	`Way of Work server http://127.0.0.1:${server.port} workspace=${getWorkspaceRoot()} chatEngine=${_bootEngineMode} piDrivesChat=${_bootPiDrives} manifest=/api/manifest`,
 );
 
 // Start the workspace-index auto-sync timer based on saved options.
@@ -3031,6 +3575,12 @@ void applyAutoSync((result) => {
 });
 
 startClawScheduler();
+
+// Start Telegram bot (if token is configured)
+void (async () => {
+	const { startTelegramBot } = await import("./telegram-bot");
+	await startTelegramBot();
+})();
 
 if (process.env.WOP_NGROK_DOMAIN) {
 	void (async () => {

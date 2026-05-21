@@ -1,5 +1,5 @@
 /**
- * Pi-style `/…` lines in Way of Pi web chat (Bun server).
+ * Pi-style `/…` lines in Way of Work web chat (Bun server).
  * Full Pi TUI slash registry lives in Pi itself — this is a **parity subset** for the bridge chat.
  */
 
@@ -13,6 +13,8 @@ export type ChatSlashMutation = {
 	setModelId?: string;
 	setChatMode?: ChatSessionMode;
 	setAgentName?: string | null;
+	/** Reload agents, skills, and settings from disk. */
+	reload?: boolean;
 };
 
 export type ChatSlashResult =
@@ -137,7 +139,7 @@ export async function evalChatSlashCommand(
 				return {
 					handled: true,
 					assistantText: [
-						"**Way of Pi web chat** — slash subset (see **`docs/commands/REFERENCE.md`** for the full Pi TUI command guide).",
+						"**Way of Work web chat** — slash subset (see **`docs/commands/REFERENCE.md`** for the full Pi TUI command guide).",
 						"",
 						WEB_CHAT_COMMANDS,
 						"",
@@ -221,11 +223,10 @@ export async function evalChatSlashCommand(
 		case "reload":
 			return {
 				handled: true,
-				assistantText: [
-					"**`/reload` in Pi** reapplies `agent/settings.json` and project **`.pi/settings.json`** (extensions, etc.).",
-					"",
-					"**Way of Pi web chat** does not hot-reload the Bun server from here. After editing env or **`.pi/settings.json`**, restart the dev server (or **Settings → Restart server** — allowed by default in dev).",
-				].join("\n"),
+				skipUserEcho: true,
+				assistantText:
+					"Reloaded — re-scanned agents and skills from `.wo/agents/`, `.wo/skills/`, and scan roots. Changes to agent `.md` files and skill `SKILL.md` files are now active.",
+				mutation: { reload: true },
 			};
 		case "system":
 		case "agent": {

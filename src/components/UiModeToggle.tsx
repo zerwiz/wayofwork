@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Briefcase, Shield, User, LogOut, Columns3 } from "lucide-react";
+import { FileText, Briefcase, Shield, User, LogOut, Columns3, ClipboardList } from "lucide-react";
 
 /** Same control as in the technical `MenuBar` (IDE chrome). */
 export function UiModeToggle({
@@ -160,6 +160,20 @@ export function UiModeToggle({
 				>
 					<Shield size={12} />
 					DevView
+				</button>
+			)}
+
+			{isWorkerRole && (
+				<button
+					type="button"
+					onClick={() => navigate("/ata", { replace: true })}
+					className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors ${
+						window.location.pathname === "/ata" ? "bg-[#ea580c] text-white" : "text-[#858585] hover:text-[#cccccc]"
+					}`}
+					title="ÄTA — Change order ticket system"
+				>
+					<ClipboardList size={12} />
+					ÄTA
 				</button>
 			)}
 

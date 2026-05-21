@@ -6,10 +6,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 // Note: useRef removed as unused
-import { kanbanService } from '../../services/mockKanbanService';
-import { notesService } from '../../services/mockNotesService';
-import { tasksService } from '../../services/mockTasksService';
-import { driveService } from '../../services/mockDriveService';
+import { kanbanService } from '../../services/kanbanService';
+import { notesService } from '../../services/notesService';
+import { tasksService } from '../../services/tasksService';
+import { driveService } from '../../services/driveService';
 import { calendarService } from '../../services/mockCalendarService';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -150,25 +150,28 @@ export const CardView: React.FC<CardViewProps> = ({
     }
   }, [isOpen, cardId, isCreateMode]);
 
-  // Load available notes, tasks, files, and calendar events for linking
+  // Load available notes, tasks, files, and calendar events for linking and display
   useEffect(() => {
-    if (showLinkNote) {
-      const notes = notesService.getAllNotes();
-      setAvailableNotes(notes);
-    }
-    if (showLinkTask) {
-      const tasks = tasksService.getAllTasks();
-      setAvailableTasks(tasks);
-    }
-    if (showLinkFile) {
-      const files = driveService.getAllFiles();
-      setAvailableFiles(files);
-    }
-    if (showLinkCalendar) {
-      const events = calendarService.getEvents();
-      setAvailableCalendarEvents(events);
-    }
-  }, [showLinkNote, showLinkTask, showLinkFile, showLinkCalendar]);
+    const loadLinkables = async () => {
+      if (isOpen) {
+        try {
+          const [notes, tasks, files, events] = await Promise.all([
+            notesService.getAllNotes(),
+            tasksService.getAllTasks(),
+            driveService.getAllFiles(),
+            calendarService.getEvents()
+          ]);
+          setAvailableNotes(notes);
+          setAvailableTasks(tasks);
+          setAvailableFiles(files);
+          setAvailableCalendarEvents(events);
+        } catch (error) {
+          console.error('Error loading linkables:', error);
+        }
+      }
+    };
+    loadLinkables();
+  }, [isOpen]);
 
   const loadCard = async () => {
     if (!cardId || !boardId) return;
@@ -1862,9 +1865,9 @@ export const CardView: React.FC<CardViewProps> = ({
                         <FileText className="w-4 h-4 text-blue-400" />
                         <span className="text-sm text-white">
                           {!isCreateMode && card?.metadata?.noteId
-                            ? notesService.getNote(card.metadata.noteId)?.title || 'Linked Note'
+                            ? availableNotes.find(n => n.id === card.metadata?.noteId)?.title || 'Linked Note'
                             : isCreateMode && editedCard.metadata?.noteId
-                            ? notesService.getNote(editedCard.metadata.noteId)?.title || 'Linked Note'
+                            ? availableNotes.find(n => n.id === editedCard.metadata?.noteId)?.title || 'Linked Note'
                             : 'Linked Note'}
                         </span>
                       </div>
@@ -1894,9 +1897,9 @@ export const CardView: React.FC<CardViewProps> = ({
                         <List className="w-4 h-4 text-emerald-400" />
                         <span className="text-sm text-white">
                           {!isCreateMode && card?.metadata?.taskListId
-                            ? tasksService.getTaskList(card.metadata.taskListId)?.title || 'Linked Task List'
+                            ? 'Linked Task List'
                             : isCreateMode && editedCard.metadata?.taskListId
-                            ? tasksService.getTaskList(editedCard.metadata.taskListId)?.title || 'Linked Task List'
+                            ? 'Linked Task List'
                             : 'Linked Task List'}
                         </span>
                       </div>
@@ -1926,9 +1929,9 @@ export const CardView: React.FC<CardViewProps> = ({
                         <Folder className="w-4 h-4 text-orange-400" />
                         <span className="text-sm text-white">
                           {!isCreateMode && card?.metadata?.fileId
-                            ? driveService.getFile(card.metadata.fileId)?.name || 'Linked File'
+                            ? availableFiles.find(f => f.id === card.metadata?.fileId)?.name || 'Linked File'
                             : isCreateMode && editedCard.metadata?.fileId
-                            ? driveService.getFile(editedCard.metadata.fileId)?.name || 'Linked File'
+                            ? availableFiles.find(f => f.id === editedCard.metadata?.fileId)?.name || 'Linked File'
                             : 'Linked File'}
                         </span>
                       </div>
@@ -1995,7 +1998,7 @@ export const CardView: React.FC<CardViewProps> = ({
                       : [];
                     
                     return (taskIds as string[]).length > 0 && (taskIds as string[]).map((taskId) => {
-                      const task = tasksService.getTask(taskId);
+                      const task = availableTasks.find(t => t.id === taskId);
                       if (!task) return null;
                       
                       return (

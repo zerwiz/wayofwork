@@ -53,7 +53,7 @@ export function useClawHostFileTree(enabled: boolean) {
 			let msg = e instanceof Error ? e.message : String(e);
 			if (/^404\b/.test(msg) && !msg.includes("Another process on the API port")) {
 				msg +=
-					" Restart the Way of Pi API (e.g. bun run server/index.ts in apps/wayofwork-ui) so GET /api/claw/tree is available.";
+					" Restart the Way of Work API (e.g. bun run server/index.ts in apps/wayofwork-ui) so GET /api/claw/tree is available.";
 			}
 			setError(msg);
 			setNodes([]);

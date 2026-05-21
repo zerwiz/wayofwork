@@ -44,7 +44,7 @@ function settingsJsonListsPiTelegram(abs: string): boolean {
 	}
 }
 
-/** Opened workspace folder(s) plus the Way of Pi host checkout (Claw extensions often live only on the host). */
+/** Opened workspace folder(s) plus the Way of Work host checkout (Claw extensions often live only on the host). */
 function scanPiTelegramInSettings(): boolean {
 	const seen = new Set<string>();
 	const roots = [getClawHostRepoRoot(), ...listWorkspaceFolders().map(({ path }) => path)];

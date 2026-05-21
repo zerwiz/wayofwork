@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { FileText, Briefcase, Shield, User, LayoutDashboard, Code2, Bot, FileCode } from "lucide-react";
+import { FileText, Briefcase, Shield, User, LayoutDashboard, Code2, Bot, FileCode, ClipboardList } from "lucide-react";
 
 interface NavItem {
   id: string;
@@ -31,6 +31,7 @@ const PRIMARY_NAV: NavItem[] = [
 ];
 
 const CONTEXT_NAV: NavItem[] = [
+  { id: "ata", label: "ÄTA", icon: <ClipboardList size={14} />, title: "ÄTA — Change order ticket system", path: "/ata", showCondition: (role?: string) => role === "worker" || role === "leader" || role === "admin" || role === "super_admin" },
   { id: "portal", label: "Portal", icon: <LayoutDashboard size={14} />, title: "Worker/Admin Portal", path: "/portal", showCondition: (role?: string) => role === "worker" || role === "leader" || role === "admin" },
   { id: "admin", label: "Admin", icon: <Shield size={14} />, title: "Admin Console", path: "/admin", showCondition: (role?: string) => role === "admin" },
   { id: "super_admin", label: "DevView", icon: <Shield size={14} />, title: "Developer View", path: "/super-admin", showCondition: (role?: string) => role === "super_admin" },

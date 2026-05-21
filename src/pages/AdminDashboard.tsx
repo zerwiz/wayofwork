@@ -23,45 +23,44 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
   const [clients, setClients] = useState<Worker[]>([]);
   const [stats, setStats] = useState<AdminStats>({ workers: 0, clients: 0, projects: 0, tasks: 0, time_entries: 0 });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"workers" | "clients">("workers");
+  const [activeTab, setActiveTab] = useState<"workers" | "clients" | "channels">("workers");
   const [showAddWorker, setShowAddWorker] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
   const [newWorker, setNewWorker] = useState({ username: "", full_name: "", pin: "1234" });
   const [newClient, setNewClient] = useState({ username: "", full_name: "", pin: "1234" });
+  const [whatsappBots, setWhatsappBots] = useState<any[]>([]);
+  const [telegramBots, setTelegramBots] = useState<any[]>([]);
+  const [channelLinks, setChannelLinks] = useState<any[]>([]);
+  const [channelLogs, setChannelLogs] = useState<any[]>([]);
+  const [showAddWhatsappBot, setShowAddWhatsappBot] = useState(false);
+  const [showAddTelegramBot, setShowAddTelegramBot] = useState(false);
+  const [channelsTab, setChannelsTab] = useState<"bots" | "links" | "logs">("bots");
+  const [newWhatsappBot, setNewWhatsappBot] = useState({ label: "", phone_number_id: "", access_token: "", business_account_id: "" });
+  const [newTelegramBot, setNewTelegramBot] = useState({ label: "", bot_token: "", bot_username: "" });
+
+  const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem("wop_token")}` });
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  const DEMO_WORKERS: Worker[] = [
-    { id: "w-1", username: "anna", full_name: "Anna Svensson", role: "WORKER", active: 1, last_active: "2026-05-08" },
-    { id: "w-2", username: "bjorn", full_name: "Björn Larsson", role: "WORKER", active: 1, last_active: "2026-05-07" },
-    { id: "w-3", username: "cecilia", full_name: "Cecilia Johansson", role: "LEADER", active: 1, last_active: "2026-05-08" },
-    { id: "w-4", username: "demo-worker", full_name: "Demo Worker", role: "WORKER", active: 1, last_active: "2026-05-08" },
-  ];
-
-  const DEMO_CLIENTS: Worker[] = [
-    { id: "c-1", username: "demo-client", full_name: "Demo Client", role: "CLIENT", active: 1, last_active: "2026-05-08" },
-    { id: "c-2", username: "byggab", full_name: "Bygg AB", role: "CLIENT", active: 1, last_active: "2026-05-06" },
-  ];
-
-  const DEMO_STATS: AdminStats = { workers: 3, clients: 2, projects: 8, tasks: 24, time_entries: 142 };
-
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [usersRes, statsRes] = await Promise.all([
-        fetch("/api/admin/users"),
-        fetch("/api/admin/stats"),
+      const h = authHeaders();
+      const [usersRes, statsRes, waBotsRes, tgBotsRes, linksRes, logsRes] = await Promise.all([
+        fetch("/api/admin/users", { headers: h }),
+        fetch("/api/admin/stats", { headers: h }),
+        fetch("/api/admin/channels/whatsapp-bots", { headers: h }),
+        fetch("/api/admin/channels/telegram-bots", { headers: h }),
+        fetch("/api/admin/channels/links", { headers: h }),
+        fetch("/api/admin/channels/logs?limit=50", { headers: h }),
       ]);
 
       if (usersRes.ok) {
         const data = await usersRes.json();
         setWorkers(data.filter((u: any) => u.role !== "CLIENT"));
         setClients(data.filter((u: any) => u.role === "CLIENT"));
-      } else {
-        setWorkers(DEMO_WORKERS);
-        setClients(DEMO_CLIENTS);
       }
 
       if (statsRes.ok) {
@@ -73,14 +72,14 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
           tasks: statsData.tasks || 0,
           time_entries: statsData.timeEntries || 0,
         });
-      } else {
-        setStats(DEMO_STATS);
       }
+
+      if (waBotsRes.ok) setWhatsappBots(await waBotsRes.json());
+      if (tgBotsRes.ok) setTelegramBots(await tgBotsRes.json());
+      if (linksRes.ok) setChannelLinks(await linksRes.json());
+      if (logsRes.ok) setChannelLogs(await logsRes.json());
     } catch (error) {
       console.error("Failed to fetch admin data:", error);
-      setWorkers(DEMO_WORKERS);
-      setClients(DEMO_CLIENTS);
-      setStats(DEMO_STATS);
     } finally {
       setLoading(false);
     }
@@ -88,7 +87,21 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
 
   const handleAddWorker = async () => {
     if (!newWorker.username) return;
-    // Mock implementation for adding worker
+    try {
+      await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          username: newWorker.username,
+          full_name: newWorker.full_name,
+          pin: newWorker.pin || "1234",
+          password: newWorker.pin || "1234",
+          role: "WORKER",
+        }),
+      });
+    } catch (e) {
+      console.error("Failed to create worker:", e);
+    }
     setShowAddWorker(false);
     setNewWorker({ username: "", full_name: "", pin: "1234" });
     fetchData();
@@ -96,10 +109,73 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
 
   const handleAddClient = async () => {
     if (!newClient.username) return;
-    // Mock implementation for adding client
+    try {
+      await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          username: newClient.username,
+          full_name: newClient.full_name,
+          pin: newClient.pin || "1234",
+          password: newClient.pin || "1234",
+          role: "CLIENT",
+        }),
+      });
+    } catch (e) {
+      console.error("Failed to create client:", e);
+    }
     setShowAddClient(false);
     setNewClient({ username: "", full_name: "", pin: "1234" });
     fetchData();
+  };
+
+  const handleAddWhatsappBot = async () => {
+    if (!newWhatsappBot.label || !newWhatsappBot.phone_number_id || !newWhatsappBot.access_token) return;
+    try {
+      await fetch("/api/admin/channels/whatsapp-bots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify(newWhatsappBot),
+      });
+    } catch (e) { console.error("Failed to create WhatsApp bot:", e); }
+    setShowAddWhatsappBot(false);
+    setNewWhatsappBot({ label: "", phone_number_id: "", access_token: "", business_account_id: "" });
+    fetchData();
+  };
+
+  const handleDeleteWhatsappBot = async (id: string) => {
+    try {
+      await fetch(`/api/admin/channels/whatsapp-bots/${id}`, { method: "DELETE", headers: authHeaders() });
+      fetchData();
+    } catch (e) { console.error("Failed to delete WhatsApp bot:", e); }
+  };
+
+  const handleAddTelegramBot = async () => {
+    if (!newTelegramBot.label || !newTelegramBot.bot_token) return;
+    try {
+      await fetch("/api/admin/channels/telegram-bots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify(newTelegramBot),
+      });
+    } catch (e) { console.error("Failed to create Telegram bot:", e); }
+    setShowAddTelegramBot(false);
+    setNewTelegramBot({ label: "", bot_token: "", bot_username: "" });
+    fetchData();
+  };
+
+  const handleDeleteTelegramBot = async (id: string) => {
+    try {
+      await fetch(`/api/admin/channels/telegram-bots/${id}`, { method: "DELETE", headers: authHeaders() });
+      fetchData();
+    } catch (e) { console.error("Failed to delete Telegram bot:", e); }
+  };
+
+  const handleForceUnlink = async (id: string) => {
+    try {
+      await fetch(`/api/admin/channels/links/${id}`, { method: "DELETE", headers: authHeaders() });
+      fetchData();
+    } catch (e) { console.error("Failed to unlink channel:", e); }
   };
 
   if (loading) {
@@ -162,6 +238,16 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
             }`}
           >
             Clients
+          </button>
+          <button
+            onClick={() => setActiveTab("channels")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "channels"
+                ? "border-b-2 border-[#ea580c] text-[#ea580c]"
+                : "text-[#858585] hover:text-[#cccccc]"
+            }`}
+          >
+            Channels
           </button>
         </div>
 
@@ -371,6 +457,259 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {activeTab === "channels" && (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-white">Channels</h2>
+            </div>
+
+            <div className="flex gap-4 border-b border-[#3c3c3c] mb-6">
+              <button
+                onClick={() => setChannelsTab("bots")}
+                className={`px-3 py-1 text-sm transition-colors ${
+                  channelsTab === "bots"
+                    ? "border-b-2 border-[#ea580c] text-[#ea580c]"
+                    : "text-[#858585] hover:text-[#cccccc]"
+                }`}
+              >Bot Accounts</button>
+              <button
+                onClick={() => setChannelsTab("links")}
+                className={`px-3 py-1 text-sm transition-colors ${
+                  channelsTab === "links"
+                    ? "border-b-2 border-[#ea580c] text-[#ea580c]"
+                    : "text-[#858585] hover:text-[#cccccc]"
+                }`}
+              >Channel Links</button>
+              <button
+                onClick={() => setChannelsTab("logs")}
+                className={`px-3 py-1 text-sm transition-colors ${
+                  channelsTab === "logs"
+                    ? "border-b-2 border-[#ea580c] text-[#ea580c]"
+                    : "text-[#858585] hover:text-[#cccccc]"
+                }`}
+              >Message Logs</button>
+            </div>
+
+            {channelsTab === "bots" && (
+              <div className="space-y-6">
+                {/* WhatsApp Bots */}
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-lg font-semibold text-white">WhatsApp Bot Accounts</h3>
+                    <button
+                      onClick={() => setShowAddWhatsappBot(true)}
+                      className="px-3 py-1.5 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-xs"
+                    >+ Add WhatsApp Bot</button>
+                  </div>
+                  {showAddWhatsappBot && (
+                    <div className="bg-[#252526] p-4 rounded mb-4 border border-[#3c3c3c]">
+                      <div className="grid grid-cols-2 gap-3">
+                        <input type="text" placeholder="Label (e.g. Sales Bot)"
+                          value={newWhatsappBot.label}
+                          onChange={(e) => setNewWhatsappBot({...newWhatsappBot, label: e.target.value})}
+                          className="bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm" />
+                        <input type="text" placeholder="Phone Number ID"
+                          value={newWhatsappBot.phone_number_id}
+                          onChange={(e) => setNewWhatsappBot({...newWhatsappBot, phone_number_id: e.target.value})}
+                          className="bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm" />
+                        <input type="text" placeholder="Access Token"
+                          value={newWhatsappBot.access_token}
+                          onChange={(e) => setNewWhatsappBot({...newWhatsappBot, access_token: e.target.value})}
+                          className="bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm" />
+                        <input type="text" placeholder="Business Account ID (optional)"
+                          value={newWhatsappBot.business_account_id}
+                          onChange={(e) => setNewWhatsappBot({...newWhatsappBot, business_account_id: e.target.value})}
+                          className="bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm" />
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <button onClick={handleAddWhatsappBot} className="px-3 py-1.5 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-xs">Create</button>
+                        <button onClick={() => setShowAddWhatsappBot(false)} className="px-3 py-1.5 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-xs">Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="bg-[#252526] rounded border border-[#3c3c3c]">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-[#3c3c3c]">
+                        <tr className="text-left text-[#999]">
+                          <th className="p-2">Label</th>
+                          <th className="p-2">Phone Number ID</th>
+                          <th className="p-2">Active</th>
+                          <th className="p-2">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {whatsappBots.map((bot: any) => (
+                          <tr key={bot.id} className="border-b border-[#3c3c3c] hover:bg-[#2d2d2d]">
+                            <td className="p-2 text-white">{bot.label}</td>
+                            <td className="p-2 text-[#999]">{bot.phone_number_id || "-"}</td>
+                            <td className="p-2">
+                              <span className={bot.active ? "text-green-500" : "text-red-500"}>{bot.active ? "Yes" : "No"}</span>
+                            </td>
+                            <td className="p-2">
+                              <button onClick={() => handleDeleteWhatsappBot(bot.id)} className="text-red-500 hover:underline text-xs">Delete</button>
+                            </td>
+                          </tr>
+                        ))}
+                        {whatsappBots.length === 0 && (
+                          <tr><td colSpan={4} className="p-4 text-center text-[#585858]">No WhatsApp bot accounts</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Telegram Bots */}
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-lg font-semibold text-white">Telegram Bot Accounts</h3>
+                    <button
+                      onClick={() => setShowAddTelegramBot(true)}
+                      className="px-3 py-1.5 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-xs"
+                    >+ Add Telegram Bot</button>
+                  </div>
+                  {showAddTelegramBot && (
+                    <div className="bg-[#252526] p-4 rounded mb-4 border border-[#3c3c3c]">
+                      <div className="grid grid-cols-2 gap-3">
+                        <input type="text" placeholder="Label (e.g. Support Bot)"
+                          value={newTelegramBot.label}
+                          onChange={(e) => setNewTelegramBot({...newTelegramBot, label: e.target.value})}
+                          className="bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm" />
+                        <input type="text" placeholder="Bot Username (e.g. my_bot)"
+                          value={newTelegramBot.bot_username}
+                          onChange={(e) => setNewTelegramBot({...newTelegramBot, bot_username: e.target.value})}
+                          className="bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm" />
+                        <input type="password" placeholder="Bot Token"
+                          value={newTelegramBot.bot_token}
+                          onChange={(e) => setNewTelegramBot({...newTelegramBot, bot_token: e.target.value})}
+                          className="bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm col-span-2" />
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <button onClick={handleAddTelegramBot} className="px-3 py-1.5 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-xs">Create</button>
+                        <button onClick={() => setShowAddTelegramBot(false)} className="px-3 py-1.5 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-xs">Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="bg-[#252526] rounded border border-[#3c3c3c]">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-[#3c3c3c]">
+                        <tr className="text-left text-[#999]">
+                          <th className="p-2">Label</th>
+                          <th className="p-2">Bot Username</th>
+                          <th className="p-2">Active</th>
+                          <th className="p-2">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {telegramBots.map((bot: any) => (
+                          <tr key={bot.id} className="border-b border-[#3c3c3c] hover:bg-[#2d2d2d]">
+                            <td className="p-2 text-white">{bot.label}</td>
+                            <td className="p-2 text-[#999]">{bot.bot_username || "-"}</td>
+                            <td className="p-2">
+                              <span className={bot.active ? "text-green-500" : "text-red-500"}>{bot.active ? "Yes" : "No"}</span>
+                            </td>
+                            <td className="p-2">
+                              <button onClick={() => handleDeleteTelegramBot(bot.id)} className="text-red-500 hover:underline text-xs">Delete</button>
+                            </td>
+                          </tr>
+                        ))}
+                        {telegramBots.length === 0 && (
+                          <tr><td colSpan={4} className="p-4 text-center text-[#585858]">No Telegram bot accounts</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {channelsTab === "links" && (
+              <div className="bg-[#252526] rounded border border-[#3c3c3c]">
+                <table className="w-full text-sm">
+                  <thead className="border-b border-[#3c3c3c]">
+                    <tr className="text-left text-[#999]">
+                      <th className="p-3">User</th>
+                      <th className="p-3">Channel</th>
+                      <th className="p-3">Channel User ID</th>
+                      <th className="p-3">Channel Username</th>
+                      <th className="p-3">Bot</th>
+                      <th className="p-3">Active</th>
+                      <th className="p-3">Last Activity</th>
+                      <th className="p-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {channelLinks.map((link: any) => (
+                      <tr key={link.id} className="border-b border-[#3c3c3c] hover:bg-[#2d2d2d]">
+                        <td className="p-3 text-white">{link.user_name || link.user_id}</td>
+                        <td className="p-3">
+                          <span className="px-2 py-0.5 rounded text-xs bg-blue-600">{link.channel}</span>
+                        </td>
+                        <td className="p-3 text-[#999] text-xs">{link.channel_user_id || "-"}</td>
+                        <td className="p-3 text-[#999]">{link.channel_username || "-"}</td>
+                        <td className="p-3 text-[#999] text-xs">{link.channel_bot_id || "-"}</td>
+                        <td className="p-3">
+                          <span className={link.active ? "text-green-500" : "text-red-500"}>{link.active ? "Yes" : "No"}</span>
+                        </td>
+                        <td className="p-3 text-[#999] text-xs">
+                          {link.last_activity_at ? new Date(link.last_activity_at).toLocaleString() : "-"}
+                        </td>
+                        <td className="p-3">
+                          <button onClick={() => handleForceUnlink(link.id)} className="text-red-500 hover:underline text-xs">Unlink</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {channelLinks.length === 0 && (
+                      <tr><td colSpan={8} className="p-6 text-center text-[#585858]">No channel links</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {channelsTab === "logs" && (
+              <div className="bg-[#252526] rounded border border-[#3c3c3c]">
+                <table className="w-full text-sm">
+                  <thead className="border-b border-[#3c3c3c]">
+                    <tr className="text-left text-[#999]">
+                      <th className="p-2">Time</th>
+                      <th className="p-2">Channel</th>
+                      <th className="p-2">Direction</th>
+                      <th className="p-2">User</th>
+                      <th className="p-2">Message</th>
+                      <th className="p-2">Type</th>
+                      <th className="p-2">Bot</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {channelLogs.map((log: any) => (
+                      <tr key={log.id} className="border-b border-[#3c3c3c] hover:bg-[#2d2d2d]">
+                        <td className="p-2 text-[#999] text-xs">
+                          {log.created_at ? new Date(log.created_at).toLocaleString() : "-"}
+                        </td>
+                        <td className="p-2">
+                          <span className="px-2 py-0.5 rounded text-xs bg-blue-600">{log.channel}</span>
+                        </td>
+                        <td className="p-2 text-xs">
+                          <span className={log.direction === "inbound" ? "text-green-500" : "text-yellow-500"}>
+                            {log.direction}
+                          </span>
+                        </td>
+                        <td className="p-2 text-[#999] text-xs">{log.channel_user_id || "-"}</td>
+                        <td className="p-2 text-[#999] text-xs max-w-[200px] truncate">{log.message_text || "-"}</td>
+                        <td className="p-2 text-[#999] text-xs">{log.message_type || "-"}</td>
+                        <td className="p-2 text-[#999] text-xs">{log.bot_id || "-"}</td>
+                      </tr>
+                    ))}
+                    {channelLogs.length === 0 && (
+                      <tr><td colSpan={7} className="p-6 text-center text-[#585858]">No channel message logs</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>

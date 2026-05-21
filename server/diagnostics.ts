@@ -160,13 +160,13 @@ function buildDoctorChecks(options: {
 		status: existsSync(primary) ? "ok" : "error",
 		summary: primary,
 		hint: existsSync(primary)
-			? "Tree, /api/file, plans, agents, and Pi chat cwd use this root (Open Folder / WOP_WORKSPACE / server cwd). It is not the Way of Pi app install path unless you opened that repo here. The active editor tab does not retarget this."
+			? "Tree, /api/file, plans, agents, and Pi chat cwd use this root (Open Folder / WOP_WORKSPACE / server cwd). It is not the Way of Work app install path unless you opened that repo here. The active editor tab does not retarget this."
 			: "Path missing or unreadable. Fix WOP_WORKSPACE or open a valid folder.",
 	});
 
 	checks.push({
 		id: "wayofpi_bundle_root",
-		title: "Way of Pi app checkout (install path)",
+		title: "Way of Work app checkout (install path)",
 		status: existsSync(bundleRepoRoot) ? "ok" : "error",
 		summary: bundleRepoRoot,
 		hint: existsSync(bundleRepoRoot)
@@ -178,11 +178,11 @@ function buildDoctorChecks(options: {
 		const same = canonicalFsPath(primary) === canonicalFsPath(bundleRepoRoot);
 		checks.push({
 			id: "workspace_vs_bundle",
-			title: "Project workspace vs Way of Pi install",
+			title: "Project workspace vs Way of Work install",
 			status: "info",
 			summary: same
-				? "Primary workspace equals this Way of Pi checkout (typical when developing Way of Pi itself)."
-				: "Primary workspace is a different directory than this Way of Pi install — expected when you opened another repo.",
+				? "Primary workspace equals this Way of Work checkout (typical when developing Way of Work itself)."
+				: "Primary workspace is a different directory than this Way of Work install — expected when you opened another repo.",
 			hint: "Never infer the project root from the app install path or from which file tab is focused.",
 		});
 	}
@@ -244,7 +244,7 @@ function buildDoctorChecks(options: {
 						title: "OpenRouter API key",
 						status: "error",
 						summary: "OPENROUTER_API_KEY is missing or empty",
-						hint: "Set the key in the server environment and restart Way of Pi.",
+						hint: "Set the key in the server environment and restart Way of Work.",
 					},
 		);
 	} else {
@@ -432,7 +432,7 @@ export async function collectDiagnostics(): Promise<Record<string, unknown>> {
 			id: "legacy_bundle_playground_marker",
 			title: "Remove repo-root .playground-from",
 			status: "warn",
-			summary: "Machine-specific playground path marker exists at the Way of Pi checkout root.",
+			summary: "Machine-specific playground path marker exists at the Way of Work checkout root.",
 			hint: "Delete `.playground-from` in the repo root. Linked projects record the playground only in `<project>/.pi/.playground-from` (see `scripts/enable-playground-in-project`).",
 		});
 	}
@@ -447,7 +447,7 @@ export async function collectDiagnostics(): Promise<Record<string, unknown>> {
 				title: "Pi playground link (.pi/.playground-from)",
 				status: "warn",
 				summary: "Marker file is empty or whitespace only.",
-				hint: "Remove `.pi/.playground-from` or re-run `enable-playground-in-project` / `pi-e` option 2 from your Way of Pi clone on this machine.",
+				hint: "Remove `.pi/.playground-from` or re-run `enable-playground-in-project` / `pi-e` option 2 from your Way of Work clone on this machine.",
 			});
 		} else if (!existsSync(target)) {
 			checks.push({
@@ -455,7 +455,7 @@ export async function collectDiagnostics(): Promise<Record<string, unknown>> {
 				title: "Pi playground link (.pi/.playground-from)",
 				status: "error",
 				summary: `Recorded playground root does not exist: ${target}`,
-				hint: "Another machine’s absolute path is often the cause. Re-link: run `disable-playground-in-project` in the project, then `enable-playground-in-project` from your local Way of Pi checkout.",
+				hint: "Another machine’s absolute path is often the cause. Re-link: run `disable-playground-in-project` in the project, then `enable-playground-in-project` from your local Way of Work checkout.",
 			});
 		} else {
 			checks.push({

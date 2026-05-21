@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { kanbanService } from '../../services/mockKanbanService';
+import { kanbanService } from '../../services/kanbanService';
 import { developmentWorkflowService } from '../../services/mockDevelopmentWorkflowService';
 import { useToast } from '../../contexts/ToastContext';
 import type { Board, BoardColumn } from '../../types/kanban';

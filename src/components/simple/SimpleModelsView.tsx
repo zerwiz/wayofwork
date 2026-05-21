@@ -200,7 +200,7 @@ export function SimpleModelsView({
 							<span className="font-mono text-[11px]">WOP_CHAT_ENGINE</span>,{" "}
 							<span className="font-mono text-[11px]">OLLAMA_HOST</span> / <span className="font-mono text-[11px]">OLLAMA_MODEL</span>,{" "}
 							<span className="font-mono text-[11px]">OPENROUTER_*</span>, … Full list:{" "}
-							<span className="font-mono text-[11px]">apps/wayofwork-ui/.env.sample</span> in the Way of Pi repo. When you
+							<span className="font-mono text-[11px]">apps/wayofwork-ui/.env.sample</span> in the Way of Work repo. When you
 							start from <span className="font-mono text-[11px]">./start-wayofwork-ui.sh</span> or{" "}
 							<span className="font-mono text-[11px]">./start-wayofpi-electron.sh</span>, a <span className="font-mono text-[11px]">.env</span>{" "}
 							at the <strong className={heading}>repository root</strong> (next to <span className="font-mono text-[11px]">apps/</span>) is
@@ -281,11 +281,11 @@ export function SimpleModelsView({
 							aligned with Pi whenever you use the TUI on this workspace.
 						</p>
 						<p className={`mb-2 text-sm font-medium leading-relaxed ${sub}`}>
-							The Way of Pi server reads <strong className={heading}>host env</strong> —{" "}
+							The Way of Work server reads <strong className={heading}>host env</strong> —{" "}
 							<span className="font-mono">WOP_LLM_PROVIDER</span>, <span className="font-mono">WOP_CHAT_ENGINE</span> (
 							<span className="font-mono">auto</span> / <span className="font-mono">pi</span> for headless Pi, else Bun),{" "}
 							<span className="font-mono">OLLAMA_*</span>, <span className="font-mono">OPENROUTER_*</span> — not values
-							inside this JSON. Restart the Way of Pi process after changing env. Invalid JSON cannot be saved.
+							inside this JSON. Restart the Way of Work process after changing env. Invalid JSON cannot be saved.
 						</p>
 						<p className={`mb-3 text-xs font-medium leading-relaxed ${mono}`}>
 							<strong className={heading}>Session model</strong> (other tab) lists live Ollama tags from the daemon (or
@@ -317,7 +317,7 @@ export function SimpleModelsView({
 					<p className={sub}>
 						Pi&apos;s TUI reads workspace JSON (models / routing) via{" "}
 						<span className="font-mono text-xs">/models</span>. <strong className={heading}>Provider files</strong> edits
-						the same files. The <strong className={heading}>running Way of Pi server</strong> still needs the right host
+						the same files. The <strong className={heading}>running Way of Work server</strong> still needs the right host
 						env for how turns run (Bun vs headless Pi — see <span className="font-mono text-xs">WOP_CHAT_ENGINE</span> in{" "}
 						<span className="font-mono text-xs">.env.sample</span>):
 					</p>
@@ -396,7 +396,7 @@ export function SimpleModelsView({
 						<p className="font-bold">Unsupported provider for web chat</p>
 						<p className={`mt-1 ${appearanceDark ? "text-red-100/90" : "text-red-900/90"}`}>
 							Set <span className="font-mono">WOP_LLM_PROVIDER</span> to <span className="font-mono">ollama</span> or{" "}
-							<span className="font-mono">openrouter</span> on the Way of Pi server host, then restart. You can still
+							<span className="font-mono">openrouter</span> on the Way of Work server host, then restart. You can still
 							edit Pi provider JSON under <strong>Provider files</strong> for TUI / future wiring.
 						</p>
 						{data?.catalogNote ? (

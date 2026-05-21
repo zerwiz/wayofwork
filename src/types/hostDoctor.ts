@@ -16,7 +16,7 @@ export type HostDoctorDiagnostics = {
 	service?: string;
 	time?: string;
 	playgroundRoot?: string;
-	/** Same path as `playgroundRoot`; preferred name — Way of Pi server package / repo checkout, not the user project. */
+	/** Same path as `playgroundRoot`; preferred name — Way of Work server package / repo checkout, not the user project. */
 	wayOfPiBundleRoot?: string;
 	workspace?: {
 		primary?: string;

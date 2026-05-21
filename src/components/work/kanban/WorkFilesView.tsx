@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { Folder, File, Link2, Search, X, HardDrive, ChevronRight } from 'lucide-react';
 import type { Board, BoardCard } from '../../../types/kanban';
-import { driveService } from '../../../services/mockDriveService';
+import { driveService } from '../../../services/driveService';
 import type { DriveFile } from '../../../types/drive';
 
 interface BoardDriveViewProps {
@@ -40,10 +40,13 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
     buildFolderPath();
   }, [currentFolder]);
 
-  const loadFiles = () => {
+  const loadFiles = async () => {
     try {
-      const files = driveService.getFiles(currentFolder);
-      const fileList = files.filter((f) => f.type === 'file');
+      const allFiles = await driveService.getFiles();
+      const filesInFolder = currentFolder 
+        ? allFiles.filter((f: any) => f.parentId === currentFolder)
+        : allFiles.filter((f: any) => !f.parentId);
+      const fileList = filesInFolder.filter((f: any) => f.type === 'file');
       setAllFiles(fileList);
     } catch (error) {
       console.error('Failed to load files:', error);
@@ -51,10 +54,13 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
     }
   };
 
-  const loadFolders = () => {
+  const loadFolders = async () => {
     try {
-      const files = driveService.getFiles(currentFolder);
-      const folderList = files.filter((f) => f.type === 'folder');
+      const allFiles = await driveService.getFiles();
+      const filesInFolder = currentFolder 
+        ? allFiles.filter((f: any) => f.parentId === currentFolder)
+        : allFiles.filter((f: any) => !f.parentId);
+      const folderList = filesInFolder.filter((f: any) => f.type === 'folder');
       setFolders(folderList);
     } catch (error) {
       console.error('Failed to load folders:', error);
@@ -62,19 +68,19 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
     }
   };
 
-  const buildFolderPath = () => {
+  const buildFolderPath = async () => {
     if (!currentFolder) {
       setFolderPath([]);
       return;
     }
 
     const path: DriveFile[] = [];
-    let current: DriveFile | null = driveService.getFile(currentFolder) || null;
+    let current: DriveFile | null = await driveService.getFile(currentFolder);
 
     while (current) {
       path.unshift(current);
       if (current.parentId) {
-        current = driveService.getFile(current.parentId) || null;
+        current = await driveService.getFile(current.parentId);
       } else {
         current = null;
       }
@@ -184,7 +190,7 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
             </div>
             <button
               onClick={() => setIsLinkingMode(!isLinkingMode)}
-              className="px-4 py-2 bg-[#ea580c] hover:bg-orange-700 text-[#cccccc] rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
             >
               <Link2 className="w-4 h-4" />
               {isLinkingMode ? 'Cancel Linking' : 'Link File'}
@@ -196,7 +202,7 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
             <div className="flex items-center gap-2 text-sm text-[#858585] mb-4">
               <button
                 onClick={() => onNavigateFolder && onNavigateFolder(undefined)}
-                className="hover:text-[#cccccc] transition-colors flex items-center gap-1"
+                className="hover:text-white transition-colors flex items-center gap-1"
               >
                 <HardDrive className="w-4 h-4" />
                 Storage
@@ -206,7 +212,7 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
                   <ChevronRight className="w-4 h-4" />
                   <button
                     onClick={() => handleFolderClick(folder.id)}
-                    className="hover:text-[#cccccc] transition-colors"
+                    className="hover:text-white transition-colors"
                   >
                     {folder.name}
                   </button>
@@ -223,7 +229,7 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
               placeholder="Search files..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#1e1e1e] border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-[#cccccc] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full bg-[#252526] border border-[#333333] rounded-lg pl-10 pr-4 py-2 text-white placeholder-[#6e6e6e] focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
         </div>
@@ -231,13 +237,13 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
         {/* Folders */}
         {folders.length > 0 && (
           <div className="mb-6">
-            <h4 className="text-sm font-semibold text-[#cccccc] mb-4">Folders</h4>
+            <h4 className="text-sm font-semibold text-[#a0a0a0] mb-4">Folders</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
               {folders.map((folder) => (
                 <button
                   key={folder.id}
                   onClick={() => handleFolderClick(folder.id)}
-                  className="bg-[#1e1e1e] border border-gray-700 rounded-lg p-4 hover:border-orange-500 transition-colors text-left"
+                  className="bg-[#252526] border border-[#333333] rounded-lg p-4 hover:border-orange-500 transition-colors text-left"
                 >
                   <Folder className="w-8 h-8 text-orange-400 mb-2" />
                   <p className="text-sm font-medium text-gray-100 truncate">{folder.name}</p>
@@ -250,7 +256,7 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
         {/* Linked Files Section */}
         {allLinked.length > 0 && (
           <div className="mb-8">
-            <h4 className="text-sm font-semibold text-[#cccccc] mb-4">Linked Files</h4>
+            <h4 className="text-sm font-semibold text-[#a0a0a0] mb-4">Linked Files</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {allLinked
                 .filter(
@@ -265,7 +271,7 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
                   return (
                     <div
                       key={file.id}
-                      className="bg-[#1e1e1e] border border-gray-700 rounded-lg p-4 hover:border-orange-500 transition-colors"
+                      className="bg-[#252526] border border-[#333333] rounded-lg p-4 hover:border-orange-500 transition-colors"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -313,11 +319,11 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
         {/* Unlinked Files Section */}
         {isLinkingMode && (
           <div className="mb-8">
-            <h4 className="text-sm font-semibold text-[#cccccc] mb-4">
+            <h4 className="text-sm font-semibold text-[#a0a0a0] mb-4">
               Available Files {selectedCardId && `- Link to: ${cards.get(selectedCardId)?.title}`}
             </h4>
             {unlinked.length === 0 ? (
-              <div className="text-center py-8 text-[#585858]">
+              <div className="text-center py-8 text-[#6e6e6e]">
                 <File className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>No unlinked files found in this folder</p>
               </div>
@@ -326,7 +332,7 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
                 {unlinked.map((file) => (
                   <div
                     key={file.id}
-                    className="bg-[#1e1e1e] border border-gray-700 rounded-lg p-4 hover:border-orange-500 transition-colors cursor-pointer"
+                    className="bg-[#252526] border border-[#333333] rounded-lg p-4 hover:border-orange-500 transition-colors cursor-pointer"
                     onClick={() => {
                       if (selectedCardId) {
                         handleLinkFile(selectedCardId, file.id);
@@ -346,7 +352,7 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
 
                     {!selectedCardId && (
                       <div className="mt-3">
-                        <p className="text-xs text-[#585858] mb-2">Select a card to link:</p>
+                        <p className="text-xs text-[#6e6e6e] mb-2">Select a card to link:</p>
                         <div className="flex flex-wrap gap-1">
                           {Array.from(cards.values()).slice(0, 3).map((card) => (
                             <button
@@ -373,13 +379,13 @@ export const WorkFilesView: React.FC<BoardDriveViewProps> = ({
 
         {/* All Files Section (when not in linking mode) */}
         {!isLinkingMode && allLinked.length === 0 && unlinked.length === 0 && (
-          <div className="text-center py-12 text-[#585858]">
+          <div className="text-center py-12 text-[#6e6e6e]">
             <File className="w-16 h-16 mx-auto mb-4 opacity-50" />
             <h3 className="text-xl font-semibold mb-2">No files linked</h3>
             <p className="mb-4">Link files to cards to see them here.</p>
             <button
               onClick={() => setIsLinkingMode(true)}
-              className="px-4 py-2 bg-[#ea580c] hover:bg-orange-700 text-[#cccccc] rounded-lg text-sm font-medium transition-colors flex items-center gap-2 mx-auto"
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 mx-auto"
             >
               <Link2 className="w-4 h-4" />
               Link File

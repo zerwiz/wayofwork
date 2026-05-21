@@ -75,7 +75,7 @@ function GithubConnectModal({
 					Connect GitHub
 				</h2>
 				<p className="mt-1 text-[12px] leading-relaxed text-[#858585]">
-					A <strong className="text-[#cccccc]">personal access token</strong> is like a special password that lets Way of Pi talk to GitHub on your behalf — without ever seeing your real password.
+					A <strong className="text-[#cccccc]">personal access token</strong> is like a special password that lets Way of Work talk to GitHub on your behalf — without ever seeing your real password.
 				</p>
 
 				{/* Step-by-step guide */}
@@ -142,7 +142,7 @@ function GithubConnectModal({
 						{
 							n: "5",
 							title: "Paste it below and click Save",
-							body: "Paste the token in the box below. Way of Pi verifies it with GitHub, then saves it only on your machine under .wayofpi/github-credentials.json. Nothing is sent anywhere else.",
+							body: "Paste the token in the box below. Way of Work verifies it with GitHub, then saves it only on your machine under .wayofpi/github-credentials.json. Nothing is sent anywhere else.",
 						},
 					].map((s) => (
 						<div key={s.n} className="flex gap-2.5">

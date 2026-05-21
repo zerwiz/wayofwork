@@ -110,7 +110,7 @@ export function HostDoctorWorkspaceFileEditor({
 				</div>
 			</div>
 			<p className={`border-b px-3 py-1.5 text-[10px] leading-snug ${border} ${sub}`}>
-				This is a real workspace file (not the live snapshot). Restart the Way of Pi server after changing host env (
+				This is a real workspace file (not the live snapshot). Restart the Way of Work server after changing host env (
 				<span className="font-mono">WOP_*</span>, <span className="font-mono">OLLAMA_*</span>) outside the repo.
 			</p>
 			{error ? (

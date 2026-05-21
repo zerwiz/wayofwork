@@ -137,7 +137,7 @@ function NgrokTunnelControlRow({
 				</p>
 				<p className={`mt-3 text-xs leading-relaxed ${dark ? "text-[#d4d4d4]" : "text-[#333]"}`}>
 					<strong className={titleC}>Sections 1–3 (install, authtoken, tunnel on/off)</strong> load only after{" "}
-					<Mono dark={dark}>GET /api/dev/ngrok-tunnel</Mono> succeeds. That request goes to the <strong className={titleC}>Way of Pi Bun server</strong> (
+					<Mono dark={dark}>GET /api/dev/ngrok-tunnel</Mono> succeeds. That request goes to the <strong className={titleC}>Way of Work Bun server</strong> (
 					<Mono dark={dark}>WOP_SERVER_PORT</Mono>, default <Mono dark={dark}>3333</Mono>). A <strong className={titleC}>404</strong> usually means the browser is not
 					reaching that API (Bun not running, wrong page origin, or a proxy dropping <Mono dark={dark}>/api/dev/*</Mono>).
 				</p>
@@ -173,7 +173,7 @@ ngrok http ${tunnelPort}`}
 			<div className={`mb-4 rounded-lg border p-4 ${card}`}>
 				<h3 className={`text-sm font-bold ${titleC}`}>3. Tunnel</h3>
 				<p className={`mt-1 text-xs leading-relaxed ${desc}`}>
-					Way of Pi cannot start or stop ngrok from here (<Mono dark={dark}>WOP_ALLOW_NGROK_SPAWN</Mono> is off). You can still save your authtoken in section 2. Start{" "}
+					Way of Work cannot start or stop ngrok from here (<Mono dark={dark}>WOP_ALLOW_NGROK_SPAWN</Mono> is off). You can still save your authtoken in section 2. Start{" "}
 					<Mono dark={dark}>ngrok http {tunnelPort}</Mono> yourself on this host (or unset that env), then use{" "}
 					<strong className={dark ? "text-[#e0e0e0]" : "text-[#111]"}>Refresh</strong> below for the public URL.
 				</p>
@@ -210,9 +210,9 @@ ngrok http ${tunnelPort}`}
 			<div className="min-w-0 pr-2">
 				<h3 className={`text-sm font-bold ${titleC}`}>3. Tunnel</h3>
 				<p className={`mt-1 text-xs leading-relaxed ${desc}`}>
-					<strong className={dark ? "text-[#e0e0e0]" : "text-[#111]"}>On</strong> - Way of Pi runs{" "}
+					<strong className={dark ? "text-[#e0e0e0]" : "text-[#111]"}>On</strong> - Way of Work runs{" "}
 					<Mono dark={dark}>ngrok http {tunnelPort}</Mono> for this session. <strong className={dark ? "text-[#e0e0e0]" : "text-[#111]"}>Off</strong>{" "}
-					- stops only the ngrok process Way of Pi started here; if you started ngrok in another terminal, stop it there (Ctrl+C).
+					- stops only the ngrok process Way of Work started here; if you started ngrok in another terminal, stop it there (Ctrl+C).
 				</p>
 			</div>
 			<button
@@ -458,7 +458,7 @@ export function NgrokSettingsModal({
 			setTunnelStatus(null);
 			setTunnelLoadState("prod");
 			setTunnelProdMessage(
-				"Tunnel API not found (HTTP 404). Ensure the Way of Pi Bun server handles GET /api/dev/ngrok-tunnel (no stale proxy stripping /api/dev/*).",
+				"Tunnel API not found (HTTP 404). Ensure the Way of Work Bun server handles GET /api/dev/ngrok-tunnel (no stale proxy stripping /api/dev/*).",
 			);
 		} else if (!rTunnel.ok) {
 			setTunnelStatus(null);
@@ -694,7 +694,7 @@ export function NgrokSettingsModal({
 							<h2 id="wop-ngrok-settings-title" className="text-lg font-bold">
 								ngrok (optional)
 							</h2>
-							<p className={`mt-0.5 text-[11px] font-normal leading-snug ${sub}`}>Public URL to localhost - skip if you only use Way of Pi locally.</p>
+							<p className={`mt-0.5 text-[11px] font-normal leading-snug ${sub}`}>Public URL to localhost - skip if you only use Way of Work locally.</p>
 						</div>
 					</div>
 					<div className="flex shrink-0 items-center gap-1">
@@ -921,7 +921,7 @@ export function NgrokSettingsModal({
 								</pre>
 							</div>
 							<p className={`text-[11px] ${sub}`}>
-								Then press <strong className={appearanceDark ? "text-[#e0e0e0]" : "text-[#111]"}>Refresh</strong> in section 1, paste your dashboard authtoken in section 2, and start the tunnel in section 3. Way of Pi tunnels{" "}
+								Then press <strong className={appearanceDark ? "text-[#e0e0e0]" : "text-[#111]"}>Refresh</strong> in section 1, paste your dashboard authtoken in section 2, and start the tunnel in section 3. Way of Work tunnels{" "}
 								<Mono dark={appearanceDark}>ngrok http {tunnelPort}</Mono> (Vite + proxy), not port 80 - unless you only run Bun on 80.
 							</p>
 						</div>
@@ -935,7 +935,7 @@ export function NgrokSettingsModal({
 								<a href="https://dashboard.ngrok.com/get-started/your-authtoken" target="_blank" rel="noreferrer" className={helpLinkBtn}>
 									ngrok dashboard
 								</a>
-								. Way of Pi runs <Mono dark={appearanceDark}>ngrok config add-authtoken ...</Mono> on the{" "}
+								. Way of Work runs <Mono dark={appearanceDark}>ngrok config add-authtoken ...</Mono> on the{" "}
 								<strong className={appearanceDark ? "text-[#e0e0e0]" : "text-[#111]"}>host</strong> (the Bun server), not inside the browser.
 								This works even if <Mono dark={appearanceDark}>WOP_ALLOW_NGROK_SPAWN</Mono> is off (section 3 only needs that for the managed switch).
 							</p>
@@ -980,7 +980,7 @@ export function NgrokSettingsModal({
 							<strong className={appearanceDark ? "text-[#fde68a]" : "text-amber-900"}>
 								Nothing is listening on 127.0.0.1:{tunnelPort}.
 							</strong>{" "}
-							Start the dev server first (Vite on that port with Bun on 3333, or your usual ./start-wayofwork-ui.sh). Way of Pi will refuse to start the
+							Start the dev server first (Vite on that port with Bun on 3333, or your usual ./start-wayofwork-ui.sh). Way of Work will refuse to start the
 							managed tunnel until the port answers, so ngrok is not forwarding into an empty socket.{" "}
 							<strong className={appearanceDark ? "text-[#fde68a]" : "text-amber-900"}>ERR_NGROK_3200 / “endpoint offline”</strong> also appears if you open
 							an old <Mono dark={appearanceDark}>https://…ngrok…</Mono> bookmark after the tunnel stopped — copy a fresh link from{" "}
@@ -1009,7 +1009,7 @@ export function NgrokSettingsModal({
 							<h3 className="mb-2 font-semibold">4. Tunnel login (optional)</h3>
 							<p className={`mb-3 text-[12px] leading-relaxed ${sub}`}>
 								When someone opens your app through an <strong className={appearanceDark ? "text-[#e0e0e0]" : "text-[#111]"}>ngrok-style</strong>{" "}
-								hostname, Way of Pi can require <strong className={appearanceDark ? "text-[#e0e0e0]" : "text-[#111]"}>HTTP Basic Auth</strong>{" "}
+								hostname, Way of Work can require <strong className={appearanceDark ? "text-[#e0e0e0]" : "text-[#111]"}>HTTP Basic Auth</strong>{" "}
 								(browser login prompt) before any page, <Mono dark={appearanceDark}>/api</Mono>, or <Mono dark={appearanceDark}>/ws</Mono>.{" "}
 								<strong className={appearanceDark ? "text-[#e0e0e0]" : "text-[#111]"}>localhost</strong> stays open so you can configure from this
 								machine. First-time setup should be done on <Mono dark={appearanceDark}>http://localhost:...</Mono> before sharing the public link.
@@ -1201,7 +1201,7 @@ export function NgrokSettingsModal({
 						</summary>
 						<div className={`mt-3 space-y-3 text-[12px] leading-relaxed ${sub}`}>
 							<p>
-								<strong className={appearanceDark ? "text-[#e0e0e0]" : "text-[#111]"}>Fully supported, opt-in:</strong> Way of Pi resolves the ngrok
+								<strong className={appearanceDark ? "text-[#e0e0e0]" : "text-[#111]"}>Fully supported, opt-in:</strong> Way of Work resolves the ngrok
 								agent from <Mono dark={appearanceDark}>WOP_NGROK_BINARY</Mono>, your PATH, or the{" "}
 								<Mono dark={appearanceDark}>ngrok</Mono> optional package (after <Mono dark={appearanceDark}>bun install</Mono> in{" "}
 								<Mono dark={appearanceDark}>apps/wayofwork-ui</Mono>), then runs <Mono dark={appearanceDark}>ngrok config add-authtoken</Mono> and{" "}

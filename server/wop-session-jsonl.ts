@@ -1,5 +1,5 @@
 /**
- * Way of Pi web chat → **Pi-shaped JSONL** under the workspace `agent/sessions/` tree
+ * Way of Work web chat → **Pi-shaped JSONL** under the workspace `agent/sessions/` tree
  * (same area as Pi’s session logs — see **docs/AGENT_MEMORY.md**).
  *
  * Files: `wayofpi-chat-<sessionKey>.jsonl` so they are distinct from native Pi session names.

@@ -6,8 +6,8 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { kanbanService } from '../../services/mockKanbanService';
-import { tasksService } from '../../services/mockTasksService';
+import { kanbanService } from '../../services/kanbanService';
+import { tasksService } from '../../services/tasksService';
 import { useToast } from '../../contexts/ToastContext';
 import type { Board, BoardColumn, BoardCard } from '../../types/kanban';
 import type { TaskList, Task } from '../../types/tasks';
@@ -49,7 +49,7 @@ export function PushTaskListToKanbanModal({
         }
 
         // Load tasks in the list
-        const tasks = tasksService.getTasksByTaskList(taskList.id);
+        const tasks = (await tasksService.getTasksByTaskList(taskList.id)) as any[];
         setTasksInList(tasks);
         setSelectedTasks(tasks.map((t) => t.id));
 

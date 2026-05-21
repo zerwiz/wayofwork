@@ -16,6 +16,7 @@ import {
 	Loader,
 	Mail,
 	MessageSquare,
+	MessageCircle,
 	Radio,
 	RefreshCw,
 	Webhook,
@@ -24,8 +25,10 @@ import { useCallback, useEffect, useState } from "react";
 
 import { apiGet, apiPostJson } from "../../api/client";
 import { useClawTelegramStatus, type ClawTelegramLoadIssue } from "../../hooks/useClawTelegramStatus";
+import { useClawWhatsAppStatus, type ClawWhatsAppLoadIssue } from "../../hooks/useClawWhatsAppStatus";
 import type { ClawHelpSectionId } from "./ClawHelpModal";
 import type { ClawTelegramStatusV1 } from "../../../shared/claw-telegram-status";
+import type { ClawWhatsAppStatusV1 } from "../../../shared/claw-whatsapp-status";
 
 // ──────────────────────────────────────────────
 // Shared design tokens (matching ClawMissionView)
@@ -285,7 +288,7 @@ function TelegramCard({
 								<>
 									<span className="font-semibold">
 										{loadIssue === "network"
-											? "Cannot reach the Way of Pi API."
+											? "Cannot reach the Way of Work API."
 											: "Bun server on your API port is out of date."}
 									</span>{" "}
 									<span>This is not the same as “Telegram not set up” — the Channels snapshot needs a current server build.</span>
@@ -348,7 +351,7 @@ function TelegramCard({
 						.
 					</SetupStep>
 					<SetupStep n={4} dark={dark}>
-						Run <span className={codeC}>/reload</span> in Pi or restart Way of Pi.
+						Run <span className={codeC}>/reload</span> in Pi or restart Way of Work.
 					</SetupStep>
 					<SetupStep n={5} dark={dark}>
 						Run <span className={codeC}>/telegram-connect</span> then{" "}
@@ -449,7 +452,7 @@ function WebhookCard({ dark }: { dark: boolean }) {
 			</div>
 			<div className="flex flex-col gap-3 px-4 py-4">
 				<p className={`text-[11px] leading-relaxed ${muted}`}>
-					POST JSON to the Way of Pi server with{" "}
+					POST JSON to the Way of Work server with{" "}
 					<span className="font-mono text-[10px]">Authorization: Bearer …</span>. Each request runs one
 					headless <span className="font-mono text-[10px]">pi --mode json</span> turn (same as schedules).
 				</p>
@@ -582,6 +585,214 @@ function EmailCard({ dark }: { dark: boolean }) {
 }
 
 // ──────────────────────────────────────────────
+// WhatsApp card
+// ──────────────────────────────────────────────
+
+function whatsappIntegrationBadge(
+	wa: ClawWhatsAppStatusV1 | null,
+	loading: boolean,
+	loadIssue: ClawWhatsAppLoadIssue | null,
+): ChannelState {
+	if (loadIssue) return "needs_api";
+	if (loading && !wa) return "checking";
+	if (!wa) return "not_configured";
+	const tokenOk = wa.globalTokenConfigured || wa.workspaceTokenConfigured;
+	if (!tokenOk) return "not_configured";
+	if (wa.piWhatsAppInSettings) return "pi_ready";
+	return "token_saved";
+}
+
+function whatsappTokenSourceHint(wa: ClawWhatsAppStatusV1): string {
+	if (wa.tokenSource === "both") return "Token files: ~/.pi/agent/whatsapp.json and .claw/whatsapp.json";
+	if (wa.tokenSource === "workspace") return "Token file: .claw/whatsapp.json";
+	if (wa.tokenSource === "global") return "Token file: ~/.pi/agent/whatsapp.json";
+	return "";
+}
+
+function WhatsAppCard({
+	dark,
+	onOpenFile,
+	whatsapp,
+	loading,
+	error,
+	loadIssue,
+	onRefresh,
+}: {
+	dark: boolean;
+	onOpenFile: (path: string) => void;
+	whatsapp: ClawWhatsAppStatusV1 | null;
+	loading: boolean;
+	error: string | null;
+	loadIssue: ClawWhatsAppLoadIssue | null;
+	onRefresh: (mode?: "full" | "silent") => void;
+}) {
+	const border = dark ? "border-[#2a2a2a]" : "border-[#f0f0f0]";
+	const headText = dark ? "text-[#cccccc]" : "text-[#333333]";
+	const muted = dark ? "text-[#858585]" : "text-[#888888]";
+	const codeC = `rounded px-1 py-0.5 font-mono text-[10px] ${
+		dark ? "bg-[#252526] text-[#cccccc]" : "bg-[#f5f5f5] text-[#444444]"
+	}`;
+	const linkBtn = `flex items-center gap-1 text-[11px] font-medium transition-colors ${
+		dark ? "text-[#fb923c] hover:text-[#fed7aa]" : "text-[#ea580c] hover:text-[#9a3412]"
+	}`;
+
+	const badge = whatsappIntegrationBadge(whatsapp, loading, loadIssue);
+
+	return (
+		<Card dark={dark} className="flex flex-col">
+			<div className={`flex items-center justify-between border-b px-4 py-3 ${border}`}>
+				<div className="flex items-center gap-2.5">
+					<div
+						className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
+							dark ? "bg-[#25D366]/15" : "bg-[#25D366]/10"
+						}`}
+					>
+						<MessageCircle size={15} className="text-[#25D366]" />
+					</div>
+					<div>
+						<div className={`text-[13px] font-semibold ${headText}`}>WhatsApp</div>
+						<div className={`text-[10px] ${muted}`}>Chat with Claw via WhatsApp</div>
+					</div>
+				</div>
+				<StatusBadge state={badge} dark={dark} />
+			</div>
+
+			{whatsapp && (whatsapp.globalTokenConfigured || whatsapp.workspaceTokenConfigured) ? (
+				<div
+					className={`border-b px-4 py-2.5 text-[10px] leading-relaxed ${border} ${
+						dark ? "bg-[#252526]/60 text-[#aaaaaa]" : "bg-[#fafafa] text-[#555555]"
+					}`}
+				>
+					{whatsappTokenSourceHint(whatsapp)}
+					{" · "}
+					Live messaging runs inside Pi after{" "}
+					<span className={codeC}>/whatsapp-connect</span> (this UI never receives your token).
+				</div>
+			) : null}
+
+			{error ? (
+				<div
+					className={`flex flex-col gap-1 border-b px-4 py-2.5 text-[10px] leading-relaxed ${border} ${
+						loadIssue === "stale_api" || loadIssue === "network"
+							? dark
+								? "bg-amber-950/40 text-amber-100/95"
+								: "bg-amber-50 text-amber-950"
+							: dark
+								? "text-[#f14c4c]/90"
+								: "text-[#dc2626]"
+					}`}
+				>
+					<div className="flex items-start gap-2">
+						<AlertTriangle size={12} className="mt-0.5 shrink-0" />
+						<div className="min-w-0">
+							{loadIssue === "stale_api" || loadIssue === "network" ? (
+								<>
+									<span className="font-semibold">
+										{loadIssue === "network"
+											? "Cannot reach the Way of Work API."
+											: "Bun server on your API port is out of date."}
+									</span>{" "}
+									<span>This is not the same as "WhatsApp not set up" — the Channels snapshot needs a current server build.</span>
+								</>
+							) : (
+								<span className="font-semibold">Could not load snapshot</span>
+							)}
+						</div>
+					</div>
+					<p
+						className={`pl-[20px] ${
+							loadIssue === "stale_api" || loadIssue === "network"
+								? dark
+									? "text-amber-100/85"
+									: "text-amber-950/90"
+								: dark
+									? "text-[#f14c4c]/85"
+									: "text-[#dc2626]"
+						}`}
+					>
+						{error}
+					</p>
+				</div>
+			) : null}
+
+			<div className={`border-b px-4 py-3 text-[11px] leading-relaxed ${border} ${muted}`}>
+				Connect a WhatsApp Business API account so you can send instructions to Claw and receive replies on any device. Powered by the{" "}
+				<span className={codeC}>pi-whatsapp</span> Pi extension.
+			</div>
+
+			<div className="flex-1 px-4 py-3">
+				<p className={`mb-3 text-[10px] font-bold uppercase tracking-wider ${muted}`}>
+					Setup guide
+				</p>
+				<ol className="flex flex-col gap-2.5">
+					<SetupStep n={1} dark={dark}>
+						Set up a WhatsApp Business Account and get your API key from the Meta Developer Portal.
+					</SetupStep>
+					<SetupStep n={2} dark={dark}>
+						In Pi, run <span className={codeC}>/whatsapp-setup</span> and paste the API key (writes{" "}
+						<span className={codeC}>~/.pi/agent/whatsapp.json</span> or your workspace secret file — never
+						commit it). Optionally note in{" "}
+						<button type="button" className={linkBtn} onClick={() => onOpenFile(".claw/workspace/TOOLS.md")}>
+							<span className={codeC}>.claw/workspace/TOOLS.md</span>
+							<ExternalLink size={10} />
+						</button>{" "}
+						that WhatsApp is enabled.
+					</SetupStep>
+					<SetupStep n={3} dark={dark}>
+						Install <span className={codeC}>pi-whatsapp</span> and add it to{" "}
+						<span className={codeC}>.pi/settings.json</span> <span className={codeC}>extensions[]</span>{" "}
+						<button type="button" className={linkBtn} onClick={() => onOpenFile(".pi/settings.json")}>
+							Open settings
+							<ExternalLink size={10} />
+						</button>
+						.
+					</SetupStep>
+					<SetupStep n={4} dark={dark}>
+						Run <span className={codeC}>/reload</span> in Pi or restart Way of Work.
+					</SetupStep>
+					<SetupStep n={5} dark={dark}>
+						Run <span className={codeC}>/whatsapp-connect</span> then{" "}
+						<span className={codeC}>/whatsapp-status</span> in Pi. Send a message to the number to pair.
+					</SetupStep>
+					<SetupStep n={6} dark={dark}>
+						Send a message to Claw on WhatsApp — Pi handles the turn with full tools.
+					</SetupStep>
+				</ol>
+			</div>
+
+			<div className={`flex flex-wrap items-center gap-3 border-t px-4 py-3 ${border}`}>
+				<button
+					type="button"
+					onClick={() => onOpenFile(".claw/workspace/TOOLS.md")}
+					className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-medium transition-colors ${
+						dark
+							? "bg-[#2a2a2a] text-[#cccccc] hover:bg-[#3c3c3c]"
+							: "bg-[#f5f5f5] text-[#444444] hover:bg-[#ebebeb]"
+					}`}
+				>
+					Open TOOLS.md
+					<ArrowRight size={11} />
+				</button>
+				<button
+					type="button"
+					onClick={() => void onRefresh("full")}
+					disabled={loading}
+					title="Refresh integration snapshot"
+					className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-medium transition-colors disabled:opacity-40 ${
+						dark
+							? "border border-[#3c3c3c] text-[#cccccc] hover:bg-[#252526]"
+							: "border border-[#e5e5e5] text-[#444444] hover:bg-[#fafafa]"
+					}`}
+				>
+					<RefreshCw size={12} className={loading ? "animate-spin" : ""} />
+					Refresh status
+				</button>
+			</div>
+		</Card>
+	);
+}
+
+// ──────────────────────────────────────────────
 // Main view
 // ──────────────────────────────────────────────
 
@@ -606,6 +817,13 @@ export function ClawChannelsView({
 		loadIssue: telegramLoadIssue,
 		refresh: refreshTelegram,
 	} = useClawTelegramStatus();
+	const {
+		status: whatsappStatus,
+		loading: whatsappLoading,
+		error: whatsappError,
+		loadIssue: whatsappLoadIssue,
+		refresh: refreshWhatsApp,
+	} = useClawWhatsAppStatus();
 
 	return (
 		<div className={`flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-4 ${bg} ${text}`}>
@@ -616,7 +834,7 @@ export function ClawChannelsView({
 			</div>
 
 			{/* ── Channel cards ── */}
-			<div className="grid gap-4 lg:grid-cols-3">
+			<div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
 				<TelegramCard
 					dark={dark}
 					onOpenFile={onOpenFile}
@@ -625,6 +843,15 @@ export function ClawChannelsView({
 					error={telegramError}
 					loadIssue={telegramLoadIssue}
 					onRefresh={refreshTelegram}
+				/>
+				<WhatsAppCard
+					dark={dark}
+					onOpenFile={onOpenFile}
+					whatsapp={whatsappStatus}
+					loading={whatsappLoading}
+					error={whatsappError}
+					loadIssue={whatsappLoadIssue}
+					onRefresh={refreshWhatsApp}
 				/>
 				<WebhookCard dark={dark} />
 				<EmailCard dark={dark} />

@@ -6,14 +6,14 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { kanbanService } from '../services/mockKanbanService';
-import { notesService } from '../services/mockNotesService';
-import { tasksService } from '../services/mockTasksService';
-import { projectsService } from '../services/mockProjectsService';
-import { driveService } from '../services/mockDriveService';
-import { calendarService } from '../services/mockCalendarService';
-import { developmentWorkflowService } from '../services/mockDevelopmentWorkflowService';
-import { workflowsService } from '../services/mockWorkflowsService';
+import { kanbanService } from '../services/kanbanService';
+import { notesService } from '../services/notesService';
+import { tasksService } from '../services/tasksService';
+import { projectsService } from '../services/projectsService';
+import { driveService } from '../services/driveService';
+import { calendarService } from '../services/calendarService';
+import { developmentWorkflowService } from '../services/developmentWorkflowService';
+import { workflowsService } from '../services/workflowsService';
 import type { DevelopmentWorkflow, DevelopmentPhase } from '../types/developmentWorkflow';
 import type { Workflow, WorkflowTrack } from '../types/workflows';
 import type { NSRFolder } from '../types/nsrCompliance';
@@ -30,6 +30,7 @@ import ConfirmationModal from '../components/modals/ConfirmationModal';
 import BoardDocsView from '../components/kanban/BoardDocsView';
 import BoardDriveView from '../components/kanban/BoardDriveView';
 import type { Board, BoardCard } from '../types/kanban';
+import type { Project } from '../services/projectsService';
 import type { DriveFile } from '../types/drive';
 import {
   Plus,
@@ -60,9 +61,11 @@ import {
   ExternalLink,
   FolderKanban,
   GitBranch,
+  MessageSquare,
   // Archive, // TODO: Use for archive functionality
 } from 'lucide-react';
 import type { BoardViewType } from '../types/kanban';
+import KanbanChatPanel from '../components/kanban/KanbanChatPanel';
 
 export default function Kanban() {
   const navigate = useNavigate();
@@ -118,6 +121,21 @@ export default function Kanban() {
   const [selectedTemplateCategory, setSelectedTemplateCategory] = useState<string | null>(null);
   const [_driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
   const [_driveSearchQuery, _setDriveSearchQuery] = useState('');
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [kanbanChatOpen, setKanbanChatOpen] = useState(false);
+
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const projects = await projectsService.getAllProjects();
+        setAllProjects(projects);
+      } catch (error) {
+        console.error('Failed to load projects:', error);
+      }
+    };
+    loadProjects();
+  }, []);
+
   const [driveCurrentFolder, setDriveCurrentFolder] = useState<string | undefined>(undefined);
   const [_driveFolderPath, setDriveFolderPath] = useState<DriveFile[]>([]);
   const [_showConnectFileModal, _setShowConnectFileModal] = useState(false);
@@ -202,8 +220,10 @@ export default function Kanban() {
 
   useEffect(() => {
     // Load available development workflows
-    const workflows = developmentWorkflowService.getAllWorkflows();
-    setAvailableWorkflows(workflows);
+    (async () => {
+      const workflows = await developmentWorkflowService.getAllWorkflows();
+      setAvailableWorkflows(workflows);
+    })();
     
     // Load available workflow tracks (Quick Flow, Project Management, Enterprise Method)
     (async () => {
@@ -244,14 +264,14 @@ export default function Kanban() {
     }
   };
 
-  const loadDriveFiles = () => {
+  const loadDriveFiles = async () => {
     try {
       // Load all files from Storage
-      const allFiles = driveService.getAllFiles();
+      const allFiles = await driveService.getAllFiles();
       
       // Filter files connected to current board or cards in the board
       const boardFiles = allFiles.filter(
-        (file) =>
+        (file: any) =>
           file.kanbanBoardId === currentBoardId ||
           (file.kanbanCardId &&
             Array.from(cards.values()).some((card) => card.id === file.kanbanCardId))
@@ -259,18 +279,19 @@ export default function Kanban() {
 
       // If in a folder, show files in that folder
       if (driveCurrentFolder) {
-        const folderFiles = driveService.getFiles(driveCurrentFolder);
+        // Filter from allFiles since getFiles doesn't support folderId in our real service yet
+        const folderFiles = allFiles.filter((f: any) => f.parentId === driveCurrentFolder);
         // Combine with board files that are in this folder
         const filtered = folderFiles.filter(
-          (file) =>
-            boardFiles.some((bf) => bf.id === file.id) ||
+          (file: any) =>
+            boardFiles.some((bf: any) => bf.id === file.id) ||
             (!file.kanbanBoardId && !file.kanbanCardId) // Also show unconnected files
         );
         setDriveFiles(filtered);
       } else {
         // Show all board files and unconnected files
         const unconnectedFiles = allFiles.filter(
-          (file) => !file.kanbanBoardId && !file.kanbanCardId
+          (file: any) => !file.kanbanBoardId && !file.kanbanCardId
         );
         setDriveFiles([...boardFiles, ...unconnectedFiles]);
       }
@@ -283,7 +304,7 @@ export default function Kanban() {
         
         while (currentId && !visited.has(currentId)) {
           visited.add(currentId);
-          const folder = driveService.getFile(currentId);
+          const folder = await driveService.getFile(currentId);
           if (folder && folder.type === 'folder') {
             path.unshift(folder);
             currentId = folder.parentId;
@@ -705,9 +726,9 @@ export default function Kanban() {
         
         // Handle bidirectional development workflow linking
         if (cardData.metadata?.developmentStepId && cardData.metadata?.developmentWorkflowId) {
-          const workflow = developmentWorkflowService.getWorkflow(cardData.metadata.developmentWorkflowId);
+          const workflow = await developmentWorkflowService.getWorkflow(cardData.metadata.developmentWorkflowId);
           if (workflow) {
-            const step = workflow.steps.find((s) => s.id === cardData.metadata?.developmentStepId);
+            const step = workflow.steps.find((s: any) => s.id === cardData.metadata?.developmentStepId);
             if (step && !step.kanbanCardIds?.includes(createdCard.id)) {
               // Add card ID to step's kanbanCardIds
               developmentWorkflowService.updateStep(
@@ -1608,7 +1629,14 @@ export default function Kanban() {
   });
 
   return (
-    <div className="h-full flex flex-col bg-[#1e1e1e] text-white overflow-hidden">
+    <div className="h-full flex bg-[#1e1e1e] text-white overflow-hidden">
+      {board && (
+        <KanbanChatPanel
+          open={kanbanChatOpen}
+          onToggle={() => setKanbanChatOpen(!kanbanChatOpen)}
+        />
+      )}
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
       {/* Header */}
       <div className="bg-[#252526] border-b border-[#333333] pl-3 pr-2 sm:pl-4 lg:pl-6 py-3 sm:py-4 flex-shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
@@ -1628,7 +1656,7 @@ export default function Kanban() {
                     <FolderKanban className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-400 flex-shrink-0" />
                     <span className="text-xs text-[#858585]">Linked to:</span>
                     {board.projectIds.slice(0, 2).map((projectId) => {
-                      const project = projectsService.getProject(projectId);
+                      const project = allProjects.find((p) => p.id === projectId);
                       if (!project) return null;
                       return (
                         <a
@@ -1920,6 +1948,18 @@ export default function Kanban() {
 
               {/* Action Buttons */}
               <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                <button
+                  onClick={() => setKanbanChatOpen(!kanbanChatOpen)}
+                  className={`p-2 sm:px-4 sm:py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                    kanbanChatOpen
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-[#333333] text-white hover:bg-[#444444]'
+                  }`}
+                  title="Toggle Kanban Chat"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="hidden sm:inline">Chat</span>
+                </button>
                 <button
                   onClick={() => {}}
                   className="p-2 sm:px-4 sm:py-2 bg-[#333333] text-white rounded-lg hover:bg-[#444444] transition-colors flex items-center justify-center gap-2"
@@ -3360,6 +3400,7 @@ export default function Kanban() {
           cancelText="Cancel"
         />
       )}
+      </div>
     </div>
   );
 }

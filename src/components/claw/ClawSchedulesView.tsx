@@ -770,7 +770,7 @@ function ScheduleExecutionNotice({
 			<Info size={13} className={`mt-0.5 shrink-0 ${dark ? "text-sky-300" : "text-sky-600"}`} aria-hidden />
 			<span>
 				<strong className={dark ? "text-sky-100" : "text-sky-900"}>Pi is ready.</strong> Set{" "}
-				<span className="font-mono text-[10px]">WOP_CLAW_SCHEDULER=1</span> on the Way of Pi Bun server and restart so
+				<span className="font-mono text-[10px]">WOP_CLAW_SCHEDULER=1</span> on the Way of Work Bun server and restart so
 				the timer starts. Schedules are stored under host{" "}
 				<span className="font-mono text-[10px]">.claw/schedule/</span>.
 			</span>

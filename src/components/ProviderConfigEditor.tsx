@@ -123,10 +123,10 @@ export function ProviderConfigEditor({
 					})}
 				</ul>
 				<p className={`mt-2 px-2 text-[10px] leading-snug md:hidden ${sub}`}>
-					Saves to workspace via API. Restart Way of Pi for env changes; Pi TUI: <span className="font-mono">/models</span>.
+					Saves to workspace via API. Restart Way of Work for env changes; Pi TUI: <span className="font-mono">/models</span>.
 				</p>
 				<p className={`mt-2 hidden px-2 text-[10px] leading-snug md:block ${sub}`}>
-					Edits are saved to the workspace over the API. Restart the <strong className="font-semibold">Way of Pi server</strong>{" "}
+					Edits are saved to the workspace over the API. Restart the <strong className="font-semibold">Way of Work server</strong>{" "}
 					so host env (<span className="font-mono">WOP_LLM_PROVIDER</span>, <span className="font-mono">WOP_CHAT_ENGINE</span>,{" "}
 					<span className="font-mono">OLLAMA_*</span>, …) matches what you expect. For the Pi TUI, restart Pi or use{" "}
 					<span className="font-mono">/models</span> so catalog changes from JSON are picked up.

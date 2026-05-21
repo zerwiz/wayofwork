@@ -32,7 +32,7 @@ export function ClawWorkspaceCard({
 	dark: boolean;
 	onOpenFile: (path: string) => void;
 	onOpenChannels?: () => void;
-	/** Absolute host path for **`.claw/workspace/`** (Way of Pi checkout, not the opened project). */
+	/** Absolute host path for **`.claw/workspace/`** (Way of Work checkout, not the opened project). */
 	hostClawDirAbs?: string | null;
 }) {
 	const [expanded, setExpanded] = useState(false);

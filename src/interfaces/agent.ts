@@ -1,7 +1,7 @@
 /**
  * Agent Interface
  *
- * @description Defines the structure for Way of Pi agents including metadata
+ * @description Defines the structure for Way of Work agents including metadata
  * @export AgentMeta
  *
  * @example

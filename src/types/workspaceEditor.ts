@@ -132,7 +132,7 @@ export type SettingsMenuHandlers = {
 	/** Open `.wayofpi/ui-views.json` in the Simple editor (optional). */
 	onEditWorkspaceViewsCatalog?: () => void;
 	/**
-	 * Opens the **Restart Way of Pi** confirmation modal (**POST `/api/server/restart`** when the user confirms).
+	 * Opens the **Restart Way of Work** confirmation modal (**POST `/api/server/restart`** when the user confirms).
 	 * Reconnects the chat WebSocket when the process does not exit.
 	 */
 	onRestartServer: () => void | Promise<void>;

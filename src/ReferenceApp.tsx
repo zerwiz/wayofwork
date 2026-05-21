@@ -4259,7 +4259,7 @@ description:
       },
       {
         id: "how-to-use",
-        label: "Help: How to use Way of Pi",
+        label: "Help: How to use Way of Work",
         detail: "Getting started modal + doc links",
         keywords: ["help", "start", "guide", "tutorial", "onboarding"],
         run: () => {
@@ -4398,7 +4398,7 @@ description:
             })
             .catch(() =>
               injectIntoChatComposer(
-                "Could not load `/api/plans` — is the Way of Pi server running?",
+                "Could not load `/api/plans` — is the Way of Work server running?",
               ),
             );
         },
@@ -4571,7 +4571,7 @@ description:
         label:
           uiMode === "claw"
             ? "Help: Claw guide & roadmap"
-            : "Help: How to use Way of Pi",
+            : "Help: How to use Way of Work",
         detail:
           uiMode === "claw"
             ? "Claw Help — operator shell, phases, schedules, channels"

@@ -6,9 +6,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Mail, Search, Shield, Eye, User, Trash2 } from 'lucide-react';
 import type { Board, BoardMember } from '../../../types/kanban';
-import { kanbanService } from '../../../services/mockKanbanService';
-import { useToast } from '../../../context/ToastContext';
-import { ConfirmationModal } from '../../modals/ConfirmationModal';
+import { kanbanService } from '../../../services/kanbanService';
+import { useToast } from '../../../contexts/ToastContext';
+import ConfirmationModal from '../../../modals/ConfirmationModal';
 
 interface BoardMembersProps {
   board: Board;

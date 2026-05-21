@@ -150,7 +150,7 @@ export function SimpleSettingsView({
 							<h3 className={`mb-2 font-bold ${heading}`}>Claw workspace folder</h3>
 							<p className={`mb-4 text-sm ${sub}`}>
 								The <strong className={heading}>Claw workspace folder</strong> is host-scoped: it lives under the
-								Way of Pi checkout as <code className="text-xs">.claw/workspace/</code> (not inside the folder you
+								Way of Work checkout as <code className="text-xs">.claw/workspace/</code> (not inside the folder you
 								opened as
 								the project workspace). It holds seven markdown files (SOUL, AGENTS, USER, MEMORY, HEARTBEAT,
 								TOOLS, SECURITY). Override the host root with <code className="text-xs">WOP_CLAW_HOST_ROOT</code>{" "}
@@ -165,7 +165,7 @@ export function SimpleSettingsView({
 							</p>
 							{!clawWorkspaceActions.workspacePresent ? (
 								<p className={`text-sm ${sub}`}>
-									Claw host paths are not available yet — ensure the Way of Pi Bun server is running and{" "}
+									Claw host paths are not available yet — ensure the Way of Work Bun server is running and{" "}
 									<code className="text-xs">GET /api/config</code> returns <code className="text-xs">
 										clawWorkspaceDirAbs
 									</code>

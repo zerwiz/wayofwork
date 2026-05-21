@@ -485,7 +485,7 @@ export async function getWorkspaceIndexStatus(): Promise<WorkspaceIndexStatusPay
 	const options = await readWorkspaceIndexOptions();
 	const docs = (await readWorkspaceIndexDocs()).entries;
 	const about =
-		"Way of Pi keeps this index on disk under .wayofpi/index (manifest + optional grep path list). " +
+		"Way of Work keeps this index on disk under .wayofpi/index (manifest + optional grep path list). " +
 		"Cursor additionally uses Merkle trees, AST chunking, embeddings, and cloud vector search — see cursor.com/blog and docs.cursor.com for their pipeline.";
 	return {
 		rootLabel,
@@ -551,7 +551,7 @@ export function getWorkspaceIndexChatBoostSync(): string | null {
 		const state = JSON.parse(readFileSync(stateJsonPath(), "utf8")) as WorkspaceIndexStateFile;
 		const sample = (state.samplePaths ?? []).slice(0, 60);
 		const lines = [
-			"**Workspace index (local):** Way of Pi manifest — not Cursor cloud embeddings.",
+			"**Workspace index (local):** Way of Work manifest — not Cursor cloud embeddings.",
 			`- **Files:** ${state.fileCount}; **last sync:** ${state.syncedAt ?? "unknown"}; **fingerprint:** ${state.merkleRoot}`,
 			`- **Sample paths:**`,
 			...sample.map((p) => `  - \`${p}\``),

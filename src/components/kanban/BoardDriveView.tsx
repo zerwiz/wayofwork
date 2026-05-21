@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { Folder, File, Link2, Search, X, HardDrive, ChevronRight } from 'lucide-react';
 import type { Board, BoardCard } from '../../types/kanban';
-import { driveService } from '../../services/mockDriveService';
+import { driveService } from '../../services/driveService';
 import type { DriveFile } from '../../types/drive';
 
 interface BoardDriveViewProps {
@@ -40,10 +40,13 @@ export const BoardDriveView: React.FC<BoardDriveViewProps> = ({
     buildFolderPath();
   }, [currentFolder]);
 
-  const loadFiles = () => {
+  const loadFiles = async () => {
     try {
-      const files = driveService.getFiles(currentFolder);
-      const fileList = files.filter((f) => f.type === 'file');
+      const allFiles = await driveService.getFiles();
+      const filesInFolder = currentFolder 
+        ? allFiles.filter((f: any) => f.parentId === currentFolder)
+        : allFiles.filter((f: any) => !f.parentId);
+      const fileList = filesInFolder.filter((f: any) => f.type === 'file');
       setAllFiles(fileList);
     } catch (error) {
       console.error('Failed to load files:', error);
@@ -51,10 +54,13 @@ export const BoardDriveView: React.FC<BoardDriveViewProps> = ({
     }
   };
 
-  const loadFolders = () => {
+  const loadFolders = async () => {
     try {
-      const files = driveService.getFiles(currentFolder);
-      const folderList = files.filter((f) => f.type === 'folder');
+      const allFiles = await driveService.getFiles();
+      const filesInFolder = currentFolder 
+        ? allFiles.filter((f: any) => f.parentId === currentFolder)
+        : allFiles.filter((f: any) => !f.parentId);
+      const folderList = filesInFolder.filter((f: any) => f.type === 'folder');
       setFolders(folderList);
     } catch (error) {
       console.error('Failed to load folders:', error);
@@ -62,19 +68,19 @@ export const BoardDriveView: React.FC<BoardDriveViewProps> = ({
     }
   };
 
-  const buildFolderPath = () => {
+  const buildFolderPath = async () => {
     if (!currentFolder) {
       setFolderPath([]);
       return;
     }
 
     const path: DriveFile[] = [];
-    let current: DriveFile | null = driveService.getFile(currentFolder) || null;
+    let current: DriveFile | null = await driveService.getFile(currentFolder);
 
     while (current) {
       path.unshift(current);
       if (current.parentId) {
-        current = driveService.getFile(current.parentId) || null;
+        current = await driveService.getFile(current.parentId);
       } else {
         current = null;
       }

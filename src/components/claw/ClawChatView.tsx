@@ -101,6 +101,7 @@ export function ClawChatView({
 	layoutVariant = "desktop",
 	/** When present and increments, open the `.claw/` file panel (mobile shell or narrow ≤767px desktop); path set from App menu / palette. */
 	menuFileFocusRev,
+	onSetupClawWorkspace,
 }: {
 	chatTabs: ChatSessionTab[];
 	activeChatTabId: string;
@@ -165,6 +166,7 @@ export function ClawChatView({
 	/** `mobile` = single-column chat, session sheet, full-screen file overlay. */
 	layoutVariant?: "desktop" | "mobile";
 	menuFileFocusRev?: number;
+	onSetupClawWorkspace?: () => void;
 }) {
 	const clawAgentAvailable = agents.some((a) => a.name === "claw");
 	const [showFilePanel, setShowFilePanel] = useState(false);
@@ -267,6 +269,7 @@ export function ClawChatView({
 		onMoveFileToDirectory,
 		allowWorkspaceRootDrop: false,
 		dark,
+		onSetupClawWorkspace,
 	};
 
 	return (
@@ -467,6 +470,7 @@ function ClawFilePanel({
 	allowWorkspaceRootDrop = false,
 	dark,
 	presentation = "dock",
+	onSetupClawWorkspace,
 }: {
 	nodes: TreeNode[];
 	treeLoading: boolean;
@@ -497,6 +501,7 @@ function ClawFilePanel({
 	dark: boolean;
 	/** `overlay` = full-screen mobile sheet (no left border; compact header). */
 	presentation?: "dock" | "overlay";
+	onSetupClawWorkspace?: () => void;
 }) {
 	const borderC = dark ? "border-[#252526]" : "border-[#e5e5e5]";
 	const treeBg = dark ? "bg-[#1a1a1a]" : "bg-[#f5f5f5]";
@@ -621,6 +626,7 @@ function ClawFilePanel({
 						onMoveFileToDirectory={onMoveFileToDirectory}
 						allowWorkspaceRootDrop={allowWorkspaceRootDrop}
 						emptyTreeHint="No files under host .claw/ yet. Use Mission → workspace setup, Add document, or create .claw/ on disk."
+						emptyTreeAction={onSetupClawWorkspace ? { label: "Setup", onClick: onSetupClawWorkspace } : undefined}
 					/>
 				)}
 			</div>

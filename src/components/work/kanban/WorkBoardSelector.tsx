@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { kanbanService } from '../../../services/mockKanbanService';
+import { kanbanService } from '../../../services/kanbanService';
 import { BOARD_TEMPLATES, getTemplatesByCategory, type BoardTemplate } from '../../../services/boardTemplates';
 import type { Board } from '../../../types/kanban';
 import { Search, Plus, LayoutGrid, X, Star } from 'lucide-react';

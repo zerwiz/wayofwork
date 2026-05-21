@@ -136,7 +136,7 @@ export async function buildWorkspaceTree(tenantId: string = "default"): Promise<
 }
 
 /**
- * Tree for host **`.claw/`** (Way of Pi checkout), with paths relative to the host root
+ * Tree for host **`.claw/`** (Way of Work checkout), with paths relative to the host root
  * (e.g. `.claw/workspace/SOUL.md`). Used by Claw mode Files tab — not `WOP_WORKSPACE`.
  */
 export async function buildClawHostTree(): Promise<{

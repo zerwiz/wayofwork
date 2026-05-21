@@ -26,7 +26,7 @@ export async function fetchWayofpiHealthCapabilities(): Promise<WayofpiHealthCap
 	}
 }
 
-/** True when this build’s Way of Pi Bun is answering (not an older server on the same port). */
+/** True when this build’s Way of Work Bun is answering (not an older server on the same port). */
 export function healthSupportsClawHostTree(caps: WayofpiHealthCapabilities | null): boolean {
 	return caps?.clawHostTreeGet === true;
 }
@@ -48,7 +48,7 @@ export async function warmDevWayOfPiApiIfNeeded(): Promise<void> {
 
 export function staleWayOfPiApiMessage(): string {
 	return [
-		"The process on your API port (default 3333, or WOP_SERVER_PORT) is an older Way of Pi server without the current Claw routes (files, schedules, mission APIs).",
+		"The process on your API port (default 3333, or WOP_SERVER_PORT) is an older Way of Work server without the current Claw routes (files, schedules, mission APIs).",
 		"Stop it, then start the current API from apps/wayofwork-ui:",
 		"  bun run server/index.ts",
 		"Or use: bun run dev (starts API + Vite together).",

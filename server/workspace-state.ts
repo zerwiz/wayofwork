@@ -1,7 +1,7 @@
 /**
  * **Workspace roots** (what `/api/tree`, `/api/file`, plans, agents, and Pi `cwd` use) live in
  * **`folders`** — set at boot from **`WOP_WORKSPACE`** or **`process.cwd()`**, then updated only via
- * **Open Folder** / workspace-file APIs. They are **not** the Way of Pi app install path unless the
+ * **Open Folder** / workspace-file APIs. They are **not** the Way of Work app install path unless the
  * user opened that directory, and they are **not** driven by the editor’s active tab path.
  */
 import { existsSync, realpathSync } from "node:fs";

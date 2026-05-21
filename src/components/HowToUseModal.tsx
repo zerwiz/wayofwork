@@ -82,13 +82,13 @@ function SectionWelcome() {
 	return (
 		<>
 			<P>
-				<strong className="text-white">Way of Pi</strong> is a desktop app that wraps an AI coding assistant
+				<strong className="text-white">Way of Work</strong> is a desktop app that wraps an AI coding assistant
 				in a friendly interface — a file browser, chat window, code editor, and controls, all in one place.
 			</P>
 			<InfoBox>
 				<strong className="text-white">The simplest explanation:</strong> Imagine a super-smart robot called{" "}
 				<strong>Pi</strong> that is amazing at writing code. Normally you type at it in a plain black terminal.
-				Way of Pi gives that robot a proper <em>control center</em> — windows, buttons, and a file browser —
+				Way of Work gives that robot a proper <em>control center</em> — windows, buttons, and a file browser —
 				so it's much easier to work with.
 			</InfoBox>
 
@@ -99,7 +99,7 @@ function SectionWelcome() {
 					value="The AI brain that reads code, writes files, runs commands, and follows your instructions."
 				/>
 				<Row
-					label="🖥️ Way of Pi (the shell)"
+					label="🖥️ Way of Work (the shell)"
 					value="The app you see: file tree, chat, editor, agent roster, and model picker."
 				/>
 			</div>
@@ -129,7 +129,7 @@ function SectionWelcome() {
 			</UL>
 
 			<DevBox>
-				Way of Pi runs a <Chip>Bun</Chip> server (<Chip>apps/wayofwork-ui/server/</Chip>) and a Vite+React
+				Way of Work runs a <Chip>Bun</Chip> server (<Chip>apps/wayofwork-ui/server/</Chip>) and a Vite+React
 				frontend. Chat uses <Chip>WOP_CHAT_ENGINE</Chip> to route turns: when unset or <Chip>auto</Chip>, the
 				server uses headless <Chip>pi --mode json</Chip> when the Pi CLI resolves, otherwise direct
 				Ollama/OpenRouter; <Chip>pi</Chip> requires Pi; <Chip>bundled</Chip>/<Chip>bun</Chip> forces Bun-only. See{" "}
@@ -255,7 +255,7 @@ const MORE_BUILTIN_AGENTS: [string, string][] = [
 	["📡 Hermes", "Bridge to the external Hermes CLI — send a prompt, relay stdout back to the user."],
 	["🔎 Project Scanner", "Bootstraps ~/.pi/projects/<slug>/ docs from the template for a new workspace."],
 	["🚪 Playground Portal", "Ports extensions, skills, and shims from the Pi playground into your app repo."],
-	["🦾 Claw", "Way of Pi Claw shell lead — operator flows, .claw/ workspace, Telegram setup guidance."],
+	["🦾 Claw", "Way of Work Claw shell lead — operator flows, .claw/ workspace, Telegram setup guidance."],
 	["🛡️ Red Team", "Adversarial review: vulnerabilities, edge cases, severity — read-only, no file edits."],
 	["✅ Plan Reviewer", "Critiques plans/PLAN-*.md: assumptions, risks, ordering, and missing steps."],
 	["🧠 Pi orchestrator (Pi Pi)", "Meta-agent that coordinates Pi-internal experts (extensions, themes, skills, …)."],
@@ -272,7 +272,7 @@ function SectionAgents() {
 		<>
 			<P>
 				An <strong className="text-white">agent</strong> is an AI helper with a specific job and
-				personality. Way of Pi ships with agents for the most common coding roles.
+				personality. Way of Work ships with agents for the most common coding roles.
 			</P>
 
 			<InfoBox>
@@ -469,7 +469,7 @@ function SectionLayout() {
 	return (
 		<>
 			<P>
-				Way of Pi has three layout modes selectable from the top bar. Each is optimised for a different
+				Way of Work has three layout modes selectable from the top bar. Each is optimised for a different
 				style of working.
 			</P>
 
@@ -549,7 +549,7 @@ function SectionWorkspace() {
 	return (
 		<>
 			<P>
-				A <strong className="text-white">workspace</strong> is the folder on your computer that Way of Pi
+				A <strong className="text-white">workspace</strong> is the folder on your computer that Way of Work
 				works inside. Everything — the file tree, chat context, and AI actions — is scoped to that
 				folder. You choose it; the app can't see anything outside it.
 			</P>
@@ -586,10 +586,10 @@ function SectionWorkspace() {
 				</li>
 				<li>
 					All <Chip>/api/file</Chip> calls, the file tree, and the AI's working directory refer to the
-					workspace root — not to wherever the Way of Pi app lives.
+					workspace root — not to wherever the Way of Work app lives.
 				</li>
 				<li>
-					If the workspace shows a "Way of Pi" path when you mean to work on your own project, use{" "}
+					If the workspace shows a "Way of Work" path when you mean to work on your own project, use{" "}
 					<strong className="text-white">Open Folder</strong> to switch.
 				</li>
 			</UL>
@@ -613,7 +613,7 @@ function SectionForDevelopers() {
 		<>
 			<P>
 				This section is for people who want to go deeper: configure the Pi engine, write extensions,
-				set up providers, or contribute to Way of Pi itself.
+				set up providers, or contribute to Way of Work itself.
 			</P>
 
 			<H>Connecting Pi (the real AI engine)</H>
@@ -685,7 +685,7 @@ function SectionForDevelopers() {
 			</UL>
 
 			<DevBox>
-				Way of Pi docs live in <Chip>docs/WOP_*.md</Chip>. Key reads:{" "}
+				Way of Work docs live in <Chip>docs/WOP_*.md</Chip>. Key reads:{" "}
 				<Chip>WOP_PI_BACKEND_WIRING_PLAN.md</Chip> (API wiring phases),{" "}
 				<Chip>WOP_TECHNICAL_UI.md</Chip> (shell architecture),{" "}
 				<Chip>WOP_NAMESPACE.md</Chip> (isolation rules),{" "}
@@ -755,12 +755,12 @@ function SectionHoncho() {
 				at all. After env changes, <Chip>/reload</Chip> in Pi or restart the app.
 			</P>
 
-			<H>Way of Pi UI (today)</H>
+			<H>Way of Work UI (today)</H>
 			<P>
 				Simple, Technical, and Claw modes do <strong className="text-white">not</strong> yet show Honcho
 				connection health or browse Honcho data in-app. Use Honcho&apos;s <Chip>/docs</Chip> (Swagger), Hermes
 				tools, or the capability map in <Chip>docs/HONCHO_CAPABILITIES.md</Chip>. Shell integration is tracked
-				in <Chip>docs/WOP_OPEN_TODOS.md</Chip> (Honcho and Way of Pi UI).
+				in <Chip>docs/WOP_OPEN_TODOS.md</Chip> (Honcho and Way of Work UI).
 			</P>
 
 			<DevBox>
@@ -793,27 +793,27 @@ function SectionNgrok() {
 				>
 					ngrok.com
 				</a>
-				) that creates a <strong className="text-white">temporary public web link</strong> pointing at Way of Pi
+				) that creates a <strong className="text-white">temporary public web link</strong> pointing at Way of Work
 				while it runs on your computer. Think of it like forwarding a mobile number to your landline: people use
 				the new number; the call still lands on your machine.
 			</P>
 
 			<P>
-				<strong className="text-white">Optional for Way of Pi.</strong> You never have to install or run ngrok unless you want that public link.
+				<strong className="text-white">Optional for Way of Work.</strong> You never have to install or run ngrok unless you want that public link.
 				Local editing, chat, and the rest of the shell work the same without it.
 			</P>
 
 			<InfoBox>
-				<strong className="text-white">Why would I care?</strong> Normally you only open Way of Pi on the machine
+				<strong className="text-white">Why would I care?</strong> Normally you only open Way of Work on the machine
 				where Bun + Vite run (for example your home PC). With ngrok, you can open that <strong className="text-white">same</strong> setup
 				from <strong className="text-white">work, a café, or another network</strong> — the stack stays on the host; your browser uses the
-				public link. Same idea for a teammate demo or a cloud webhook test — <em>only while Way of Pi and ngrok both run on the host</em>.
+				public link. Same idea for a teammate demo or a cloud webhook test — <em>only while Way of Work and ngrok both run on the host</em>.
 			</InfoBox>
 
 			<H>Everyday uses</H>
 			<UL>
 				<li>
-					<strong className="text-white">Reach home (or your dev box) from elsewhere</strong> — leave Way of Pi + ngrok running on that
+					<strong className="text-white">Reach home (or your dev box) from elsewhere</strong> — leave Way of Work + ngrok running on that
 					machine; at work or on travel, paste the ngrok <code className="text-[#ce9178]">https://…</code> link in your browser.
 				</li>
 				<li>
@@ -1017,7 +1017,7 @@ export function HowToUseModal({
 							<BookOpen size={16} className="shrink-0 text-[#ea580c]" />
 							<span className="text-[13px] font-bold text-white">Help Center</span>
 						</div>
-						<p className="mt-1 text-[11px] text-[#858585]">Way of Pi guide</p>
+						<p className="mt-1 text-[11px] text-[#858585]">Way of Work guide</p>
 					</div>
 					<nav className="flex-1 overflow-y-auto py-2">
 						{SECTIONS.map((s) => {

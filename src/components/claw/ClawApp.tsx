@@ -337,7 +337,7 @@ export function ClawApp({
     }
     if (
       !window.confirm(
-        "Delete `.claw/workspace/` from the Way of Pi host checkout?\n\nThis removes the seven scaffold files and `memory/` under that folder. It does **not** remove `.claw/telegram.json` (that stays next to `workspace/` if present). This cannot be undone.",
+        "Delete `.claw/workspace/` from the Way of Work host checkout?\n\nThis removes the seven scaffold files and `memory/` under that folder. It does **not** remove `.claw/telegram.json` (that stays next to `workspace/` if present). This cannot be undone.",
       )
     ) {
       return;
@@ -639,6 +639,7 @@ export function ClawApp({
               addClawMarkdownDocumentBusy={addClawMarkdownDocumentBusy}
               layoutVariant={layoutVariant}
               menuFileFocusRev={clawMenuFileFocusRev}
+              onSetupClawWorkspace={() => setClawWorkspaceOnboardingOpen(true)}
             />
           ) : activeTab === "team" ? (
             <SimpleTeamView
@@ -817,6 +818,10 @@ export function ClawApp({
                         onMoveFileToDirectory={moveWithClawTreeSync}
                         allowWorkspaceRootDrop={false}
                         emptyTreeHint="No files under host .claw/ yet. Use Mission → workspace setup, Add document, or create .claw/ on disk."
+                        emptyTreeAction={{
+                          label: "Setup",
+                          onClick: () => setClawWorkspaceOnboardingOpen(true),
+                        }}
                       />
                     )}
                   </div>

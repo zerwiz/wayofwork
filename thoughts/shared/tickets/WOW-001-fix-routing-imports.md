@@ -1,8 +1,8 @@
-# WOW-001 Fix system after extraction from Way of Pi monorepo
+# WOW-001 Fix system after extraction from Way of Work monorepo
 
 ## Problem Statement
 
-This repo was extracted from the Way of Pi monorepo. Several dependencies were stripped out to get `bun install` working, file paths were never reconciled, and build is blocked (41 tsc errors). Runtime paths may still reference the old monorepo layout. Database was copied over and may contain stale Pi-specific data.
+This repo was extracted from the Way of Work monorepo. Several dependencies were stripped out to get `bun install` working, file paths were never reconciled, and build is blocked (41 tsc errors). Runtime paths may still reference the old monorepo layout. Database was copied over and may contain stale Pi-specific data.
 
 ## Desired Outcome
 

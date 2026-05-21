@@ -1,5 +1,5 @@
 /**
- * Mutate primary workspace `.pi/agents/teams.yaml` — Pi **agent-team** parity for Way of Pi orchestrator tools.
+ * Mutate primary workspace `.pi/agents/teams.yaml` — Pi **agent-team** parity for Way of Work orchestrator tools.
  */
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";

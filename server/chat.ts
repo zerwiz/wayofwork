@@ -152,7 +152,7 @@ export async function streamChatCompletion(
 					Authorization: `Bearer ${key}`,
 					"Content-Type": "application/json",
 					"HTTP-Referer": process.env.WOP_OPENROUTER_REFERER || "https://wayofpi.local",
-					"X-Title": "Way of Pi",
+					"X-Title": "Way of Work",
 				},
 				body: JSON.stringify({
 					model,
@@ -191,7 +191,7 @@ export async function streamChatCompletion(
 	if (provider !== "ollama") {
 		return {
 			ok: false,
-			error: `WOP_LLM_PROVIDER="${provider}" is not supported by Way of Pi web chat. Set it to "ollama" or "openrouter" on the server, or use Pi TUI for other backends.`,
+			error: `WOP_LLM_PROVIDER="${provider}" is not supported by Way of Work web chat. Set it to "ollama" or "openrouter" on the server, or use Pi TUI for other backends.`,
 		};
 	}
 

@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Link2, Search, Plus, X } from 'lucide-react';
 import type { Board, BoardCard } from '../../../types/kanban';
-import { notesService } from '../../../services/mockNotesService';
+import { notesService } from '../../../services/notesService';
 import type { Note } from '../../../types/notes';
 
 interface BoardDocsViewProps {
@@ -32,9 +32,9 @@ export const WorkDocsView: React.FC<BoardDocsViewProps> = ({
     loadDocuments();
   }, []);
 
-  const loadDocuments = () => {
+  const loadDocuments = async () => {
     try {
-      const notes = notesService.getAllNotes();
+      const notes = await notesService.getAllNotes();
       setAllDocuments(notes);
     } catch (error) {
       console.error('Failed to load documents:', error);
@@ -100,7 +100,7 @@ export const WorkDocsView: React.FC<BoardDocsViewProps> = ({
             </div>
             <button
               onClick={() => setIsLinkingMode(!isLinkingMode)}
-              className="px-4 py-2 bg-[#ea580c] hover:bg-orange-700 text-[#cccccc] rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
             >
               <Link2 className="w-4 h-4" />
               {isLinkingMode ? 'Cancel Linking' : 'Link Document'}
@@ -115,7 +115,7 @@ export const WorkDocsView: React.FC<BoardDocsViewProps> = ({
               placeholder="Search documents..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#1e1e1e] border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-[#cccccc] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full bg-[#252526] border border-[#333333] rounded-lg pl-10 pr-4 py-2 text-white placeholder-[#6e6e6e] focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
         </div>
@@ -123,7 +123,7 @@ export const WorkDocsView: React.FC<BoardDocsViewProps> = ({
         {/* Linked Documents Section */}
         {allLinked.length > 0 && (
           <div className="mb-8">
-            <h4 className="text-sm font-semibold text-[#cccccc] mb-4">Linked Documents</h4>
+            <h4 className="text-sm font-semibold text-[#a0a0a0] mb-4">Linked Documents</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {allLinked
                 .filter(
@@ -134,13 +134,13 @@ export const WorkDocsView: React.FC<BoardDocsViewProps> = ({
                 )
                 .map((doc) => {
                   const linkedToCards = Array.from(cards.values()).filter(
-                    (card: BoardCard) => card.metadata?.documentIds?.includes(doc.id)
+                    (card) => card.metadata?.documentIds?.includes(doc.id)
                   );
 
                   return (
                     <div
                       key={doc.id}
-                      className="bg-[#1e1e1e] border border-gray-700 rounded-lg p-4 hover:border-orange-500 transition-colors"
+                      className="bg-[#252526] border border-[#333333] rounded-lg p-4 hover:border-orange-500 transition-colors"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -157,7 +157,7 @@ export const WorkDocsView: React.FC<BoardDocsViewProps> = ({
 
                       <div className="flex items-center justify-between">
                         <div className="flex flex-wrap gap-1">
-                          {linkedToCards.map((card: BoardCard) => (
+                          {linkedToCards.map((card) => (
                             <span
                               key={card.id}
                               className="text-xs px-2 py-1 bg-orange-500/20 text-orange-400 rounded border border-orange-500/30"
@@ -190,11 +190,11 @@ export const WorkDocsView: React.FC<BoardDocsViewProps> = ({
         {/* Unlinked Documents Section */}
         {isLinkingMode && (
           <div className="mb-8">
-            <h4 className="text-sm font-semibold text-[#cccccc] mb-4">
+            <h4 className="text-sm font-semibold text-[#a0a0a0] mb-4">
               Available Documents {selectedCardId && `- Link to: ${cards.get(selectedCardId)?.title}`}
             </h4>
             {unlinked.length === 0 ? (
-              <div className="text-center py-8 text-[#585858]">
+              <div className="text-center py-8 text-[#6e6e6e]">
                 <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>No unlinked documents found</p>
               </div>
@@ -203,7 +203,7 @@ export const WorkDocsView: React.FC<BoardDocsViewProps> = ({
                 {unlinked.map((doc) => (
                   <div
                     key={doc.id}
-                    className="bg-[#1e1e1e] border border-gray-700 rounded-lg p-4 hover:border-orange-500 transition-colors cursor-pointer"
+                    className="bg-[#252526] border border-[#333333] rounded-lg p-4 hover:border-orange-500 transition-colors cursor-pointer"
                     onClick={() => {
                       if (selectedCardId) {
                         handleLinkDocument(selectedCardId, doc.id);
@@ -225,9 +225,9 @@ export const WorkDocsView: React.FC<BoardDocsViewProps> = ({
 
                     {!selectedCardId && (
                       <div className="mt-3">
-                        <p className="text-xs text-[#585858] mb-2">Select a card to link:</p>
+                        <p className="text-xs text-[#6e6e6e] mb-2">Select a card to link:</p>
                         <div className="flex flex-wrap gap-1">
-                          {Array.from(cards.values()).slice(0, 3).map((card: BoardCard) => (
+                          {Array.from(cards.values()).slice(0, 3).map((card) => (
                             <button
                               key={card.id}
                               onClick={(e) => {
@@ -252,13 +252,13 @@ export const WorkDocsView: React.FC<BoardDocsViewProps> = ({
 
         {/* All Documents Section (when not in linking mode) */}
         {!isLinkingMode && allLinked.length === 0 && (
-          <div className="text-center py-12 text-[#585858]">
+          <div className="text-center py-12 text-[#6e6e6e]">
             <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
             <h3 className="text-xl font-semibold mb-2">No documents linked</h3>
             <p className="mb-4">Link documents to cards to see them here.</p>
             <button
               onClick={() => setIsLinkingMode(true)}
-              className="px-4 py-2 bg-[#ea580c] hover:bg-orange-700 text-[#cccccc] rounded-lg text-sm font-medium transition-colors flex items-center gap-2 mx-auto"
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 mx-auto"
             >
               <Plus className="w-4 h-4" />
               Link Document

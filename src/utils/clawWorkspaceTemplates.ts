@@ -1,6 +1,6 @@
 /**
  * Template content for Claw workspace scaffold files under **`.claw/workspace/`**
- * on the Way of Pi host checkout (not under the opened project `WOP_WORKSPACE`).
+ * on the Way of Work host checkout (not under the opened project `WOP_WORKSPACE`).
  *
  * Inspired by the OpenClaw / BabyClaw workspace file convention:
  * SOUL.md · AGENTS.md · USER.md · MEMORY.md · HEARTBEAT.md · TOOLS.md
@@ -47,7 +47,7 @@ export const CLAW_WORKSPACE_FILES: ClawWorkspaceFile[] = [
 > Keep it short — this is loaded every session.
 
 ## Identity
-- **Name**: Claw (Way of Pi agent)
+- **Name**: Claw (Way of Work agent)
 - **Role**: Autonomous coding and task assistant for this workspace
 - **Tone**: Direct, precise, helpful — no fluff
 
@@ -79,7 +79,7 @@ export const CLAW_WORKSPACE_FILES: ClawWorkspaceFile[] = [
 When asked for a new capability, **implement it on disk** — not only prose steps:
 
 - **Skills:** create \`.pi/skills/<name>/SKILL.md\` (frontmatter \`name\` matches folder); add the skill to relevant \`.pi/agents/*.md\` \`skills:\` when needed. See \`docs/SKILLS.md\`.
-- **Extensions:** add \`extensions/<slug>.ts\`, a one-line re-export under \`.pi/extensions/<slug>.ts\`, and an entry in \`.pi/settings.json\` → \`extensions[]\`. See \`docs/EXTENSIONS.md\`. Tell the operator to \`/reload\` in Pi or restart Way of Pi.
+- **Extensions:** add \`extensions/<slug>.ts\`, a one-line re-export under \`.pi/extensions/<slug>.ts\`, and an entry in \`.pi/settings.json\` → \`extensions[]\`. See \`docs/EXTENSIONS.md\`. Tell the operator to \`/reload\` in Pi or restart Way of Work.
 - **Published Pi extensions:** run or document \`pi install <spec>\` (e.g. git URL), then register in \`extensions[]\` as above.
 - **Record** what is installed in \`TOOLS.md\` (and session \`memory/YYYY-MM-DD.md\` if significant).
 

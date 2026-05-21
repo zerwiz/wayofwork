@@ -3,17 +3,17 @@
  * repo **`.env`** uses **`OLLAMA_BASE_URL`** + **`OLLAMA_MODEL`** (see **`scripts/pi-with-env`**);
  * Pi session defaults also live in **`agent/settings.json`** (`defaultProvider`, `defaultModel`).
  *
- * Way of Pi historically used **`OLLAMA_HOST`** only — we merge both shapes here.
+ * Way of Work historically used **`OLLAMA_HOST`** only — we merge both shapes here.
  *
  * **Workspace-only:** default model from JSON is read only under **`listWorkspaceFolders()`** (the
- * folder(s) Way of Pi is working in — `WOP_WORKSPACE` / cwd), never from the playground repo root.
+ * folder(s) Way of Work is working in — `WOP_WORKSPACE` / cwd), never from the playground repo root.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { listWorkspaceFolders } from "./workspace-state";
 
 /**
- * Absolute path to this **Way of Pi** web-server package on disk: the directory that contains
+ * Absolute path to this **Way of Work** web-server package on disk: the directory that contains
  * **`apps/wayofwork-ui`** (resolved to the monorepo / checkout root with `wop.upstream.lock.json`, etc.).
  *
  * Use only for **install / upstream / self-check** paths. **Never** treat as the user’s opened

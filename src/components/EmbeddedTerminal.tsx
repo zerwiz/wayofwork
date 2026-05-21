@@ -36,7 +36,7 @@ export function EmbeddedTerminal() {
 				<p className="text-[#858585]">
 					For a real shell (cwd = workspace), set{" "}
 					<code className="rounded bg-[#2d2d2d] px-1.5 py-0.5 text-[#dcdcaa]">WOP_ALLOW_TERMINAL=1</code> on
-					the Way of Pi UI server, restart it, then reload. Development normally enables this by default when
+					the Way of Work UI server, restart it, then reload. Development normally enables this by default when
 					unset; if you disabled it with{" "}
 					<code className="rounded bg-[#2d2d2d] px-1.5 py-0.5 text-[#dcdcaa]">WOP_ALLOW_TERMINAL=0</code>,
 					remove that or set to{" "}

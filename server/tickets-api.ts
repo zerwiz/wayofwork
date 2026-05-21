@@ -30,30 +30,34 @@ function extractId(path: string, prefix: string): string | null {
 }
 
 export async function handleTicketApi(p: string, method: string, auth: AuthInfo | null, req: Request): Promise<Response | null> {
-  const body = method === "POST" || method === "PUT" ? await req.json().catch(() => undefined) : undefined;
   const { userId, tenantId, role } = auth ?? { userId: "", tenantId: "", role: "" };
+
+  async function readBody<T>(): Promise<T | undefined> {
+    if (method !== "POST" && method !== "PUT") return undefined;
+    return await req.json().catch(() => undefined) as T | undefined;
+  }
 
   // POST /api/time-sessions/check-in
   if (p === "/api/time-sessions/check-in" && method === "POST") {
-    const b = body as { project_id?: string; notes?: string; location_json?: string } | undefined;
+    const body = await readBody<{ project_id?: string; notes?: string; location_json?: string }>();
     const id = uuid();
     db.run(
       "INSERT INTO time_sessions (id, tenant_id, user_id, project_id, check_in, notes, location_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [id, tenantId, userId, b?.project_id ?? null, now(), b?.notes ?? null, b?.location_json ?? null]
+      [id, userId, userId, body?.project_id ?? null, now(), body?.notes ?? null, body?.location_json ?? null]
     );
     return json({ ok: true, id });
   }
 
   // POST /api/time-sessions/check-out
   if (p === "/api/time-sessions/check-out" && method === "POST") {
-    const b = body as { break_minutes?: number } | undefined;
+    const body = await readBody<{ break_minutes?: number }>();
     const session = db.query("SELECT * FROM time_sessions WHERE user_id = ? AND tenant_id = ? AND check_out IS NULL ORDER BY created_at DESC LIMIT 1").get(userId, tenantId) as TimeSession | undefined;
     if (!session) return json({ error: "No active session" }, 400);
     const checkIn = new Date(session.check_in).getTime();
     const checkOut = Date.now();
-    const totalHours = Math.round(((checkOut - checkIn) / 3600000 - (b?.break_minutes ?? 0) / 60) * 100) / 100;
+    const totalHours = Math.round(((checkOut - checkIn) / 3600000 - (body?.break_minutes ?? 0) / 60) * 100) / 100;
     db.run("UPDATE time_sessions SET check_out = ?, total_hours = ?, break_minutes = ? WHERE id = ?",
-      [now(), totalHours, b?.break_minutes ?? 0, session.id]);
+      [now(), totalHours, body?.break_minutes ?? 0, session.id]);
     return json({ ok: true, id: session.id, total_hours: totalHours });
   }
 
@@ -82,12 +86,12 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
 
   // POST /api/tickets
   if (p === "/api/tickets" && method === "POST") {
-    const b = body as Partial<Ticket>;
+    const b = await readBody<Partial<Ticket>>();
     const id = uuid();
     db.run(
       `INSERT INTO tickets (id, tenant_id, project_id, title, description, category, status, priority, created_by, materials_json, photos_json)
        VALUES (?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?)`,
-      [id, tenantId, b.project_id ?? null, b.title, b.description ?? null, b.category ?? "tillägg", b.priority ?? "medium", userId, b.materials_json ?? "[]", b.photos_json ?? "[]"]
+      [id, tenantId, b?.project_id ?? null, b?.title, b?.description ?? null, b?.category ?? "tillägg", b?.priority ?? "medium", userId, b?.materials_json ?? "[]", b?.photos_json ?? "[]"]
     );
     const ticket = db.query("SELECT * FROM tickets WHERE id = ?").get(id);
     return json(ticket, 201);
@@ -103,12 +107,12 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
 
   // PUT /api/tickets/:id
   if (ticketGetMatch && method === "PUT") {
-    const b = body as Partial<Ticket>;
+    const b = await readBody<Partial<Ticket>>();
     const existing = db.query("SELECT * FROM tickets WHERE id = ? AND tenant_id = ?").get(ticketGetMatch[1], tenantId) as Ticket | undefined;
     if (!existing) return json({ error: "Not found" }, 404);
     db.run(
       `UPDATE tickets SET title = ?, description = ?, category = ?, priority = ?, project_id = ?, materials_json = ?, photos_json = ?, updated_at = ? WHERE id = ?`,
-      [b.title ?? existing.title, b.description ?? existing.description, b.category ?? existing.category, b.priority ?? existing.priority, b.project_id ?? existing.project_id, b.materials_json ?? existing.materials_json, b.photos_json ?? existing.photos_json, now(), ticketGetMatch[1]]
+      [b?.title ?? existing.title, b?.description ?? existing.description, b?.category ?? existing.category, b?.priority ?? existing.priority, b?.project_id ?? existing.project_id, b?.materials_json ?? existing.materials_json, b?.photos_json ?? existing.photos_json, now(), ticketGetMatch[1]]
     );
     const updated = db.query("SELECT * FROM tickets WHERE id = ?").get(ticketGetMatch[1]);
     return json(updated);
@@ -128,7 +132,7 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
   const reviewMatch = p.match(/^\/api\/tickets\/([^/]+)\/review$/);
   if (reviewMatch && method === "POST") {
     if (role !== "LEADER" && role !== "ADMIN" && role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
-    const b = body as { approved?: boolean; notes?: string; forward?: boolean; cost_actual?: number } | undefined;
+    const b = await readBody<{ approved?: boolean; notes?: string; forward?: boolean; cost_actual?: number }>();
     const ticket = db.query("SELECT * FROM tickets WHERE id = ? AND tenant_id = ?").get(reviewMatch[1], tenantId) as Ticket | undefined;
     if (!ticket) return json({ error: "Not found" }, 404);
     if (ticket.status !== "pending_review") return json({ error: "Ticket not awaiting review" }, 400);
@@ -149,13 +153,25 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
   const rejectIntMatch = p.match(/^\/api\/tickets\/([^/]+)\/reject-internal$/);
   if (rejectIntMatch && method === "POST") {
     if (role !== "LEADER" && role !== "ADMIN" && role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
-    const b = body as { reason?: string } | undefined;
+    const b = await readBody<{ reason?: string }>();
     const ticket = db.query("SELECT * FROM tickets WHERE id = ? AND tenant_id = ?").get(rejectIntMatch[1], tenantId) as Ticket | undefined;
     if (!ticket) return json({ error: "Not found" }, 404);
     if (ticket.status !== "pending_review") return json({ error: "Not pending review" }, 400);
     db.run("UPDATE tickets SET status = 'draft', rejected_reason = ?, updated_at = ? WHERE id = ?",
       [b?.reason ?? "Rejected by leader", now(), rejectIntMatch[1]]);
     return json({ ok: true, status: "draft" });
+  }
+
+  // POST /api/tickets/:id/reject — client reject
+  const rejectMatch = p.match(/^\/api\/tickets\/([^/]+)\/reject$/);
+  if (rejectMatch && method === "POST") {
+    const b = await readBody<{ reason?: string }>();
+    const ticket = db.query("SELECT * FROM tickets WHERE id = ? AND tenant_id = ?").get(rejectMatch[1], tenantId) as Ticket | undefined;
+    if (!ticket) return json({ error: "Not found" }, 404);
+    if (ticket.status !== "pending_approval") return json({ error: "Not pending approval" }, 400);
+    db.run("UPDATE tickets SET status = 'rejected', rejected_reason = ?, updated_at = ? WHERE id = ?",
+      [b?.reason ?? "Rejected by client", now(), rejectMatch[1]]);
+    return json({ ok: true, status: "rejected" });
   }
 
   // POST /api/tickets/:id/approve — client sign-off
@@ -169,17 +185,8 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
     return json({ ok: true, status: "approved", locked_at: now() });
   }
 
-  // POST /api/tickets/:id/reject — client reject
-  const rejectMatch = p.match(/^\/api\/tickets\/([^/]+)\/reject$/);
-  if (rejectMatch && method === "POST") {
-    const b = body as { reason?: string } | undefined;
-    const ticket = db.query("SELECT * FROM tickets WHERE id = ? AND tenant_id = ?").get(rejectMatch[1], tenantId) as Ticket | undefined;
-    if (!ticket) return json({ error: "Not found" }, 404);
-    if (ticket.status !== "pending_approval") return json({ error: "Not pending approval" }, 400);
-    db.run("UPDATE tickets SET status = 'rejected', rejected_reason = ?, updated_at = ? WHERE id = ?",
-      [b?.reason ?? "Rejected by client", now(), rejectMatch[1]]);
-    return json({ ok: true, status: "rejected" });
-  }
+  // POST /api/tickets/:id/reject — client reject (second occurrence removed — handled above)
+  // (was duplicate const rejectMatch and body-as-Partial block — removed in body-stream fix)
 
   // POST /api/tickets/:id/lock
   const lockMatch = p.match(/^\/api\/tickets\/([^/]+)\/lock$/);
@@ -196,7 +203,7 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
   const invoiceMatch = p.match(/^\/api\/tickets\/([^/]+)\/invoice$/);
   if (invoiceMatch && method === "POST") {
     if (role !== "ADMIN" && role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
-    const b = body as { invoice_ref?: string } | undefined;
+    const b = await readBody<{ invoice_ref?: string }>();
     const ticket = db.query("SELECT * FROM tickets WHERE id = ? AND tenant_id = ?").get(invoiceMatch[1], tenantId) as Ticket | undefined;
     if (!ticket) return json({ error: "Not found" }, 404);
     if (ticket.status !== "approved") return json({ error: "Only approved tickets can be invoiced" }, 400);
@@ -216,12 +223,12 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
 
   // POST /api/tickets/:id/time-blocks
   if (tbListMatch && method === "POST") {
-    const b = body as Partial<TimeBlock>;
+    const b = await readBody<Partial<TimeBlock>>();
     const id = uuid();
     db.run(
       `INSERT INTO time_blocks (id, ticket_id, user_id, date, check_in, check_out, hours, break_hours, description, hourly_rate, overtime, overtime_hours, overtime_rate)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, tbListMatch[1], userId, b.date ?? now().slice(0, 10), b.check_in ?? null, b.check_out ?? null, b.hours ?? 0, b.break_hours ?? 0, b.description ?? null, b.hourly_rate ?? null, b.overtime ? 1 : 0, b.overtime_hours ?? 0, b.overtime_rate ?? null]
+      [id, tbListMatch[1], userId, b?.date ?? now().slice(0, 10), b?.check_in ?? null, b?.check_out ?? null, b?.hours ?? 0, b?.break_hours ?? 0, b?.description ?? null, b?.hourly_rate ?? null, b?.overtime ? 1 : 0, b?.overtime_hours ?? 0, b?.overtime_rate ?? null]
     );
     const block = db.query("SELECT * FROM time_blocks WHERE id = ?").get(id);
     return json(block, 201);
@@ -230,12 +237,12 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
   // PUT /api/tickets/:id/time-blocks/:blockId
   const tbUpdateMatch = p.match(/^\/api\/tickets\/([^/]+)\/time-blocks\/([^/]+)$/);
   if (tbUpdateMatch && method === "PUT") {
-    const b = body as Partial<TimeBlock>;
+    const b = await readBody<Partial<TimeBlock>>();
     const existing = db.query("SELECT * FROM time_blocks WHERE id = ?").get(tbUpdateMatch[2]) as TimeBlock | undefined;
     if (!existing) return json({ error: "Not found" }, 404);
     db.run(
       "UPDATE time_blocks SET date = ?, check_in = ?, check_out = ?, hours = ?, break_hours = ?, description = ?, hourly_rate = ?, overtime = ?, overtime_hours = ?, overtime_rate = ? WHERE id = ?",
-      [b.date ?? existing.date, b.check_in ?? existing.check_in, b.check_out ?? existing.check_out, b.hours ?? existing.hours, b.break_hours ?? existing.break_hours, b.description ?? existing.description, b.hourly_rate ?? existing.hourly_rate, b.overtime ? 1 : 0, b.overtime_hours ?? existing.overtime_hours, b.overtime_rate ?? existing.overtime_rate, tbUpdateMatch[2]]
+      [b?.date ?? existing.date, b?.check_in ?? existing.check_in, b?.check_out ?? existing.check_out, b?.hours ?? existing.hours, b?.break_hours ?? existing.break_hours, b?.description ?? existing.description, b?.hourly_rate ?? existing.hourly_rate, b?.overtime ? 1 : 0, b?.overtime_hours ?? existing.overtime_hours, b?.overtime_rate ?? existing.overtime_rate, tbUpdateMatch[2]]
     );
     return json({ ok: true });
   }
@@ -258,10 +265,10 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
   // POST /api/price-lists
   if (p === "/api/price-lists" && method === "POST") {
     if (role !== "LEADER" && role !== "ADMIN" && role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
-    const b = body as Partial<PriceList>;
+    const b = await readBody<Partial<PriceList>>();
     const id = uuid();
     db.run("INSERT INTO price_lists (id, tenant_id, name, items_json) VALUES (?, ?, ?, ?)",
-      [id, tenantId, b.name, b.items_json ?? "[]"]);
+      [id, tenantId, b?.name, b?.items_json ?? "[]"]);
     const list = db.query("SELECT * FROM price_lists WHERE id = ?").get(id);
     return json(list, 201);
   }
@@ -270,11 +277,11 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
   const plMatch = p.match(/^\/api\/price-lists\/([^/]+)$/);
   if (plMatch && method === "PUT") {
     if (role !== "LEADER" && role !== "ADMIN" && role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
-    const b = body as Partial<PriceList>;
+    const b = await readBody<Partial<PriceList>>();
     const existing = db.query("SELECT * FROM price_lists WHERE id = ? AND tenant_id = ?").get(plMatch[1], tenantId) as PriceList | undefined;
     if (!existing) return json({ error: "Not found" }, 404);
     db.run("UPDATE price_lists SET name = ?, items_json = ?, active = ?, valid_from = ?, valid_to = ? WHERE id = ?",
-      [b.name ?? existing.name, b.items_json ?? existing.items_json, b.active !== undefined ? (b.active ? 1 : 0) : existing.active ? 1 : 0, b.valid_from ?? existing.valid_from, b.valid_to ?? existing.valid_to, plMatch[1]]);
+      [b?.name ?? existing.name, b?.items_json ?? existing.items_json, b?.active !== undefined ? (b.active ? 1 : 0) : existing.active ? 1 : 0, b?.valid_from ?? existing.valid_from, b?.valid_to ?? existing.valid_to, plMatch[1]]);
     return json({ ok: true });
   }
 

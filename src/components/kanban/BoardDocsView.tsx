@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Link2, Search, Plus, X } from 'lucide-react';
 import type { Board, BoardCard } from '../../types/kanban';
-import { notesService } from '../../services/mockNotesService';
+import { notesService } from '../../services/notesService';
 import type { Note } from '../../types/notes';
 
 interface BoardDocsViewProps {
@@ -32,9 +32,9 @@ export const BoardDocsView: React.FC<BoardDocsViewProps> = ({
     loadDocuments();
   }, []);
 
-  const loadDocuments = () => {
+  const loadDocuments = async () => {
     try {
-      const notes = notesService.getAllNotes();
+      const notes = await notesService.getAllNotes();
       setAllDocuments(notes);
     } catch (error) {
       console.error('Failed to load documents:', error);

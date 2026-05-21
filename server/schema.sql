@@ -165,7 +165,39 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TEXT DEFAULT (datetime('now'))
 );
 
-CREATE INDEX IF NOT EXISTS idx_audit_tenant_time ON audit_logs(tenant_id, created_at);
+-- ============================================
+-- 9. NOTES (Project Documentation)
+-- ============================================
+CREATE TABLE IF NOT EXISTS notes (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    content TEXT,
+    created_by TEXT REFERENCES users(id),
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_notes_tenant ON notes(tenant_id);
+-- ============================================
+-- 10. CALENDAR_EVENTS (Project Scheduling)
+-- ============================================
+CREATE TABLE IF NOT EXISTS calendar_events (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    start_date TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    all_day BOOLEAN DEFAULT 0,
+    created_by TEXT REFERENCES users(id),
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_calendar_tenant ON calendar_events(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_calendar_project ON calendar_events(project_id);
 
 -- ============================================
 -- SAMPLE DATA (Development Only - Remove in Production)

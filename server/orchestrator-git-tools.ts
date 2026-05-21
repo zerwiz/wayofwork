@@ -130,7 +130,7 @@ export async function orchestratorToolGitFetch(args: {
 	const { code, combined } = await runGitArgv(argv, `git fetch ${remote}`);
 	if (code !== 0) {
 		const hint = !token
-			? "\n(hint: connect GitHub in Way of Pi Settings if this remote is a private github.com HTTPS repo.)"
+			? "\n(hint: connect GitHub in Way of Work Settings if this remote is a private github.com HTTPS repo.)"
 			: "";
 		return `git_fetch: exit ${code}\n${combined}${hint}`;
 	}
@@ -332,7 +332,7 @@ export const ORCHESTRATOR_GIT_TOOLS_OPENAI = [
 		function: {
 			name: "git_fetch",
 			description:
-				"Run `git fetch` against a remote (default origin). When a GitHub PAT is saved in Way of Pi Settings, adds HTTPS auth for github.com; otherwise still runs (public remotes, SSH, or host credential helpers). Optional --prune.",
+				"Run `git fetch` against a remote (default origin). When a GitHub PAT is saved in Way of Work Settings, adds HTTPS auth for github.com; otherwise still runs (public remotes, SSH, or host credential helpers). Optional --prune.",
 			parameters: {
 				type: "object",
 				properties: {
@@ -364,7 +364,7 @@ export const ORCHESTRATOR_GIT_TOOLS_OPENAI = [
 		function: {
 			name: "git_push",
 			description:
-				"Run `git push` to origin (or chosen remote). For a **new local branch**, pass **branch** so Git creates the upstream (e.g. `git push -u origin my-feature` semantics). Uses GitHub PAT from Way of Pi Settings for github.com HTTPS (needs push permission). Prefer non-force; optional --force-with-lease for safe force updates.",
+				"Run `git push` to origin (or chosen remote). For a **new local branch**, pass **branch** so Git creates the upstream (e.g. `git push -u origin my-feature` semantics). Uses GitHub PAT from Way of Work Settings for github.com HTTPS (needs push permission). Prefer non-force; optional --force-with-lease for safe force updates.",
 			parameters: {
 				type: "object",
 				properties: {

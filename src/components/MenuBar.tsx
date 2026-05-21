@@ -832,13 +832,13 @@ WAY OF WORK
 										<button
 											type="button"
 											className={menuBtnClass(false)}
-											title="Open Way of Pi (Standalone Technical IDE)"
+											title="Open Way of Work (Standalone Technical IDE)"
 											onClick={() => {
 												window.open("http://localhost:5174", "_blank");
 												closeMenus();
 											}}
 										>
-											Open Way of Pi (IDE)
+											Open Way of Work (IDE)
 											<span className="float-right text-[#858585]">↗</span>
 										</button>
 									</li>
@@ -2756,7 +2756,7 @@ WAY OF WORK
 														closeMenus();
 													}}
 												>
-													How to use Way of Pi…
+													How to use Way of Work…
 												</button>
 											</li>
 											<li>
@@ -2845,7 +2845,7 @@ WAY OF WORK
 													className={menuBtnClass(!helpMenu.canToggleDeveloperTools)}
 													title={
 														!helpMenu.canToggleDeveloperTools
-															? "In a normal browser, use F12 or the browser menu. In the Way of Pi Electron window, this row is enabled."
+															? "In a normal browser, use F12 or the browser menu. In the Way of Work Electron window, this row is enabled."
 															: undefined
 													}
 													onClick={() => {
@@ -2930,7 +2930,7 @@ WAY OF WORK
 														closeMenus();
 													}}
 												>
-													About Way of Pi
+													About Way of Work
 												</button>
 											</li>
 										</>
@@ -3115,13 +3115,13 @@ WAY OF WORK
 											<button
 												type="button"
 												className={menuBtnClass()}
-												title="Opens a short dialog: you can turn Way of Pi off so it can start fresh, then open it again the way you usually do."
+												title="Opens a short dialog: you can turn Way of Work off so it can start fresh, then open it again the way you usually do."
 												onClick={() => {
 													void settingsMenu.onRestartServer();
 													closeMenus();
 												}}
 											>
-												Restart Way of Pi…
+												Restart Way of Work…
 											</button>
 										</li>
 									) : null}
@@ -3534,7 +3534,7 @@ WAY OF WORK
 						</h2>
 						<div id="debug-help-desc" className="mt-3 space-y-3 text-[13px] leading-relaxed text-[#cccccc]">
 							<p>
-								Way of Pi does not embed the full VS Code debugger. Commands in <strong className="text-[#e0e0e0]">Run</strong>{" "}
+								Way of Work does not embed the full VS Code debugger. Commands in <strong className="text-[#e0e0e0]">Run</strong>{" "}
 								send lines to the <strong className="text-[#e0e0e0]">integrated terminal</strong>, so the server must allow
 								PTYs (<span className="font-mono text-[#9cdcfe]">WOP_ALLOW_TERMINAL=1</span>).
 							</p>
@@ -3597,7 +3597,7 @@ WAY OF WORK
 						aria-labelledby="about-title"
 					>
 						<h2 id="about-title" className="text-lg font-bold text-white">
-							Way of Pi
+							Way of Work
 						</h2>
 						<p className="mt-2 text-[13px] leading-relaxed text-[#cccccc]">
 							Technical web shell for the Pi extension playground. Chat and workspace tools use the{" "}
@@ -3641,7 +3641,7 @@ WAY OF WORK
 						<p className="mt-3 text-[12px] leading-relaxed text-[#9d9d9d]">
 							Heavy automation (editing files, running commands) depends on your Settings, orchestrator toggles, and
 							whether chat runs through the Pi CLI — see <strong className="font-semibold text-[#b0b0b0]">Help → Host doctor</strong>{" "}
-							and the <span className="font-mono text-[11px]">docs/</span> folder in the Way of Pi checkout (for example{" "}
+							and the <span className="font-mono text-[11px]">docs/</span> folder in the Way of Work checkout (for example{" "}
 							<span className="font-mono text-[11px]">WOP_PRODUCT_CAPABILITIES.md</span>).
 						</p>
 						<p className="mt-3 text-[13px] leading-relaxed text-[#cccccc]">

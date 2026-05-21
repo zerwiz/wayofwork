@@ -25,6 +25,40 @@ function unquoteFrontmatterField(raw: string): string {
 	return s.trim();
 }
 
+/** Same dirs as agent scan roots but for skills. `.wo/skills` is the primary Way of Work location. */
+const SKILL_SCAN_ROOTS = [".wo/skills", "skills", ".pi/skills", ".claude/skills", ".cursor/skills"];
+
+/**
+ * Resolve skill markdown bodies from a comma-separated skills string.
+ * Looks for `SKILL.md` inside `<scanroot>/<skillname>/` for each skill name.
+ * Returns the body (content after frontmatter) for each matched skill.
+ */
+export async function resolveSkillBodies(skillsCsv: string, root: string): Promise<string[]> {
+	const names = skillsCsv
+		.split(",")
+		.map((s) => s.trim().toLowerCase())
+		.filter(Boolean);
+	if (names.length === 0) return [];
+
+	const bodies: string[] = [];
+	for (const name of names) {
+		for (const dir of SKILL_SCAN_ROOTS) {
+			const skillFile = join(root, dir, name, "SKILL.md");
+			let raw: string;
+			try {
+				raw = await readFile(skillFile, "utf8");
+			} catch {
+				continue;
+			}
+			const parsed = parseAgentMarkdownPiStyle(raw);
+			if (!parsed) continue;
+			bodies.push(parsed.body);
+			break; // first match wins (same priority as agent scan)
+		}
+	}
+	return bodies;
+}
+
 /**
  * Mirrors `parseAgentFile` in `extensions/agent-team.ts`: YAML block between first
  * `---` and closing `---`, then body. CRLF in the file is normalized so the same
@@ -93,13 +127,14 @@ async function collectAgentMarkdownFiles(absDir: string): Promise<string[]> {
  */
 function agentScanRoots(workspaceRoot: string): string[] {
 	const roots = [
+		join(workspaceRoot, ".wo", "agents"),
 		join(workspaceRoot, "agents"),
 		join(workspaceRoot, ".claude", "agents"),
 		join(workspaceRoot, ".pi", "agents"),
 		join(workspaceRoot, ".cursor", "agents"),
 	];
 
-	// Also include Way of Pi host repo root agents if it's different from the workspace
+	// Also include Way of Work host repo root agents if it's different from the workspace
 	const hostRoot = getClawHostRepoRoot();
 	if (hostRoot && normalize(hostRoot) !== normalize(workspaceRoot)) {
 		roots.push(join(hostRoot, ".pi", "agents"));

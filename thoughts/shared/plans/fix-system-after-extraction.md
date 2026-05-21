@@ -1,6 +1,6 @@
 # Fix System After Extraction
 
-The system was extracted from the Way of Pi monorepo to `~/wayofwork/`. Several things are broken or missing. This plan lists what agents need to fix.
+The system was extracted from the Way of Work monorepo to `~/wayofwork/`. Several things are broken or missing. This plan lists what agents need to fix.
 
 ## 1. Install Wo Agent
 
@@ -39,7 +39,7 @@ Files that import from `@earendil-works/pi-tui/menu` are excluded from tsconfig 
 
 ## 4. Runtime Paths
 
-The server code references the Way of Pi monorepo in a few places:
+The server code references the Way of Work monorepo in a few places:
 
 - `server/diagnostics.ts` — references `@earendil-works/pi-coding-agent` in diagnostic labels
 - `server/agent-runtime.ts` — comments reference Pi paths

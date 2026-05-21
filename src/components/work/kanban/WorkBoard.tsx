@@ -10,22 +10,14 @@ const useNavigate = () => (path: string) => console.log('Navigate to:', path);
 const stableSearchParams = new URLSearchParams();
 const stableSetSearchParams = (params: any) => {};
 const useSearchParams = () => [stableSearchParams, stableSetSearchParams] as const;
-import { kanbanService } from '../../../services/mockKanbanService';
-import { notesService } from '../../../services/mockNotesService';
-import { tasksService } from '../../../services/mockTasksService';
-import { driveService } from '../../../services/mockDriveService';
-import { calendarService } from '../../../services/mockCalendarService';
-import { useToast } from '../../../context/ToastContext';
+import { kanbanService } from '../../../services/kanbanService';
+import { notesService } from '../../../services/notesService';
+import { tasksService } from '../../../services/tasksService';
+import { projectsService, type Project } from '../../../services/projectsService';
+import { driveService } from '../../../services/driveService';
+import { calendarService } from '../../../services/calendarService';
 import { developmentWorkflowService } from '../../../services/developmentWorkflowService';
 import { workflowsService } from '../../../services/workflowsService';
-import { boardMembersService } from '../../../services/boardMembersService';
-import type { Board, BoardCard } from '../../../types/kanban';
-import type { DriveFile } from '../../../types/drive';
-import type { DevelopmentPhase, DevelopmentWorkflow } from '../../../types/developmentWorkflow';
-import type { NSRFolder } from '../../../types/nsrCompliance';
-import type { Workflow, WorkflowTrack } from '../../../types/workflows';
-import { BOARD_TEMPLATES, getTemplatesByCategory, type TemplateCategory } from '../../../services/boardTemplates';
-import { projectsService } from '../../../services/mockProjectsService';
 import { NSR_MANDATORY_FOLDERS, NSR_FOLDER_DISPLAY_NAMES } from '../../../types/nsrCompliance';
 import NSRFolderBadge from '../../../components/development/NSRFolderBadge';
 import NSRComplianceBadge from '../../../components/development/NSRComplianceBadge';
@@ -65,7 +57,13 @@ import {
   GitBranch,
 } from 'lucide-react';
 import WorkBoardSelector from './WorkBoardSelector';
-import type { BoardViewType } from '../../../types/kanban';
+import type { Board, BoardCard, BoardViewType } from '../../../types/kanban';
+import type { DevelopmentPhase, DevelopmentWorkflow } from '../../../types/developmentWorkflow';
+import type { NSRFolder } from '../../../types/nsrCompliance';
+import type { WorkflowTrack, Workflow } from '../../../types/workflows';
+import type { DriveFile } from '../../../types/drive';
+import { useToast } from '../../../contexts/ToastContext';
+import { BOARD_TEMPLATES, getTemplatesByCategory, type TemplateCategory } from '../../../services/boardTemplates';
 
 export function WorkBoard() {
   const navigate = useNavigate();
@@ -129,6 +127,20 @@ export function WorkBoard() {
   const columnMenuRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const cardMenuRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const boardListMenuRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
+
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const projects = await projectsService.getAllProjects();
+        setAllProjects(projects);
+      } catch (error) {
+        console.error('Failed to load projects:', error);
+      }
+    };
+    loadProjects();
+  }, []);
 
   useEffect(() => {
     loadAllBoards();
@@ -244,14 +256,14 @@ export function WorkBoard() {
     }
   };
 
-  const loadDriveFiles = () => {
+  const loadDriveFiles = async () => {
     try {
       // Load all files from Storage
-      const allFiles = driveService.getAllFiles();
+      const allFiles = await driveService.getAllFiles();
       
       // Filter files connected to current board or cards in the board
       const boardFiles = allFiles.filter(
-        (file) =>
+        (file: any) =>
           file.kanbanBoardId === currentBoardId ||
           (file.kanbanCardId &&
             Array.from(cards.values()).some((card) => card.id === file.kanbanCardId))
@@ -259,18 +271,19 @@ export function WorkBoard() {
 
       // If in a folder, show files in that folder
       if (driveCurrentFolder) {
-        const folderFiles = driveService.getFiles(driveCurrentFolder);
+        // Filter from allFiles since getFiles doesn't support folderId in our real service yet
+        const folderFiles = allFiles.filter((f: any) => f.parentId === driveCurrentFolder);
         // Combine with board files that are in this folder
         const filtered = folderFiles.filter(
-          (file) =>
-            boardFiles.some((bf) => bf.id === file.id) ||
+          (file: any) =>
+            boardFiles.some((bf: any) => bf.id === file.id) ||
             (!file.kanbanBoardId && !file.kanbanCardId) // Also show unconnected files
         );
         setDriveFiles(filtered);
       } else {
         // Show all board files and unconnected files
         const unconnectedFiles = allFiles.filter(
-          (file) => !file.kanbanBoardId && !file.kanbanCardId
+          (file: any) => !file.kanbanBoardId && !file.kanbanCardId
         );
         setDriveFiles([...boardFiles, ...unconnectedFiles]);
       }
@@ -283,7 +296,7 @@ export function WorkBoard() {
         
         while (currentId && !visited.has(currentId)) {
           visited.add(currentId);
-          const folder = driveService.getFile(currentId);
+          const folder = await driveService.getFile(currentId);
           if (folder && folder.type === 'folder') {
             path.unshift(folder);
             currentId = folder.parentId;
@@ -1576,7 +1589,7 @@ export function WorkBoard() {
                     <FolderKanban className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-400 flex-shrink-0" />
                     <span className="text-xs text-[#858585]">Linked to:</span>
                     {board.projectIds.slice(0, 2).map((projectId) => {
-                      const project = projectsService.getProject(projectId);
+                      const project = allProjects.find((p) => p.id === projectId);
                       if (!project) return null;
                       return (
                         <a
