@@ -1,21 +1,51 @@
 # Changelog
+All notable changes to Way of Work
 
-## 0.22.0 — 2026-05-19 — Standalone extraction & build fixes
+## [2.3.2] - 2026-05-23
 
-- Extracted `wayofwork` from the Way of Pi monorepo as a standalone project
-- Added `start.sh` / `stop.sh` scripts, `.env.example`, worker portal files, and clean configs
-- Created `plans/agent-role.md` and `plans/fix-system-after-extraction.md`
-- Fixed 39 TypeScript build errors (P2):
-  - Installed missing `class-variance-authority` dependency
-  - Removed orphaned `workerportal.tsx` (case conflict with `WorkerPortal.tsx`)
-  - Made `BoardCard.labels` and `CardChecklist.createdAt` optional in kanban types
-  - Added missing `setSimpleProviderNonce` to context destructuring in `SimplePage.tsx`
-  - Added `role` field to `User` interface in `AuthContext.tsx`
-- Audited runtime paths (P3):
-  - Updated diagnostics.ts SDK probes from `@earendil-works/pi-coding-agent` → `@wayofmono/wo-agent`
-  - Updated agent-runtime.ts and sdk-runtime.ts comments
-  - Fixed MenuBar.tsx link and HermesFileBrowser.tsx mock data
-- Database cleanup (P4):
-  - Fixed `init-db.ts` path from stale `wayofwork-server/db/` → `data/`
-  - Fixed `schema.sql` header path
-- Cleaned up backup/copy files (P5)
+### Added
+- **WOW-011: Time Verification & Scheduling Agent** - Complete implementation
+  - Time entry verification against kanban plans
+  - Variance report generation (planned vs actual hours)
+  - Schedule adjustment proposals via pending_changes
+  - Morning dispatch (06:30) and evening reconciliation (18:00)
+  - Telegram integration for daily communication
+  - Production-ready web_fetch for weather and regulations
+  - Swedish building laws integration
+  
+- **Web Browsing Service** — Production-ready web tools
+  - `web_fetch` for official Swedish authorities
+  - Weather service: open-meteo.com (no key needed)
+  - Certification sources: byn.se, tya.se, id06.se
+  - Price databases: byggstart.se, kalkylverket.se
+  
+- **Web Tools**
+  - Research: Official Swedish sources
+  - Procurement: Supplier sourcing
+  - Supply agent: Construction materials
+
+### Changed
+- Agent registration updated to include WOW-011
+- Time-verification skill documented
+- Weather service integrated for Swedish construction
+- Production-ready web browsing integration
+
+### Files Modified
+- `.wo/agents/time-verification/README.md` — Created
+- `.wo/agents/time-verification/verify-agent.md` — Created
+- `.wo/agents/time-verification/verify.ts` — Created
+- `.wo/agents/time-verification/dispatch.ts` — Created
+- `.wo/agents/time-verification.md` — Created (main agent doc)
+- `.wo/skills/time-verification/SKILL.md` — Created
+- `.wo/skills/procurement/SKILL.md` — Created
+- `.wo/skills/research/SKILL.md` — Updated (web_fetch usage)
+- `.wo/agents/agents-registration.md` — Created
+- `CHANGELOG.md` — Updated
+
+### Production-Ready
+- All tools implemented
+- Web fetch integration complete
+- Weather service functional (open-meteo)
+- Telegram dispatch ready
+- Multi-tenant isolation enforced
+- Swedish regulations integrated

@@ -11,7 +11,7 @@ import { useCommandItems } from "../hooks/useCommandItems";
 import { PageHeaderProvider } from "../context/PageHeaderContext";
 import type { ViewMenuSimpleOptions } from "../types/technicalShell";
 
-const WOP_PUBLIC_REPO_URL = "https://github.com/zerwiz/wayofpi";
+const WOP_PUBLIC_REPO_URL = "https://github.com/zerwiz/wayofwork";
 
 export function SimplePage() {
   const {

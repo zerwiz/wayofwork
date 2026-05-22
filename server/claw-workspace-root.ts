@@ -1,5 +1,5 @@
 /**
- * Host-scoped Claw workspace: `.claw/` lives under the Way of Pi product checkout
+ * Host-scoped Claw workspace: `.claw/` lives under the Way of Work product checkout
  * (the repo that contains `apps/wayofwork-ui/`), **not** under the mutable project
  * workspace (`WOP_WORKSPACE` / Open Folder). Relative paths in the UI stay
  * `.claw/…`; the Bun server maps them here.
@@ -17,13 +17,13 @@ function thisModuleDir(): string {
 	return dirname(fileURLToPath(import.meta.url));
 }
 
-/** Repo root when running from `apps/wayofwork-ui/server/*.ts` (three hops: server → wayofwork-ui → apps → checkout). */
-export function getDefaultWayOfPiRepoRootFromServerLayout(): string {
-	return normalize(resolve(join(thisModuleDir(), "..", "..", "..")));
+/** Repo root when running from `server/*.ts` (one hop: server → checkout). */
+export function getDefaultWoRepoRootFromServerLayout(): string {
+	return normalize(resolve(join(thisModuleDir(), "..")));
 }
 
 /**
- * Way of Pi checkout directory that contains **`.claw/`** (not the `.claw` path itself).
+ * Way of Work checkout directory that contains **`.claw/`** (not the `.claw` path itself).
  * **`WOP_CLAW_HOST_ROOT`** wins; else **`WOP_PLAYGROUND_ROOT`**; else inferred layout.
  */
 export function getClawHostRepoRoot(): string {
@@ -31,7 +31,7 @@ export function getClawHostRepoRoot(): string {
 	if (a) return normalize(resolve(a));
 	const b = process.env.WOP_PLAYGROUND_ROOT?.trim();
 	if (b) return normalize(resolve(b));
-	return getDefaultWayOfPiRepoRootFromServerLayout();
+	return getDefaultWoRepoRootFromServerLayout();
 }
 
 /** Absolute path to host **`.claw/`** (e.g. `telegram.json` lives here, not in `workspace/`). */
@@ -78,7 +78,7 @@ export function resolveClawWorkspaceAbs(relRaw: string): string | null {
 	return abs;
 }
 
-/** Workspace-jailed paths, except `.claw/…` which resolves on the Way of Pi host checkout. */
+/** Workspace-jailed paths, except `.claw/…` which resolves on the Way of Work host checkout. */
 export function resolveWorkspaceOrClawAbs(relRaw: string): string | null {
 	const rel = relRaw.trim().replace(/^[/\\]+/, "");
 	if (!rel || rel === "." || rel.includes("..")) return null;

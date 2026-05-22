@@ -6,11 +6,11 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { kanbanService } from '../../services/mockKanbanService';
-import { tasksService } from '../../services/mockTasksService';
+import { kanbanService } from '../../services/kanbanService';
+import { tasksService } from '../../services/tasksService';
 import { calendarService } from '../../services/mockCalendarService';
 import { developmentWorkflowService } from '../../services/mockDevelopmentWorkflowService';
-import { notesService } from '../../services/mockNotesService';
+import { notesService } from '../../services/notesService';
 import { useToast } from '../../contexts/ToastContext';
 import type { Board, BoardColumn, BoardCard } from '../../types/kanban';
 import { X, LayoutGrid, Folder, Check, FileText, Plus } from 'lucide-react';

@@ -134,7 +134,7 @@ function SectionOverview() {
 		<>
 			<H>What is Claw?</H>
 			<P>
-				Claw is the <strong className="text-[#fb923c]">operator shell</strong> of Way of Pi.
+				Claw is the <strong className="text-[#fb923c]">operator shell</strong> of Way of Work.
 				Where <strong>Simple</strong> mode gives you a clean chat window and{" "}
 				<strong>Technical</strong> mode gives you a full IDE grid, Claw is designed for
 				running <strong>autonomous, persistent, and scheduled Pi agent tasks</strong> — with
@@ -191,7 +191,7 @@ function SectionExtendingClaw() {
 			<H>Built on Pi — one runtime, many surfaces</H>
 			<P>
 				Claw does not ship a separate agent engine. The{" "}
-				<strong className="text-[#cccccc]">open Claw community</strong> and Way of Pi are
+				<strong className="text-[#cccccc]">open Claw community</strong> and Way of Work are
 				aimed at the same stack as Pi: <Code>extensions[]</Code>,{" "}
 				<Code>registerTool</Code>, skills, hooks, and sessions. When Pi runs your turn, any
 				skill or extension you enable is available to Claw, Simple, and Technical modes alike.
@@ -250,7 +250,7 @@ function SectionExtendingClaw() {
 			</P>
 
 			<Note>
-				UI modules are <strong>Way of Pi client code</strong> — they do not replace Pi tools.
+				UI modules are <strong>Way of Work client code</strong> — they do not replace Pi tools.
 				Heavy logic still belongs in Pi extensions or workspace scripts so every mode benefits.
 			</Note>
 		</>
@@ -283,7 +283,7 @@ function SectionHoncho() {
 				/>
 				<TableRow
 					left="Honcho"
-					right="Server-side API (sessions, messages, peers). Inspected via Swagger, Hermes tools, or cloud dashboard — not yet surfaced in Way of Pi chrome."
+					right="Server-side API (sessions, messages, peers). Inspected via Swagger, Hermes tools, or cloud dashboard — not yet surfaced in Way of Work chrome."
 				/>
 			</div>
 
@@ -306,7 +306,7 @@ function SectionHoncho() {
 
 			<Note>
 				<strong>Product gap:</strong> Claw&apos;s Mission tab does not yet show Honcho health or browse API
-				data — see <Code>docs/WOP_OPEN_TODOS.md</Code> (Honcho and Way of Pi UI). Capability map:{" "}
+				data — see <Code>docs/WOP_OPEN_TODOS.md</Code> (Honcho and Way of Work UI). Capability map:{" "}
 				<Code>docs/HONCHO_CAPABILITIES.md</Code>.
 			</Note>
 		</>
@@ -316,7 +316,7 @@ function SectionHoncho() {
 function SectionNgrok() {
 	return (
 		<>
-			<H>Share Way of Pi with ngrok</H>
+			<H>Share Way of Work with ngrok</H>
 			<P>
 				<strong className="text-[#cccccc]">ngrok</strong> is a separate tool from{" "}
 				<a href="https://ngrok.com/" target="_blank" rel="noopener noreferrer" className="text-sky-400 underline hover:text-sky-300">
@@ -330,13 +330,13 @@ function SectionNgrok() {
 			<Tip>
 				Use it when you want the <strong className="text-[#cccccc]">same session from another place</strong>, a colleague{" "}
 				<strong className="text-[#cccccc]">demo link</strong>, or a cloud service to <strong className="text-[#cccccc]">hit your dev machine
-				once</strong>. The link only works while Way of Pi and ngrok are both running on that host.
+				once</strong>. The link only works while Way of Work and ngrok are both running on that host.
 			</Tip>
 
 			<H>What you should know</H>
 			<P>
 				Anyone with the link can use your app while the tunnel is open — share it sparingly and stop ngrok when you
-				are finished. Way of Pi does <strong className="text-[#cccccc]">not</strong> install ngrok; use the menu{" "}
+				are finished. Way of Work does <strong className="text-[#cccccc]">not</strong> install ngrok; use the menu{" "}
 				<strong className="text-[#cccccc]">Settings → ngrok (public URL)…</strong> for copy-paste setup steps, or
 				ask someone comfortable running a few terminal commands.
 			</P>
@@ -370,7 +370,7 @@ function SectionTabs() {
 		{
 			icon: CalendarDays,
 			name: "Schedule",
-			desc: "Define timed Pi turns — cron or one-shot — saved on the Way of Pi host under .claw/schedule/. When WOP_CLAW_SCHEDULER=1 and the same Pi engine as Chat is active, the Bun server runs them as headless Pi turns (shared agent-runtime, not a separate stack).",
+			desc: "Define timed Pi turns — cron or one-shot — saved on the Way of Work host under .claw/schedule/. When WOP_CLAW_SCHEDULER=1 and the same Pi engine as Chat is active, the Bun server runs them as headless Pi turns (shared agent-runtime, not a separate stack).",
 		},
 		{
 			icon: Radio,
@@ -444,7 +444,7 @@ function SectionWorkspace() {
 			<P>
 				The <strong className="text-[#cccccc]">Workspace</strong> is a small set of text files Claw uses to remember
 				who the assistant is, how you like to work, and what it should do next. On disk they live under{" "}
-				<Code>.claw/workspace/</Code> next to your <strong className="text-[#cccccc]">Way of Pi installation</strong>{" "}
+				<Code>.claw/workspace/</Code> next to your <strong className="text-[#cccccc]">Way of Work installation</strong>{" "}
 				(the folder where the app lives), <em>not</em> inside the project folder you opened to edit your own code.
 				If you have not created them yet, use{" "}
 				<strong className="text-[#cccccc]">Mission → Create Claw workspace folder</strong> (or the workspace setup
@@ -467,7 +467,7 @@ function SectionWorkspace() {
 			<P>
 				<strong className="text-[#cccccc]">The folder you open</strong> (File → Open Folder) is your everyday work:
 				source code, docs, and anything you see in the file tree. <strong className="text-[#cccccc]">The Workspace</strong>{" "}
-				is separate: it is the assistant&apos;s profile and memory, bundled with Way of Pi. The assistant can still read
+				is separate: it is the assistant&apos;s profile and memory, bundled with Way of Work. The assistant can still read
 				and change files in your opened project when you ask it to.
 			</P>
 			<div className="mb-4 rounded-xl border border-[#2a2a2a] overflow-hidden">
@@ -614,7 +614,7 @@ function SectionChannels({
 				<Code>.pi/settings.json</Code>.
 			</Step>
 			<Step n={4}>
-				Run <Code>/reload</Code> in Pi TUI or restart Way of Pi.
+				Run <Code>/reload</Code> in Pi TUI or restart Way of Work.
 			</Step>
 			<Step n={5}>
 				Run <Code>/telegram-connect</Code> then <Code>/telegram-status</Code>. In Telegram, open your bot DM and

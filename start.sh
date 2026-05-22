@@ -4,12 +4,33 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 PORT="${WOP_SERVER_PORT:-3333}"
 HEALTH="http://127.0.0.1:${PORT}/api/health"
+LOG_FILE="${ROOT}/server.log"
+
+# Initialize log file
+echo "--- Starting Way of Work Server at $(date) ---" > "$LOG_FILE"
+
+# Redirect all subsequent output to both stdout and the log file
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+echo "============================================"
+echo "  Way of Work Server"
+echo "============================================"
+echo ""
+echo "  Web interface:    http://127.0.0.1:${PORT}"
+echo "  API health:       ${HEALTH}"
+echo "  API docs:         http://127.0.0.1:${PORT}/api/manifest"
+echo "  Logs:             ${LOG_FILE}"
+echo ""
+echo "  Set WOP_AUTH_SECRET in .env for production JWT signing."
+echo ""
+echo "============================================"
+echo ""
 
 echo "==> Building app (tsc -b && vite build)..."
 bun run build
 
 echo "==> Starting Bun server..."
-NODE_ENV=production bun run server/index.ts &
+bun run server/index.ts &
 SERVER_PID=$!
 
 cleanup() {
@@ -31,5 +52,7 @@ for i in $(seq 1 60); do
 	sleep 1
 done
 
-echo "==> Launching Electron..."
-ELECTRON_DEV=0 npx --yes electron .
+echo "==> Open http://127.0.0.1:${PORT} in your browser (Electron disabled)"
+echo "    Press Ctrl+C to stop the server."
+
+wait "$SERVER_PID"

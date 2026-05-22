@@ -47,7 +47,7 @@ export function SimpleProjectsView({
 
 				{/* Plain-English explainer */}
 				<p className={`mb-6 max-w-2xl text-sm leading-relaxed ${sub}`}>
-					A <strong className={heading}>workspace</strong> is the folder on your computer that Way of Pi is working
+					A <strong className={heading}>workspace</strong> is the folder on your computer that Way of Work is working
 					inside. Think of it like opening a drawer — everything inside (your files, code, agents) comes from
 					that folder. You can switch to a different folder any time to work on a different project.
 				</p>

@@ -1,5 +1,5 @@
 /**
- * Mutate primary workspace `.pi/agents/teams.yaml` — Pi **agent-team** parity for Way of Pi orchestrator tools.
+ * Mutate primary workspace `.wo/agents/teams.yaml` — team management parity for Way of Work orchestrator tools.
  */
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -14,7 +14,7 @@ function primaryTeamsYamlAbs(): string | null {
 	const folders = listWorkspaceFolders();
 	const root = folders[0]?.path;
 	if (!root) return null;
-	return join(root, ".pi", "agents", "teams.yaml");
+	return join(root, ".wo", "agents", "teams.yaml");
 }
 
 function resolveTeamKey(teams: Record<string, string[]>, requested?: string): { team: string } | { error: string } {
@@ -38,7 +38,7 @@ function canonicalAgentName(agents: AgentMeta[], raw: string): string | null {
 export async function toolTeamList(): Promise<string> {
 	const { agents, teams, teamsPath } = await loadWorkspaceAgents();
 	const lines: string[] = [];
-	lines.push(`teams.yaml: ${teamsPath ?? "(not found under primary workspace — create .pi/agents/teams.yaml)"}`);
+	lines.push(`teams.yaml: ${teamsPath ?? "(not found under primary workspace — create .wo/agents/teams.yaml)"}`);
 	lines.push("");
 	lines.push("Teams:");
 	const keys = Object.keys(teams).sort((a, b) => a.localeCompare(b));
@@ -61,7 +61,7 @@ export async function toolTeamMemberRemove(
 	const abs = primaryTeamsYamlAbs();
 	if (!abs || !existsSync(abs)) {
 		return {
-			output: "team_member_remove: teams.yaml not found. Create `.pi/agents/teams.yaml` or use the My Team UI.",
+			output: "team_member_remove: teams.yaml not found. Create `.wo/agents/teams.yaml` or use the My Team UI.",
 			agentsCatalogChanged: false,
 		};
 	}
@@ -102,7 +102,7 @@ export async function toolTeamMemberAdd(
 	const abs = primaryTeamsYamlAbs();
 	if (!abs || !existsSync(abs)) {
 		return {
-			output: "team_member_add: teams.yaml not found. Create `.pi/agents/teams.yaml` first.",
+			output: "team_member_add: teams.yaml not found. Create `.wo/agents/teams.yaml` first.",
 			agentsCatalogChanged: false,
 		};
 	}

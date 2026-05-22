@@ -188,7 +188,7 @@ export function attachTerminalSession(ws: ServerWebSocket<TerminalWsData>): void
 		ws.send(
 			JSON.stringify({
 				type: "term_error",
-				message: "No workspace folder (open a folder in Way of Pi so the server has a cwd).",
+				message: "No workspace folder (open a folder in Way of Work so the server has a cwd).",
 			}),
 		);
 		ws.close();

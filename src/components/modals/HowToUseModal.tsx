@@ -62,9 +62,9 @@ const HowToUseModal: React.FC<HowToUseModalProps & HowToUseSectionHandlersWithRe
         title: "Welcome",
         render: () => (
           <div className="howto-section welcome">
-            <h2>Welcome to Way of Pi</h2>
+            <h2>Welcome to Way of Work</h2>
             <p>
-              Way of Pi is an AI-powered development environment that helps you
+              Way of Work is an AI-powered development environment that helps you
               build and debug applications with the help of intelligent agents.
             </p>
             <button onClick={onClose} className="modal-close-button">
@@ -183,7 +183,7 @@ const HowToUseModal: React.FC<HowToUseModalProps & HowToUseSectionHandlersWithRe
           <div className="howto-section accessibility">
             <h2>Accessibility Features</h2>
             <p>
-              Way of Pi supports various accessibility features to help users
+              Way of Work supports various accessibility features to help users
               with different needs.
             </p>
             <div className="accessibility-list">
@@ -211,7 +211,7 @@ const HowToUseModal: React.FC<HowToUseModalProps & HowToUseSectionHandlersWithRe
           <div className="howto-section feedback">
             <h2>Give Feedback</h2>
             <p>
-              Your feedback helps improve Way of Pi. Please share your thoughts!
+              Your feedback helps improve Way of Work. Please share your thoughts!
             </p>
             <div className="feedback-cta">
               <a
@@ -235,7 +235,7 @@ const HowToUseModal: React.FC<HowToUseModalProps & HowToUseSectionHandlersWithRe
           <div className="howto-section support">
             <h2>Support Us</h2>
             <p>
-              Way of Pi is an open-source project. Consider supporting its
+              Way of Work is an open-source project. Consider supporting its
               development!
             </p>
             <div className="support-links">
@@ -260,7 +260,7 @@ const HowToUseModal: React.FC<HowToUseModalProps & HowToUseSectionHandlersWithRe
           <div className="howto-section license">
             <h2>MIT License</h2>
             <p>
-              Way of Pi is released under the MIT License. You are free to use,
+              Way of Work is released under the MIT License. You are free to use,
               modify, and distribute this software.
             </p>
             <div className="license-text">

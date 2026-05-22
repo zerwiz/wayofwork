@@ -77,6 +77,8 @@ export function SimpleFileTree({
 	allowWorkspaceRootDrop,
 	/** Shown when the tree has no nodes (and not in active search). */
 	emptyTreeHint,
+	/** Optional action button shown below the empty hint. */
+	emptyTreeAction,
 }: {
 	nodes: TreeNode[];
 	selectedPath: string | null;
@@ -89,6 +91,7 @@ export function SimpleFileTree({
 	/** Single-root workspace: empty tree padding accepts drop → workspace root (`""`). */
 	allowWorkspaceRootDrop?: boolean;
 	emptyTreeHint?: string;
+	emptyTreeAction?: { label: string; onClick: () => void };
 }) {
 	const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 	const [searchQuery, setSearchQuery] = useState("");
@@ -370,9 +373,24 @@ export function SimpleFileTree({
 	const emptyDefault = "No files in workspace.";
 	const treeBody =
 		displayNodes.length === 0 ? (
-			<p className={`px-2 py-3 text-center font-mono text-[11px] ${emptySearch}`}>
-				{searchActive ? "No matching files or folders." : emptyTreeHint ?? emptyDefault}
-			</p>
+			<div className="px-2 py-3 text-center">
+				<p className={`font-mono text-[11px] ${emptySearch}`}>
+					{searchActive ? "No matching files or folders." : emptyTreeHint ?? emptyDefault}
+				</p>
+				{!searchActive && emptyTreeAction ? (
+					<button
+						type="button"
+						onClick={emptyTreeAction.onClick}
+						className={`mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors ${
+							appearanceDark
+								? "bg-[#ea580c]/15 text-[#fb923c] hover:bg-[#ea580c]/25"
+								: "bg-[#ea580c]/10 text-[#ea580c] hover:bg-[#ea580c]/18"
+						}`}
+					>
+						{emptyTreeAction.label}
+					</button>
+				) : null}
+			</div>
 		) : (
 			renderNodes(displayNodes, 0)
 		);

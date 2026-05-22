@@ -1,14 +1,16 @@
 /**
- * INTERIM — Bun-native Pi-shaped workspace tools for LLM turns when **`WOP_ORCHESTRATOR_TOOLS`** is on
- * (orchestrator and workspace **`.md`** personas). Supersede with **headless Pi** tool events per
- * **`docs/WOP_PI_BACKEND_WIRING_PLAN.md`**.
+ * INTERIM — Bun-native workspace tools for LLM turns when **`WOP_ORCHESTRATOR_TOOLS`** is on
+ * (orchestrator and workspace **`.md`** personas). Supersede with **authoritative runtime** tool events per
+ * **`docs/WOP_BACKEND_WIRING_PLAN.md`**.
  */
 import { spawn } from "node:child_process";
 import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import { db } from "./db";
 import { formatUnknownOrchestratorToolMessage } from "../shared/session-log-metadata.ts";
 import { broadcastToolLog } from "./tool-log-broadcast";
 import { MAX_FILE_BYTES, shouldSkipDir } from "./paths";
+import { auditLog } from "./audit-logger";
 import {
 	ORCHESTRATOR_GIT_TOOLS_OPENAI,
 	orchestratorGitWorkspaceToolsEnabled,
@@ -22,6 +24,10 @@ import {
 	orchestratorToolGitPush,
 	orchestratorToolGitRemote,
 	orchestratorToolGitStatus,
+	orchestratorToolWorkspaceSnapshot,
+	orchestratorToolDocHistory,
+	orchestratorToolDocRestore,
+	orchestratorToolWorkspaceBackupStatus,
 } from "./orchestrator-git-tools";
 import {
 	toolTeamList,
@@ -30,6 +36,29 @@ import {
 	toolTeamMemberReplace,
 } from "./teams-yaml-mutate";
 import { getPrimaryWorkspacePath, resolveUnderWorkspace } from "./workspace-state";
+import {
+	ORCHESTRATOR_KANBAN_TOOLS_OPENAI,
+	kanbanListBoards,
+	kanbanCreateBoard,
+	kanbanUpdateBoard,
+	kanbanDeleteBoard,
+	kanbanBoardTemplates,
+	kanbanListCards,
+	kanbanCreateCard,
+	kanbanGetCard,
+	kanbanUpdateCard,
+	kanbanDeleteCard,
+	kanbanMoveCard,
+	kanbanLogTime,
+	kanbanCardTimeLogs,
+	kanbanListWorkers,
+} from "./orchestrator-kanban-tools";
+import {
+	ORCHESTRATOR_CHANNEL_TOOLS_OPENAI,
+	toolTelegramSend,
+	toolWhatsappSend,
+} from "./orchestrator-channel-tools";
+import { dispatchToAgent } from "./agent-dispatch";
 
 export type OrchestratorToolResult = {
 	output: string;
@@ -42,23 +71,23 @@ let orchestratorToolsRuntimeOverride: boolean | undefined;
 let orchestratorBashRuntimeOverride: boolean | undefined;
 
 /**
- * Headless Pi Spine - Execute tools via Pi CLI with --mode json
- * When enabled (WOP_CHAT_ENGINE=pi or auto with pi on PATH), tool calls
- * are executed by Pi instead of Bun-native implementations.
+ * Authoritative Runtime Spine - Execute tools via authoritative CLI with --mode json
+ * When enabled (WOP_CHAT_ENGINE=pi or auto with runtime on PATH), tool calls
+ * are executed by the runtime instead of Bun-native implementations.
  */
-export async function executeToolViaPi(
+export async function executeToolViaRuntime(
 	toolName: string,
 	args: Record<string, unknown>,
 	workspacePath: string
 ): Promise<OrchestratorToolResult> {
-	const piBinary = process.env.WOP_PI_BINARY || "pi";
-	const timeoutMs = 30_000; // 30s timeout for Pi tool execution
+	const binary = process.env.WOP_PI_BINARY || "pi";
+	const timeoutMs = 30_000; // 30s timeout for tool execution
 
 	try {
-		// Build Pi command: pi --mode json --tool <name> --args '<json>'
+		// Build command: pi --mode json --tool <name> --args '<json>'
 		const argsJson = JSON.stringify(args);
 		const proc = Bun.spawn(
-			[piBinary, "--mode", "json", "--tool", toolName, "--args", argsJson],
+			[binary, "--mode", "json", "--tool", toolName, "--args", argsJson],
 			{
 				cwd: workspacePath,
 				stdout: "pipe",
@@ -73,11 +102,11 @@ export async function executeToolViaPi(
 
 		if (exitCode !== 0) {
 			return {
-				output: `Pi tool execution failed (exit ${exitCode}): ${stderr || output}`,
+				output: `Tool execution failed (exit ${exitCode}): ${stderr || output}`,
 			};
 		}
 
-		// Parse Pi's JSON output
+		// Parse JSON output
 		try {
 			const result = JSON.parse(output);
 			return {
@@ -91,19 +120,19 @@ export async function executeToolViaPi(
 		}
 	} catch (e) {
 		const message = e instanceof Error ? e.message : String(e);
-		return { output: `Pi tool execution error: ${message}` };
+		return { output: `Tool execution error: ${message}` };
 	}
 }
 
 /**
- * Check if headless Pi mode is active for tool execution.
- * Returns true when WOP_CHAT_ENGINE=pi or auto with pi resolvable.
+ * Check if authoritative runtime mode is active for tool execution.
+ * Returns true when WOP_CHAT_ENGINE=pi or auto with binary resolvable.
  */
-export function isPiToolExecutionEnabled(): boolean {
+export function isRuntimeToolExecutionEnabled(): boolean {
 	const engine = process.env.WOP_CHAT_ENGINE?.trim().toLowerCase();
 	if (engine === "pi") return true;
 	if (engine === "bundled" || engine === "bun") return false;
-	// auto mode: check if pi is on PATH
+	// auto mode: check if binary is on PATH
 	if (engine === "auto" || !engine) {
 		try {
 			const proc = Bun.spawn(["which", "pi"], { stdout: "pipe" });
@@ -369,13 +398,17 @@ async function toolBash(command: string): Promise<string> {
 }
 
 /**
- * Run one Pi-named orchestrator tool (workspace-jailed).
+ * Run one orchestrator tool (workspace-jailed).
  * Results are plain text for the model.
  *
- * When `isPiToolExecutionEnabled()` is true (WOP_CHAT_ENGINE=pi or auto with pi on PATH),
- * tool execution is delegated to Pi CLI via `executeToolViaPi()` for authoritative tool execution.
+ * When `isRuntimeToolExecutionEnabled()` is true (WOP_CHAT_ENGINE=pi or auto with binary on PATH),
+ * tool execution is delegated to the authoritative CLI via `executeToolViaRuntime()` for authoritative tool execution.
  */
-export async function executeOrchestratorTool(name: string, argsJson: string): Promise<OrchestratorToolResult> {
+export async function executeOrchestratorTool(
+	name: string,
+	argsJson: string,
+	auth?: { tenantId: string; userId: string },
+): Promise<OrchestratorToolResult> {
 	let args: Record<string, unknown> = {};
 	try {
 		args = JSON.parse(argsJson || "{}") as Record<string, unknown>;
@@ -383,12 +416,15 @@ export async function executeOrchestratorTool(name: string, argsJson: string): P
 		return { output: "Invalid JSON in tool arguments." };
 	}
 
-	// HEADLESS PI SPINE: Delegate to Pi CLI when enabled
-	if (isPiToolExecutionEnabled()) {
+	// AUTHORITATIVE RUNTIME SPINE: Delegate to CLI when enabled
+	if (isRuntimeToolExecutionEnabled()) {
 		const workspacePath = getPrimaryWorkspacePath();
-		broadcastToolLog("INFO", "pi-tool", `${name} → Pi CLI (--mode json)`);
-		return await executeToolViaPi(name, args, workspacePath);
+		broadcastToolLog("INFO", "runtime-tool", `${name} → CLI (--mode json)`);
+		return await executeToolViaRuntime(name, args, workspacePath);
 	}
+
+	const tenantId = auth?.tenantId ?? "default";
+	const userId = auth?.userId ?? "system";
 
 	switch (name) {
 		case "read": {
@@ -396,6 +432,14 @@ export async function executeOrchestratorTool(name: string, argsJson: string): P
 			const offset = typeof args.offset === "number" ? args.offset : undefined;
 			const limit = typeof args.limit === "number" ? args.limit : undefined;
 			logTool("read", path);
+			auditLog({
+				tenantId,
+				userId,
+				action: "READ",
+				resourceType: "file",
+				resourceId: path,
+				summary: `User read file ${path}`
+			});
 			return { output: await toolRead(path, offset, limit) };
 		}
 		case "list_dir": {
@@ -408,6 +452,14 @@ export async function executeOrchestratorTool(name: string, argsJson: string): P
 			const path = args.path != null ? String(args.path) : undefined;
 			const glob = args.glob != null ? String(args.glob) : undefined;
 			logTool("grep", `${pattern} @ ${path ?? "."}`);
+			auditLog({
+				tenantId,
+				userId,
+				action: "SEARCH",
+				resourceType: "workspace",
+				summary: `User searched for "${pattern}" in ${path ?? "."}`,
+				details: { pattern, path, glob }
+			});
 			return { output: await toolGrep(pattern, path, glob) };
 		}
 		case "write": {
@@ -503,6 +555,143 @@ export async function executeOrchestratorTool(name: string, argsJson: string): P
 			logTool("git_commit", message.slice(0, 80) + (message.length > 80 ? "…" : ""));
 			return { output: await orchestratorToolGitCommit({ message, allowEmpty }) };
 		}
+		// ── Kanban tools ──
+		case "kanban_list_boards":
+			logTool("kanban_list_boards", "");
+			return { output: await kanbanListBoards(tenantId) };
+		case "kanban_create_board":
+			logTool("kanban_create_board", String(args.name ?? ""));
+			return { output: await kanbanCreateBoard({ ...args, tenantId, userId } as any) };
+		case "kanban_update_board":
+			logTool("kanban_update_board", String(args.boardId ?? ""));
+			return { output: await kanbanUpdateBoard({ ...args, tenantId } as any) };
+		case "kanban_delete_board":
+			logTool("kanban_delete_board", String(args.boardId ?? ""));
+			return { output: await kanbanDeleteBoard({ ...args, tenantId } as any) };
+		case "kanban_board_templates":
+			logTool("kanban_board_templates", "");
+			return { output: await kanbanBoardTemplates() };
+		case "kanban_list_cards":
+			logTool("kanban_list_cards", String(args.boardId ?? ""));
+			return { output: await kanbanListCards({ ...args, tenantId, userId } as any) };
+		case "kanban_create_card":
+			logTool("kanban_create_card", String(args.title ?? ""));
+			return { output: await kanbanCreateCard({ ...args, tenantId, userId } as any) };
+		case "kanban_get_card":
+			logTool("kanban_get_card", String(args.cardId ?? ""));
+			return { output: await kanbanGetCard({ ...args, tenantId } as any) };
+		case "kanban_update_card":
+			logTool("kanban_update_card", String(args.cardId ?? ""));
+			return { output: await kanbanUpdateCard({ ...args, tenantId } as any) };
+		case "kanban_delete_card":
+			logTool("kanban_delete_card", String(args.cardId ?? ""));
+			return { output: await kanbanDeleteCard({ ...args, tenantId } as any) };
+		case "kanban_move_card":
+			logTool("kanban_move_card", `${args.cardId} → ${args.columnId}`);
+			return { output: await kanbanMoveCard({ ...args, tenantId } as any) };
+		case "kanban_log_time":
+			logTool("kanban_log_time", `${args.cardId} ${args.hours}h`);
+			return { output: await kanbanLogTime({ ...args, tenantId, userId } as any) };
+		case "kanban_card_time_logs":
+			logTool("kanban_card_time_logs", String(args.cardId ?? ""));
+			return { output: await kanbanCardTimeLogs({ ...args, tenantId } as any) };
+		case "kanban_list_workers":
+			logTool("kanban_list_workers", "");
+			return { output: await kanbanListWorkers(tenantId) };
+		// ── Channel tools ──
+		case "telegram_send":
+			return { output: await toolTelegramSend(args as any, tenantId) };
+		case "whatsapp_send":
+			return { output: await toolWhatsappSend(args as any, tenantId) };
+		case "dispatch_agent": {
+			const name = String(args.agent ?? "");
+			const task = String(args.task ?? "");
+			logTool("dispatch_agent", `${name}: ${task.slice(0, 40)}…`);
+			const res = await dispatchToAgent(name, task, tenantId, userId, "User");
+			if (res.ok) return { output: res.output };
+			return { output: `Error: ${res.error}` };
+		}
+		case "workspace_snapshot":
+			return { output: await orchestratorToolWorkspaceSnapshot(args as any) };
+		case "doc_history":
+			return { output: await orchestratorToolDocHistory(args as any) };
+		case "doc_restore":
+			return { output: await orchestratorToolDocRestore(args as any) };
+		case "workspace_backup_status":
+			return { output: await orchestratorToolWorkspaceBackupStatus() };
+		// ── Calendar tools ──
+		case "calendar_list": {
+			logTool("calendar_list", `user=${userId}`);
+			const startDate = args.start_date ? String(args.start_date) : null;
+			const endDate = args.end_date ? String(args.end_date) : null;
+			let sql = "SELECT * FROM calendar_events WHERE tenant_id = ? AND (user_id = ? OR created_by = ?)";
+			const params: unknown[] = [tenantId, userId, userId];
+			if (startDate) { sql += " AND start_date >= ?"; params.push(startDate); }
+			if (endDate) { sql += " AND end_date <= ?"; params.push(endDate); }
+			sql += " ORDER BY start_date ASC";
+			try {
+				const rows = db.query(sql).all(...params);
+				return { output: JSON.stringify(rows, null, 2) };
+			} catch (e) {
+				const m = e instanceof Error ? e.message : String(e);
+				return { output: `calendar_list: ${m}` };
+			}
+		}
+		case "calendar_create": {
+			const title = String(args.title ?? "").trim();
+			const startDate = String(args.start_date ?? "").trim();
+			const endDate = String(args.end_date ?? "").trim();
+			if (!title || !startDate || !endDate) return { output: "calendar_create: title, start_date, end_date required" };
+			const description = args.description ? String(args.description) : null;
+			const allDay = args.all_day === true ? 1 : 0;
+			try {
+				const id = `event_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+				db.query(`
+					INSERT INTO calendar_events (id, tenant_id, user_id, project_id, title, description, start_date, end_date, all_day, created_by)
+					VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				`).run(id, tenantId, userId, null, title, description, startDate, endDate, allDay, userId);
+				const event = db.query("SELECT * FROM calendar_events WHERE id = ?").get(id);
+				return { output: JSON.stringify(event, null, 2) };
+			} catch (e) {
+				const m = e instanceof Error ? e.message : String(e);
+				return { output: `calendar_create: ${m}` };
+			}
+		}
+		case "calendar_update": {
+			const eventId = String(args.event_id ?? "").trim();
+			if (!eventId) return { output: "calendar_update: event_id required" };
+			try {
+				const existing = db.query("SELECT * FROM calendar_events WHERE id = ? AND tenant_id = ?").get(eventId, tenantId) as Record<string, unknown> | null;
+				if (!existing) return { output: `calendar_update: event not found: ${eventId}` };
+				const title = args.title ? String(args.title) : existing.title;
+				const description = args.description !== undefined ? String(args.description) : existing.description;
+				const startDate = args.start_date ? String(args.start_date) : existing.start_date;
+				const endDate = args.end_date ? String(args.end_date) : existing.end_date;
+				const allDay = args.all_day !== undefined ? (args.all_day === true ? 1 : 0) : existing.all_day;
+				db.query(`
+					UPDATE calendar_events SET title = ?, description = ?, start_date = ?, end_date = ?, all_day = ?
+					WHERE id = ? AND tenant_id = ?
+				`).run(title, description, startDate, endDate, allDay, eventId, tenantId);
+				const updated = db.query("SELECT * FROM calendar_events WHERE id = ?").get(eventId);
+				return { output: JSON.stringify(updated, null, 2) };
+			} catch (e) {
+				const m = e instanceof Error ? e.message : String(e);
+				return { output: `calendar_update: ${m}` };
+			}
+		}
+		case "calendar_delete": {
+			const delId = String(args.event_id ?? "").trim();
+			if (!delId) return { output: "calendar_delete: event_id required" };
+			try {
+				const existing = db.query("SELECT * FROM calendar_events WHERE id = ? AND tenant_id = ?").get(delId, tenantId) as Record<string, unknown> | null;
+				if (!existing) return { output: `calendar_delete: event not found: ${delId}` };
+				db.query("DELETE FROM calendar_events WHERE id = ? AND tenant_id = ?").run(delId, tenantId);
+				return { output: `calendar_delete: ok — deleted ${delId}` };
+			} catch (e) {
+				const m = e instanceof Error ? e.message : String(e);
+				return { output: `calendar_delete: ${m}` };
+			}
+		}
 		default:
 			return {
 				output: formatUnknownOrchestratorToolMessage(name),
@@ -517,7 +706,7 @@ export const ORCHESTRATOR_TOOLS_OPENAI = [
 		function: {
 			name: "read",
 			description:
-				"Read a UTF-8 text file under the Way of Pi workspace (Pi `read`-style). Path is relative to workspace root.",
+				"Read a UTF-8 text file under the Way of Work workspace (Pi `read`-style). Path is relative to workspace root.",
 			parameters: {
 				type: "object",
 				properties: {
@@ -651,6 +840,90 @@ export const ORCHESTRATOR_TOOLS_OPENAI = [
 			},
 		},
 	},
+	{
+		type: "function" as const,
+		function: {
+			name: "calendar_list",
+			description:
+				"List calendar events for the current user. Optionally filter by start_date and/or end_date (ISO 8601, e.g. 2026-05-22 or 2026-05-22T12:00:00).",
+			parameters: {
+				type: "object",
+				properties: {
+					start_date: { type: "string", description: "Optional start date filter (ISO 8601)" },
+					end_date: { type: "string", description: "Optional end date filter (ISO 8601)" },
+				},
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "calendar_create",
+			description:
+				"Create a calendar event for the current user. Requires title, start_date, and end_date (ISO 8601). Optionally set description and all_day.",
+			parameters: {
+				type: "object",
+				properties: {
+					title: { type: "string", description: "Event title" },
+					start_date: { type: "string", description: "Start date/time (ISO 8601, e.g. 2026-05-22T12:00:00)" },
+					end_date: { type: "string", description: "End date/time (ISO 8601, e.g. 2026-05-22T13:00:00)" },
+					description: { type: "string", description: "Optional event description" },
+					all_day: { type: "boolean", description: "Whether this is an all-day event" },
+				},
+				required: ["title", "start_date", "end_date"],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "calendar_update",
+			description:
+				"Update an existing calendar event by event_id. Only provided fields are updated. Returns the updated event.",
+			parameters: {
+				type: "object",
+				properties: {
+					event_id: { type: "string", description: "The event ID to update" },
+					title: { type: "string", description: "New title" },
+					start_date: { type: "string", description: "New start date/time (ISO 8601)" },
+					end_date: { type: "string", description: "New end date/time (ISO 8601)" },
+					description: { type: "string", description: "New description" },
+					all_day: { type: "boolean", description: "Whether this is an all-day event" },
+				},
+				required: ["event_id"],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "calendar_delete",
+			description:
+				"Delete a calendar event by event_id. Only the event owner can delete their events.",
+			parameters: {
+				type: "object",
+				properties: {
+					event_id: { type: "string", description: "The event ID to delete" },
+				},
+				required: ["event_id"],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "dispatch_agent",
+			description: "Dispatch a specific task to a specialized sub-agent (e.g. fakturering, projektledare, ata).",
+			parameters: {
+				type: "object",
+				properties: {
+					agent: { type: "string", description: "Name of the sub-agent to dispatch." },
+					task: { type: "string", description: "Clear description of the task to perform." },
+				},
+				required: ["agent", "task"],
+			},
+		},
+	},
 ];
 
 /** Tools sent to the LLM (omit `bash` when disabled via env). */
@@ -658,6 +931,13 @@ export function orchestratorToolsForLlm(): (typeof ORCHESTRATOR_TOOLS_OPENAI)[nu
 	const base = orchestratorBashEnabled()
 		? [...ORCHESTRATOR_TOOLS_OPENAI]
 		: ORCHESTRATOR_TOOLS_OPENAI.filter((t) => t.function.name !== "bash");
-	if (!orchestratorGitWorkspaceToolsEnabled()) return base;
-	return [...base, ...(ORCHESTRATOR_GIT_TOOLS_OPENAI as unknown as (typeof ORCHESTRATOR_TOOLS_OPENAI)[number][])];
+	const kanban = [...ORCHESTRATOR_KANBAN_TOOLS_OPENAI] as unknown as (typeof ORCHESTRATOR_TOOLS_OPENAI)[number][];
+	const channel = [...ORCHESTRATOR_CHANNEL_TOOLS_OPENAI] as unknown as (typeof ORCHESTRATOR_TOOLS_OPENAI)[number][];
+	if (!orchestratorGitWorkspaceToolsEnabled()) return [...base, ...kanban, ...channel];
+	return [
+		...base,
+		...kanban,
+		...channel,
+		...(ORCHESTRATOR_GIT_TOOLS_OPENAI as unknown as (typeof ORCHESTRATOR_TOOLS_OPENAI)[number][]),
+	];
 }

@@ -1,0 +1,46 @@
+{
+  "common": {
+    "save": "Spara",
+    "cancel": "Avbryt",
+    "delete": "Ta bort",
+    "edit": "Redigera",
+    "close": "Stäng",
+    "loading": "Laddar...",
+    "error": "Ett fel uppstod",
+    "success": "Klart!"
+  },
+  "nav": {
+    "admin": "Admin",
+    "projects": "Projekt",
+    "tasks": "Uppgifter",
+    "calendar": "Kalender",
+    "settings": "Inställningar",
+    "profile": "Profil"
+  },
+  "chat": {
+    "placeholder": "Skriv ett meddelande...",
+    "new_chat": "Ny chatt",
+    "clear_chat": "Rensa chatt",
+    "stop_generating": "Stoppa",
+    "thinking": "Tänker...",
+    "orchestrator": "Orkestrerare"
+  },
+  "activity_bar": {
+    "explorer": "Utforskare",
+    "search": "Sök",
+    "scm": "Versionshantering",
+    "extensions": "Kör och tillägg",
+    "planning": "Planeringsläge",
+    "settings": "Inställningar"
+  },
+  "simple_nav": {
+    "chat": "Chatt",
+    "team": "Mitt team",
+    "models": "AI-hjärnor",
+    "projects": "Projekt",
+    "documents": "Dokument",
+    "taplanner": "TA-Planer",
+    "help": "Hjälp",
+    "settings": "Inställningar"
+  }
+}

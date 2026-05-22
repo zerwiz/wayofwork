@@ -56,7 +56,7 @@ export interface PageHeaderHandlers {
 }
 
 const STUB: PageHeaderHandlers = {
-  modelLabel: "Way of Pi",
+  modelLabel: "Way of Work",
   config: null,
   onOpenCommandPalette: () => {},
   onSave: () => {},

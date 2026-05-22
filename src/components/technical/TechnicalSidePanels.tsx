@@ -868,7 +868,7 @@ export function PlanningSidePanel({
 						>
 							docs/WOP_MENU_BAR_BACKLOG.md
 						</a>
-						. Everything there is scoped to <span className="font-mono text-[11px] text-[#9cdcfe]">Way of Pi</span>{" "}
+						. Everything there is scoped to <span className="font-mono text-[11px] text-[#9cdcfe]">Way of Work</span>{" "}
 						(web UI, Bun server, headless Pi, <span className="font-mono text-[11px]">WOP_*</span>).
 					</p>
 					<ul className="mt-2 list-disc space-y-1 pl-4 text-[12px] text-[#cccccc]">

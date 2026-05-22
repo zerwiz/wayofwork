@@ -24,6 +24,9 @@ export interface ClawAutomationPayload {
 	agentName: string | null;
 	source: ClawAutomationSource;
 	sourceId?: string;
+	/** User context to run this automation under. */
+	tenantId?: string;
+	userId?: string;
 }
 
 function todayMemoryMdPath(): string {
@@ -47,7 +50,8 @@ async function appendClawMemoryLog(line: string): Promise<void> {
 export async function executeClawAutomation(
 	payload: ClawAutomationPayload,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-	const cwd = getPrimaryWorkspacePath();
+	const tenantId = payload.tenantId ?? "default";
+	const cwd = getPrimaryWorkspacePath(tenantId);
 	if (!shouldUsePiJsonChat()) {
 		const err = "Skipped — this server is not in the mode required for this automatic run.";
 		void appendClawMissionEvent({
@@ -63,16 +67,19 @@ export async function executeClawAutomation(
 		return { ok: false, error: err };
 	}
 
+	const userIdLabel = payload.userId ?? "system";
 	const intro = [
-		`You are executing an **automated Claw ${payload.source}** run in Way of Pi.`,
+		`You are executing an **automated Claw ${payload.source}** run in Way of Work.`,
 		`**Job name:** ${payload.name}`,
 		`**Workspace cwd:** \`${cwd}\``,
+		`**Tenant:** ${tenantId}`,
+		`**User:** ${userIdLabel}`,
 		`Complete the task in the user message. Prefer tools over speculation; keep the final summary concise.`,
 	].join("\n");
 
 	let system = intro;
 	if (payload.agentName?.trim()) {
-		const body = await getAgentBodyByName(payload.agentName.trim());
+		const body = await getAgentBodyByName(payload.agentName.trim(), tenantId);
 		if (body) {
 			system = `${intro}\n\n---\n\n## Agent persona (\`${payload.agentName}\`)\n\n${body}`;
 		}

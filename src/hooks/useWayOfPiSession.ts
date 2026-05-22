@@ -197,9 +197,10 @@ export function useWayOfPiSession(): UseWayOfPiSessionReturn {
 
 		connectingRef.current = true;
 
+		const token = localStorage.getItem("wop_token");
 		const wsUrl =
 			(import.meta as any).env?.VITE_WAYOFPI_WS_URL || `/ws`;
-		const newWs = new WebSocket(wsUrl);
+		const newWs = new WebSocket(token ? `${wsUrl}?token=${encodeURIComponent(token)}` : wsUrl);
 		wsRef.current = newWs;
 
 		newWs.onopen = () => {

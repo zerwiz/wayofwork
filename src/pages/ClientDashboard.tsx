@@ -70,15 +70,6 @@ export default function ClientDashboard({ uiMode, setUiMode, appHeader }: { uiMo
       setLoginError("Client ID and PIN required");
       return;
     }
-    // Demo mode
-    if (clientId === "Demo" && pin === "1234") {
-      const demoToken = btoa(JSON.stringify({ role: "CLIENT", id: "demo-client" }));
-      localStorage.setItem("wop_token", demoToken);
-      setIsLoggedIn(true);
-      setLoginError("");
-      fetchData();
-      return;
-    }
     try {
       const res = await fetch("/api/portal/login", {
         method: "POST",

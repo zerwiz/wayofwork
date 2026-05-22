@@ -1,5 +1,5 @@
 /**
- * INTERIM — Bun orchestrator Git helpers (github.com HTTPS PAT from `.wayofpi/github-credentials.json`).
+ * INTERIM — Bun orchestrator Git helpers (github.com HTTPS PAT from `.github-credentials.json`).
  * Prefer headless Pi for long-term parity; see **`docs/WOP_PI_BACKEND_WIRING_PLAN.md`**.
  */
 import { broadcastToolLog } from "./tool-log-broadcast";
@@ -130,7 +130,7 @@ export async function orchestratorToolGitFetch(args: {
 	const { code, combined } = await runGitArgv(argv, `git fetch ${remote}`);
 	if (code !== 0) {
 		const hint = !token
-			? "\n(hint: connect GitHub in Way of Pi Settings if this remote is a private github.com HTTPS repo.)"
+			? "\n(hint: connect GitHub in Way of Work Settings if this remote is a private github.com HTTPS repo.)"
 			: "";
 		return `git_fetch: exit ${code}\n${combined}${hint}`;
 	}
@@ -309,6 +309,73 @@ export async function orchestratorToolGitCommit(args: {
 	return `git_commit: ok\n${combined}`;
 }
 
+export async function orchestratorToolWorkspaceSnapshot(args: { path?: string; description?: string }): Promise<string> {
+	const cwd = getPrimaryWorkspacePath();
+	const desc = args.description?.trim() || "Saved workspace version";
+	
+	// Stage
+	const addArgs = ["add", "--"];
+	if (args.path) {
+		const rel = String(args.path).trim().replace(/^[/\\]+/, "");
+		const abs = resolveUnderWorkspace(rel);
+		if (!abs) return `workspace_snapshot: invalid path ${args.path}`;
+		addArgs.push(abs);
+	} else {
+		addArgs.push(".");
+	}
+	
+	const { code: addCode, combined: addOut } = await runGitLocal(cwd, addArgs, `git add for snapshot`);
+	if (addCode !== 0) return `workspace_snapshot: add failed: ${addOut}`;
+
+	// Commit
+	const { code: commitCode, combined: commitOut } = await runGitLocal(cwd, ["commit", "-m", desc], `git commit for snapshot`);
+	if (commitCode !== 0) {
+		if (/nothing to commit/i.test(commitOut) || /no changes added to commit/i.test(commitOut)) {
+			return "workspace_snapshot: No changes to save.";
+		}
+		return `workspace_snapshot: commit failed: ${commitOut}`;
+	}
+
+	// Push (best effort)
+	const token = await readGithubTokenForGit();
+	const argv = buildGitSpawnArgs(cwd, token, ["push"]);
+	await runGitArgv(argv, `git push for snapshot`); // Ignore push errors, commit is saved locally
+
+	return `workspace_snapshot: Saved successfully.`;
+}
+
+export async function orchestratorToolDocHistory(args: { path: string }): Promise<string> {
+	const cwd = getPrimaryWorkspacePath();
+	const rel = String(args.path).trim().replace(/^[/\\]+/, "");
+	const abs = resolveUnderWorkspace(rel);
+	if (!abs) return `doc_history: invalid path ${args.path}`;
+
+	const { code, combined } = await runGitLocal(cwd, ["log", "--oneline", "--follow", "--", abs], `git log for doc`);
+	if (code !== 0) return `doc_history: failed: ${combined}`;
+	return `doc_history:\n${combined || "No history found."}`;
+}
+
+export async function orchestratorToolDocRestore(args: { path: string; version: string }): Promise<string> {
+	const cwd = getPrimaryWorkspacePath();
+	const rel = String(args.path).trim().replace(/^[/\\]+/, "");
+	const abs = resolveUnderWorkspace(rel);
+	if (!abs) return `doc_restore: invalid path ${args.path}`;
+	
+	const version = assertSafeGitRef(args.version);
+	if (!version) return "doc_restore: invalid version string.";
+
+	const { code, combined } = await runGitLocal(cwd, ["checkout", version, "--", abs], `git checkout doc restore`);
+	if (code !== 0) return `doc_restore: failed to restore: ${combined}`;
+	return `doc_restore: Successfully restored ${args.path} to version ${version}.`;
+}
+
+export async function orchestratorToolWorkspaceBackupStatus(): Promise<string> {
+	const cwd = getPrimaryWorkspacePath();
+	const { code, combined } = await runGitLocal(cwd, ["branch", "-r", "--list", "*backup/*"], `git branch backups`);
+	if (code !== 0) return `workspace_backup_status: failed to read backups: ${combined}`;
+	return `workspace_backup_status:\n${combined || "No backups found."}`;
+}
+
 export const ORCHESTRATOR_GIT_TOOLS_OPENAI = [
 	{
 		type: "function" as const,
@@ -332,7 +399,7 @@ export const ORCHESTRATOR_GIT_TOOLS_OPENAI = [
 		function: {
 			name: "git_fetch",
 			description:
-				"Run `git fetch` against a remote (default origin). When a GitHub PAT is saved in Way of Pi Settings, adds HTTPS auth for github.com; otherwise still runs (public remotes, SSH, or host credential helpers). Optional --prune.",
+				"Run `git fetch` against a remote (default origin). When a GitHub PAT is saved in Way of Work Settings, adds HTTPS auth for github.com; otherwise still runs (public remotes, SSH, or host credential helpers). Optional --prune.",
 			parameters: {
 				type: "object",
 				properties: {
@@ -364,7 +431,7 @@ export const ORCHESTRATOR_GIT_TOOLS_OPENAI = [
 		function: {
 			name: "git_push",
 			description:
-				"Run `git push` to origin (or chosen remote). For a **new local branch**, pass **branch** so Git creates the upstream (e.g. `git push -u origin my-feature` semantics). Uses GitHub PAT from Way of Pi Settings for github.com HTTPS (needs push permission). Prefer non-force; optional --force-with-lease for safe force updates.",
+				"Run `git push` to origin (or chosen remote). For a **new local branch**, pass **branch** so Git creates the upstream (e.g. `git push -u origin my-feature` semantics). Uses GitHub PAT from Way of Work Settings for github.com HTTPS (needs push permission). Prefer non-force; optional --force-with-lease for safe force updates.",
 			parameters: {
 				type: "object",
 				properties: {
@@ -459,6 +526,58 @@ export const ORCHESTRATOR_GIT_TOOLS_OPENAI = [
 				},
 				required: ["message"],
 			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "workspace_snapshot",
+			description: "Commit the current state of the workspace or a specific file to the version history.",
+			parameters: {
+				type: "object",
+				properties: {
+					path: { type: "string", description: "Optional path to a specific file to snapshot." },
+					description: { type: "string", description: "Optional human-readable note." },
+				},
+				required: [],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "doc_history",
+			description: "View the version history of a specific document.",
+			parameters: {
+				type: "object",
+				properties: {
+					path: { type: "string", description: "Workspace-relative file path." },
+				},
+				required: ["path"],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "doc_restore",
+			description: "Restore a file from a previous version hash found via doc_history.",
+			parameters: {
+				type: "object",
+				properties: {
+					path: { type: "string", description: "Workspace-relative file path." },
+					version: { type: "string", description: "Commit hash." },
+				},
+				required: ["path", "version"],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "workspace_backup_status",
+			description: "Check the status of automated daily backups.",
+			parameters: { type: "object", properties: {}, required: [] },
 		},
 	},
 ] as const;

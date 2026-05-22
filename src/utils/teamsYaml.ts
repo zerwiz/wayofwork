@@ -26,7 +26,7 @@ export function parseTeamsYaml(text: string): Record<string, string[]> {
 export function serializeTeamsYaml(teams: Record<string, string[]>): string {
 	const lines: string[] = [
 		"# Pi agent-team rosters — member ids match agent frontmatter `name` (docs/AGENT_TEAMS.md).",
-		"# Saving from Way of Pi replaces this file; duplicate `name` across scan dirs still follows Pi order.",
+		"# Saving from Way of Work replaces this file; duplicate `name` across scan dirs still follows Pi order.",
 		"",
 	];
 	for (const name of Object.keys(teams)) {

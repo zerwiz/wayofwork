@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { Brain, Cpu, FileText, Folder, HelpCircle, MessageCircle, Settings, Users } from "lucide-react";
+import { Brain, Cpu, FileText, Folder, HelpCircle, MessageCircle, Settings, Users, Map as RoadIcon } from "lucide-react";
 import type { SimpleTabId } from "../../simple/SimpleNavRail";
+import { useTranslation } from "../../../contexts/LanguageContext";
 
 function Tab({
 	active,
@@ -47,6 +48,7 @@ export function SimpleMobileTabBar({
 	onHelp?: () => void;
 	appearanceDark: boolean;
 }) {
+	const { t } = useTranslation();
 	const bar = appearanceDark ? "border-[#3c3c3c] bg-[#252526]" : "border-[#e5e5e5] bg-white";
 
 	return (
@@ -66,25 +68,28 @@ export function SimpleMobileTabBar({
 					<Cpu size={18} className="text-[#fb923c]" aria-hidden />
 				</div>
 			</div>
-			<Tab active={activeTab === "chat"} dark={appearanceDark} label="Chat" onClick={() => onTab("chat")}>
+			<Tab active={activeTab === "chat"} dark={appearanceDark} label={t("simple_nav.chat")} onClick={() => onTab("chat")}>
 				<MessageCircle size={18} aria-hidden />
 			</Tab>
-			<Tab active={activeTab === "team"} dark={appearanceDark} label="My Team" onClick={() => onTab("team")}>
+			<Tab active={activeTab === "team"} dark={appearanceDark} label={t("simple_nav.team")} onClick={() => onTab("team")}>
 				<Users size={18} aria-hidden />
 			</Tab>
-			<Tab active={activeTab === "models"} dark={appearanceDark} label="AI Brains" onClick={() => onTab("models")}>
+			<Tab active={activeTab === "models"} dark={appearanceDark} label={t("simple_nav.models")} onClick={() => onTab("models")}>
 				<Brain size={18} aria-hidden />
 			</Tab>
-			<Tab active={activeTab === "projects"} dark={appearanceDark} label="Projects" onClick={() => onTab("projects")}>
+			<Tab active={activeTab === "projects"} dark={appearanceDark} label={t("simple_nav.projects")} onClick={() => onTab("projects")}>
 				<Folder size={18} aria-hidden />
 			</Tab>
-			<Tab active={activeTab === "documenthandler"} dark={appearanceDark} label="Documents" onClick={() => onTab("documenthandler")}>
+			<Tab active={activeTab === "documenthandler"} dark={appearanceDark} label={t("simple_nav.documents")} onClick={() => onTab("documenthandler")}>
 				<FileText size={18} aria-hidden />
+			</Tab>
+			<Tab active={activeTab === "taplanner"} dark={appearanceDark} label={t("simple_nav.taplanner")} onClick={() => onTab("taplanner")}>
+				<RoadIcon size={18} aria-hidden />
 			</Tab>
 			{onHelp ? (
 				<button
 					type="button"
-					title="Help"
+					title={t("simple_nav.help")}
 					onClick={onHelp}
 					className={`flex min-h-11 min-w-11 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 text-[10px] font-semibold ${
 						appearanceDark
@@ -93,10 +98,10 @@ export function SimpleMobileTabBar({
 					}`}
 				>
 					<HelpCircle size={18} aria-hidden />
-					<span>Help</span>
+					<span>{t("simple_nav.help")}</span>
 				</button>
 			) : null}
-			<Tab active={activeTab === "settings"} dark={appearanceDark} label="Settings" onClick={() => onTab("settings")}>
+			<Tab active={activeTab === "settings"} dark={appearanceDark} label={t("simple_nav.settings")} onClick={() => onTab("settings")}>
 				<Settings size={18} aria-hidden />
 			</Tab>
 		</nav>

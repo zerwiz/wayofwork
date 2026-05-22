@@ -125,14 +125,14 @@ export type SettingsMenuHandlers = {
 	onOpenAiBrains: () => void;
 	/** Simple **Projects** tab. */
 	onOpenProjects: () => void;
-	/** Settings → Indexing & Docs (local manifest under `.wayofpi/index`). */
+	/** Settings → Indexing & Docs (local manifest under `.index`). */
 	onOpenIndexingDocs: () => void;
 	/** Settings → Honcho (memory API): env vars, mirror extension, doc links. */
 	onOpenHonchoSettings: () => void;
-	/** Open `.wayofpi/ui-views.json` in the Simple editor (optional). */
+	/** Open `.ui-views.json` in the Simple editor (optional). */
 	onEditWorkspaceViewsCatalog?: () => void;
 	/**
-	 * Opens the **Restart Way of Pi** confirmation modal (**POST `/api/server/restart`** when the user confirms).
+	 * Opens the **Restart Way of Work** confirmation modal (**POST `/api/server/restart`** when the user confirms).
 	 * Reconnects the chat WebSocket when the process does not exit.
 	 */
 	onRestartServer: () => void | Promise<void>;

@@ -58,6 +58,16 @@ export function resolvePiLoaderPath(): string | null {
 	return null;
 }
 
+/** Deprecated — kept for backward compat with server/index.ts orchestrator patching. */
+export function patchPiJsonChatRuntimeOverride(_value: boolean | null): void {
+	// no-op: Pi CLI is no longer used
+}
+
+/** Deprecated — kept for backward compat. Pi agent is never blocked (it's not used). */
+export function piAgentRuntimeBlockedReason(): string | null {
+	return null;
+}
+
 export type RunPiChatTurnOpts = {
 	piStack?: string;
 	cwd: string;

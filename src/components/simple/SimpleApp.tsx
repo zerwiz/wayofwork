@@ -26,6 +26,7 @@ import { SimpleSettingsView } from "./SimpleSettingsView";
 import { SimpleTeamView } from "./SimpleTeamView";
 import { SimpleMobileTabBar } from "../mobile/simple/SimpleMobileTabBar";
 import ChatExplorer from "../documenthandler/ChatExplorer";
+import { TAPlannerPage } from "../../pages/TAPlannerPage";
 
 function languageFromPath(path: string | null): string {
 	if (!path) return "Plain Text";
@@ -694,6 +695,10 @@ export function SimpleApp({
 									onStop={stop}
 								/>
 								</div>
+							) : activeTab === "taplanner" ? (
+								<div className="min-h-0 flex-1 overflow-hidden">
+									<TAPlannerPage />
+								</div>
 							) : activeTab === "settings" ? (
 								<div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-2">
 									<SimpleSettingsView
@@ -985,6 +990,11 @@ export function SimpleApp({
 										onSend={sendChat}
 										onStop={stop}
 									/>
+								</div>
+							) : null}
+							{activeTab === "taplanner" ? (
+								<div className="flex h-full flex-col overflow-hidden">
+									<TAPlannerPage />
 								</div>
 							) : null}
 							{activeTab === "settings" ? (

@@ -3,8 +3,8 @@ import { chmod, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { safeResolveUnderWorkspace } from "./paths";
 
-/** Workspace-local PAT store (primary root). Add to the repo’s `.gitignore` if you keep the workspace here. */
-export const GITHUB_CREDENTIALS_REL = ".wayofpi/github-credentials.json";
+/** Workspace-local PAT store (primary root). Gitignored. */
+export const GITHUB_CREDENTIALS_REL = ".github-credentials.json";
 
 export type PersistedGithubCreds = {
 	version: 1;
@@ -70,7 +70,7 @@ export async function verifyGithubToken(
 			Accept: "application/vnd.github+json",
 			Authorization: `Bearer ${t}`,
 			"X-GitHub-Api-Version": "2022-11-28",
-			"User-Agent": "WayOfPi-UI-Server/1",
+			"User-Agent": "WayOfWork-UI-Server/1",
 		},
 	});
 	if (!res.ok) {

@@ -16,7 +16,7 @@
 import { useState, useCallback, useMemo } from "react";
 
 const STORAGE_KEY = "wop-ui-mode";
-const DEFAULT_MODE = "claw";
+const DEFAULT_MODE = "simple";
 
 export type UiMode = string;
 

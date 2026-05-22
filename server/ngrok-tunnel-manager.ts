@@ -131,13 +131,13 @@ export type NgrokTunnelGetJson = {
 	wopManagedRunning: boolean;
 	pid: number | null;
 	tunnelPort: number;
-	/** From local inspector when any ngrok agent answers (Way of Pi–spawned or external) */
+	/** From local inspector when any ngrok agent answers (Way of Work–spawned or external) */
 	publicUrl: string | null;
 	/** `ngrok version` succeeded for the resolved CLI */
 	ngrokOnPath: boolean;
 	/** First line of `ngrok version` when the CLI runs */
 	ngrokVersionLine: string | null;
-	/** Absolute path to the ngrok executable Way of Pi will run */
+	/** Absolute path to the ngrok executable Way of Work will run */
 	ngrokWhichPath: string | null;
 	/** How **`ngrokWhichPath`** was chosen */
 	ngrokResolvedSource: NgrokBinarySource;
@@ -217,7 +217,7 @@ export async function startNgrokTunnelDev(): Promise<NgrokTunnelActionJson> {
 		return {
 			ok: false,
 			message:
-				"Way of Pi cannot start ngrok from here because WOP_ALLOW_NGROK_SPAWN is off. Unset it or set a truthy value, then try again — or run ngrok http on this host yourself.",
+				"Way of Work cannot start ngrok from here because WOP_ALLOW_NGROK_SPAWN is off. Unset it or set a truthy value, then try again — or run ngrok http on this host yourself.",
 		};
 	}
 	const { path: exe } = resolveNgrokExecutable();
@@ -226,7 +226,7 @@ export async function startNgrokTunnelDev(): Promise<NgrokTunnelActionJson> {
 	}
 	if (wopNgrokChild) {
 		const publicUrl = await fetchNgrokPublicUrl(3500);
-		return { ok: true, message: "ngrok is already running (started from Way of Pi).", publicUrl };
+		return { ok: true, message: "ngrok is already running (started from Way of Work).", publicUrl };
 	}
 	const port = getNgrokTunnelTargetPort();
 	const listening = await probeTcpListening(port, "127.0.0.1", 2000);
@@ -348,7 +348,7 @@ async function runNgrokBundledPackageOp(op: BundledNgrokPackageOp): Promise<Ngro
 			return {
 				ok: false,
 				message:
-					"Install reported success but ngrok still does not run here. Restart the Way of Pi Bun server, then open Settings and tap Refresh.",
+					"Install reported success but ngrok still does not run here. Restart the Way of Work Bun server, then open Settings and tap Refresh.",
 			};
 		}
 		return {
@@ -377,14 +377,14 @@ export async function stopNgrokTunnelDev(): Promise<NgrokTunnelActionJson> {
 		return {
 			ok: false,
 			message:
-				"Way of Pi cannot stop the managed tunnel from here because WOP_ALLOW_NGROK_SPAWN is off. Stop ngrok in the terminal where you ran it, or re-enable that env and try again.",
+				"Way of Work cannot stop the managed tunnel from here because WOP_ALLOW_NGROK_SPAWN is off. Stop ngrok in the terminal where you ran it, or re-enable that env and try again.",
 		};
 	}
 	if (!wopNgrokChild) {
 		return {
 			ok: true,
 			message:
-				"Way of Pi did not start ngrok, so there is nothing to stop here. If a tunnel is still running, stop it in the terminal where you ran ngrok, or close that session.",
+				"Way of Work did not start ngrok, so there is nothing to stop here. If a tunnel is still running, stop it in the terminal where you ran ngrok, or close that session.",
 		};
 	}
 	try {
@@ -393,5 +393,5 @@ export async function stopNgrokTunnelDev(): Promise<NgrokTunnelActionJson> {
 		/* ignore */
 	}
 	wopNgrokChild = null;
-	return { ok: true, message: "Stopped the ngrok process that Way of Pi started." };
+	return { ok: true, message: "Stopped the ngrok process that Way of Work started." };
 }

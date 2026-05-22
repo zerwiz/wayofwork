@@ -1,7 +1,7 @@
 /**
  * Local workspace index (Cursor-style **shape**, not parity): walk the primary workspace,
  * respect `.gitignore` / `.cursorignore`-style rules in a small way, persist manifests under
- * `.wayofpi/index/`, optional chat boost. No cloud embeddings (see Cursor blog on Merkle + embeddings).
+ * `.index/`, optional chat boost. No cloud embeddings (see Cursor blog on Merkle + embeddings).
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
@@ -91,7 +91,7 @@ function workspaceRoot(): string {
 }
 
 function indexDirAbs(): string {
-	return join(workspaceRoot(), ".wayofpi", "index");
+	return join(workspaceRoot(), ".index");
 }
 
 function stateJsonPath(): string {
@@ -174,7 +174,7 @@ function globStarToRegExp(glob: string): RegExp {
 }
 
 function pathIgnored(rel: string, git: string[], cursor: string[]): boolean {
-	if (rel === ".wayofpi/index" || rel.startsWith(".wayofpi/index/")) return true;
+	if (rel === ".index" || rel.startsWith(".index/")) return true;
 	for (const pat of cursor) {
 		if (matchesIgnorePattern(rel, pat)) return true;
 	}
@@ -343,7 +343,7 @@ export async function syncWorkspaceIndexDoc(id: string): Promise<WorkspaceIndexD
 		const res = await fetch(e.url, {
 			signal: ac.signal,
 			headers: {
-				"User-Agent": "WayOfPi-Indexing/1.0 (+local docs crawl)",
+				"User-Agent": "Wo-Indexing/1.0 (+local docs crawl)",
 				Accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8",
 			},
 		});
@@ -485,7 +485,7 @@ export async function getWorkspaceIndexStatus(): Promise<WorkspaceIndexStatusPay
 	const options = await readWorkspaceIndexOptions();
 	const docs = (await readWorkspaceIndexDocs()).entries;
 	const about =
-		"Way of Pi keeps this index on disk under .wayofpi/index (manifest + optional grep path list). " +
+		"Way of Work keeps this index on disk under .index (manifest + optional grep path list). " +
 		"Cursor additionally uses Merkle trees, AST chunking, embeddings, and cloud vector search — see cursor.com/blog and docs.cursor.com for their pipeline.";
 	return {
 		rootLabel,
@@ -551,7 +551,7 @@ export function getWorkspaceIndexChatBoostSync(): string | null {
 		const state = JSON.parse(readFileSync(stateJsonPath(), "utf8")) as WorkspaceIndexStateFile;
 		const sample = (state.samplePaths ?? []).slice(0, 60);
 		const lines = [
-			"**Workspace index (local):** Way of Pi manifest — not Cursor cloud embeddings.",
+			"**Workspace index (local):** Way of Work manifest — not Cursor cloud embeddings.",
 			`- **Files:** ${state.fileCount}; **last sync:** ${state.syncedAt ?? "unknown"}; **fingerprint:** ${state.merkleRoot}`,
 			`- **Sample paths:**`,
 			...sample.map((p) => `  - \`${p}\``),

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiGet } from "../api/client";
 import {
-	ensureDevWayOfPiApiFresh,
+	ensureDevWoApiFresh,
 	healthSupportsClawHostTree,
-	staleWayOfPiApiMessage,
-} from "../utils/wayofpiDevApiWarmup";
+	staleWoApiMessage,
+} from "../utils/woDevApiWarmup";
 
 /** Fired after **`PUT /api/claw/schedules`** succeeds so Mission / automation UI can refresh without waiting for the poll interval. */
-export const WAYOFPI_CLAW_SCHEDULES_SYNCED_EVENT = "wayofpi:claw-schedules-synced";
+export const WO_CLAW_SCHEDULES_SYNCED_EVENT = "wo:claw-schedules-synced";
 
 export type ClawAutomationStatus = {
 	version: 1;
@@ -29,9 +29,9 @@ export function useClawAutomationStatus(pollMs = 20_000) {
 	const refresh = useCallback(async () => {
 		setError(null);
 		try {
-			const caps = await ensureDevWayOfPiApiFresh();
+			const caps = await ensureDevWoApiFresh();
 			if (caps !== null && !healthSupportsClawHostTree(caps)) {
-				setError(staleWayOfPiApiMessage());
+				setError(staleWoApiMessage());
 				return;
 			}
 			try {
@@ -72,8 +72,8 @@ export function useClawAutomationStatus(pollMs = 20_000) {
 		const on = () => {
 			void refresh();
 		};
-		window.addEventListener(WAYOFPI_CLAW_SCHEDULES_SYNCED_EVENT, on);
-		return () => window.removeEventListener(WAYOFPI_CLAW_SCHEDULES_SYNCED_EVENT, on);
+		window.addEventListener(WO_CLAW_SCHEDULES_SYNCED_EVENT, on);
+		return () => window.removeEventListener(WO_CLAW_SCHEDULES_SYNCED_EVENT, on);
 	}, [refresh]);
 
 	return { status, error, refresh, loaded };

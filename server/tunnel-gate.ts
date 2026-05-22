@@ -27,7 +27,7 @@ export type TunnelGateFileV1 = {
 export function getWopHomeDir(): string {
 	const e = process.env.WOP_HOME?.trim();
 	if (e) return e.replace(/^~(?=\/|\\)/, homedir());
-	return join(homedir(), ".wayofpi");
+	return join(homedir(), ".wo");
 }
 
 export function tunnelGateConfigPath(): string {
@@ -197,7 +197,7 @@ export function tunnelGateUnauthorizedResponse(): Response {
 	return new Response("Unauthorized", {
 		status: 401,
 		headers: {
-			"WWW-Authenticate": 'Basic realm="Way of Pi (public link)"',
+			"WWW-Authenticate": 'Basic realm="Way of Work (public link)"',
 			"Cache-Control": "no-store",
 			"Content-Type": "text/plain; charset=utf-8",
 		},
@@ -330,7 +330,7 @@ export function tunnelGateAllowsNodeRequest(req: IncomingMessage): boolean {
 
 export function tunnelGateWriteUnauthorizedNode(res: ServerResponse): void {
 	res.statusCode = 401;
-	res.setHeader("WWW-Authenticate", 'Basic realm="Way of Pi (public link)"');
+	res.setHeader("WWW-Authenticate", 'Basic realm="Way of Work (public link)"');
 	res.setHeader("Cache-Control", "no-store");
 	res.setHeader("Content-Type", "text/plain; charset=utf-8");
 	res.end("Unauthorized");

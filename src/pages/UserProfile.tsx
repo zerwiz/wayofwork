@@ -50,6 +50,9 @@ export function UserProfilePage({
     confirmPin: "",
   });
   const [showPinChange, setShowPinChange] = useState(false);
+  const [channelLinks, setChannelLinks] = useState<any[]>([]);
+  const [showLinkForm, setShowLinkForm] = useState(false);
+  const [newLink, setNewLink] = useState({ channel: "telegram", channelUserId: "", channelUsername: "" });
 
   const handleStartServer = async () => {
     setStartBusy(true);
@@ -67,7 +70,7 @@ export function UserProfilePage({
 
       if (import.meta.env.DEV) {
         try {
-          const resp = await fetch("/__wop_dev/start-wayofpi-api", {
+          const resp = await fetch("/__wop_dev/start-wo-api", {
             method: "POST",
           });
           if (resp.status !== 404) {
@@ -84,12 +87,12 @@ export function UserProfilePage({
         }
       }
 
-      const cmd = "./start-wayofpi.sh --web";
+      const cmd = "./start-wo.sh --web";
       try {
         await navigator.clipboard.writeText(cmd);
-        setStartHint("Command copied to clipboard: ./start-wayofpi.sh --web");
+        setStartHint("Command copied to clipboard: ./start-wo.sh --web");
       } catch {
-        setStartHint("Run this in your terminal: ./start-wayofpi.sh --web");
+        setStartHint("Run this in your terminal: ./start-wo.sh --web");
       }
     } catch (e) {
       setStartHint(e instanceof Error ? e.message : String(e));
@@ -130,7 +133,7 @@ export function UserProfilePage({
               id: payload.id,
               username: payload.id,
               fullName: nameMap[payload.id] || payload.id,
-              email: "demo@wayofpi.dev",
+              email: "demo@wayofwork.dev",
               phone: "+46-555-0123",
               role: payload.role,
               jobTitle: jobMap[payload.id] || payload.role,
@@ -144,7 +147,7 @@ export function UserProfilePage({
                 { id: "cert-6", name: "Truckkort (Forklift A/B)", issuer: "TYA", validUntil: "2028-01-15", category: "machine" as const, status: "valid" as const },
               ] : [],
               calendarConnections: [
-                { id: "cal-1", provider: "internal" as const, connected: true, email: "demo@wayofpi.dev" },
+                { id: "cal-1", provider: "internal" as const, connected: true, email: "demo@wayofwork.dev" },
               ],
             };
             setProfile(demoProfile);
@@ -160,6 +163,15 @@ export function UserProfilePage({
       const res = await fetch("/api/portal/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.ok) {
+        // Also fetch channel links
+        try {
+          const linksRes = await fetch("/api/channels/links", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (linksRes.ok) setChannelLinks(await linksRes.json());
+        } catch {}
+      }
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         if (res.status === 401 || res.status === 503) {
@@ -169,7 +181,7 @@ export function UserProfilePage({
           );
         } else if (res.status === 404) {
           // In dev environment, API may not be ready
-          setError("API not ready. Please check Way of Pi server is running.");
+          setError("API not ready. Please check Way of Work server is running.");
         } else {
           throw new Error(errorData.error || "Failed to load profile");
         }
@@ -251,7 +263,7 @@ export function UserProfilePage({
                   Not Authenticated
                 </h2>
                 <p className="text-[#858585] mb-6">
-                  You are not logged in to Way of Pi.
+                  You are not logged in to Way of Work.
                 </p>
                 <div className="bg-[#2d2d2d] rounded-lg p-4 mb-6 text-left">
                   <p className="text-sm text-[#858585] mb-2">
@@ -282,10 +294,10 @@ export function UserProfilePage({
             ) : error.includes("API not ready") ? (
               <div>
                 <h2 className="text-2xl font-bold mb-3 text-[#f0f0f0]">
-                  Way of Pi Server Not Running
+                  Way of Work Server Not Running
                 </h2>
                 <p className="text-[#858585] mb-6">
-                  The API server isn't ready yet. Please start the Way of Pi
+                  The API server isn't ready yet. Please start the Way of Work
                   backend or check that your terminal is running.
                 </p>
                 <div className="bg-[#2d2d2d] rounded-lg p-4 mb-6 text-left">
@@ -308,7 +320,7 @@ export function UserProfilePage({
                       disabled={startBusy}
                       className="rounded bg-[#007acc] px-6 py-2.5 text-sm font-medium text-white hover:bg-[#006bb3] transition-colors disabled:opacity-50"
                     >
-                      {startBusy ? "Starting..." : "Start Way of Pi"}
+                      {startBusy ? "Starting..." : "Start Way of Work"}
                     </button>
                     <button
                       onClick={() => window.location.reload()}
@@ -442,6 +454,117 @@ export function UserProfilePage({
                 </div>
               </div>
             )}
+
+            {/* Channel Links Section */}
+            <div className="mt-8">
+              <h2 className="mb-4 text-sm font-semibold text-[#cccccc]">Connected Channels</h2>
+              <div className="space-y-2 mb-3">
+                {channelLinks.length === 0 && (
+                  <p className="text-xs text-[#585858]">No channels linked. Link Telegram or WhatsApp to chat with Claw AI via messenger.</p>
+                )}
+                {channelLinks.map((link: any) => (
+                  <div key={link.id} className="flex items-center justify-between rounded border border-[#3c3c3c] bg-[#1e1e1e] p-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{link.channel === "telegram" ? "✈️" : "💬"}</span>
+                      <div>
+                        <p className="text-sm font-medium text-[#cccccc]">{link.channel === "telegram" ? "Telegram" : "WhatsApp"}</p>
+                        <p className="text-xs text-[#858585]">{link.channel_username || link.channel_user_id || "-"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`rounded px-2 py-1 text-xs ${link.active ? "bg-green-900/30 text-green-400" : "bg-red-900/30 text-red-400"}`}>
+                        {link.active ? "Active" : "Inactive"}
+                      </span>
+                      <button
+                        onClick={async () => {
+                          await fetch(`/api/channels/unlink?id=${link.id}`, {
+                            method: "DELETE",
+                            headers: { Authorization: `Bearer ${localStorage.getItem("wop_token")}` },
+                          });
+                          const linksRes = await fetch("/api/channels/links", {
+                            headers: { Authorization: `Bearer ${localStorage.getItem("wop_token")}` },
+                          });
+                          if (linksRes.ok) setChannelLinks(await linksRes.json());
+                        }}
+                        className="text-xs text-red-500 hover:underline"
+                      >
+                        Unlink
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {!showLinkForm ? (
+                <button
+                  onClick={() => setShowLinkForm(true)}
+                  className="text-xs text-[#ea580c] hover:underline"
+                >
+                  + Link a channel
+                </button>
+              ) : (
+                <div className="rounded border border-[#3c3c3c] bg-[#1e1e1e] p-3 space-y-2">
+                  <div>
+                    <label className="block text-xs text-[#585858] mb-1">Channel</label>
+                    <select
+                      value={newLink.channel}
+                      onChange={(e) => setNewLink({ ...newLink, channel: e.target.value })}
+                      className="w-full rounded border border-[#3c3c3c] bg-[#1e1e1e] px-3 py-2 text-sm text-[#cccccc]"
+                    >
+                      <option value="telegram">Telegram</option>
+                      <option value="whatsapp">WhatsApp</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#585858] mb-1">Channel User ID</label>
+                    <input
+                      type="text"
+                      value={newLink.channelUserId}
+                      onChange={(e) => setNewLink({ ...newLink, channelUserId: e.target.value })}
+                      placeholder="Paste the ID the bot gave you"
+                      className="w-full rounded border border-[#3c3c3c] bg-[#1e1e1e] px-3 py-2 text-sm text-[#cccccc]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#585858] mb-1">Username (optional)</label>
+                    <input
+                      type="text"
+                      value={newLink.channelUsername}
+                      onChange={(e) => setNewLink({ ...newLink, channelUsername: e.target.value })}
+                      placeholder="@yourusername"
+                      className="w-full rounded border border-[#3c3c3c] bg-[#1e1e1e] px-3 py-2 text-sm text-[#cccccc]"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        if (!newLink.channelUserId) return;
+                        await fetch("/api/channels/link", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("wop_token")}` },
+                          body: JSON.stringify(newLink),
+                        });
+                        setShowLinkForm(false);
+                        setNewLink({ channel: "telegram", channelUserId: "", channelUsername: "" });
+                        const linksRes = await fetch("/api/channels/links", {
+                          headers: { Authorization: `Bearer ${localStorage.getItem("wop_token")}` },
+                        });
+                        if (linksRes.ok) setChannelLinks(await linksRes.json());
+                      }}
+                      className="rounded bg-[#ea580c] px-3 py-1.5 text-xs text-white"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => { setShowLinkForm(false); setNewLink({ channel: "telegram", channelUserId: "", channelUsername: "" }); }}
+                      className="rounded border border-[#3c3c3c] px-3 py-1.5 text-xs text-[#cccccc]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Calendar Connections Section */}
             {profile?.calendarConnections && profile.calendarConnections.length > 0 && (

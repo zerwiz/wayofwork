@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { resolve, join } from "node:path";
 
 const DB_DIR = join(import.meta.dir, "..", "data");
-const DB_PATH = join(DB_DIR, "wayofpi.sqlite");
+const DB_PATH = join(DB_DIR, "wayofwork.sqlite");
 const SCHEMA_PATH = join(import.meta.dir, "schema.sql");
 
 // Ensure directory exists

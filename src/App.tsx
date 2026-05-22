@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { 
-  SimplePage, ClawPage, DocsPage, WorkPage, KanbanPage,
+  SimplePage, AtaPage, TAPlannerPage, ClawPage, DocsPage, WorkPage, KanbanPage,
   UserProfile, AdminDashboard, SuperAdminDashboard,
   ClientDashboard, WorkerPortal
 } from "./pages";
@@ -9,11 +9,12 @@ import { RefactorProvider, useRefactor } from "./context/RefactorContext";
 import { MenuBar } from "./components/MenuBar";
 import { PageHeaderProvider, usePageHeader } from "./context/PageHeaderContext";
 import { ToastProvider } from "./contexts/ToastContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 
 const uiModeRouteMap: Record<string, string> = {
   simple: "/simple",
   work: "/workboard",
-  claw: "/ata",
+  claw: "/claw",
   docs: "/docs",
   kanban: "/kanban",
 };
@@ -22,7 +23,7 @@ const routeUiModeMap: Record<string, string> = {
   "/simple": "simple",
   "/workboard": "work",
   "/kanban": "kanban",
-  "/ata": "claw",
+  "/claw": "claw",
   "/docs": "docs",
 };
 
@@ -147,32 +148,36 @@ const defaultMenuStubs = {
 export default function App() {
   return (
     <RefactorProvider>
-      <RouteSync />
-      <UiModeWatcher />
-      <PageHeaderProvider value={defaultMenuStubs}>
-        <ToastProvider>
-          <div className="flex flex-col h-screen overflow-hidden">
-          <div className="shrink-0">
-            <ConnectedMenuBar />
+      <LanguageProvider>
+        <RouteSync />
+        <UiModeWatcher />
+        <PageHeaderProvider value={defaultMenuStubs}>
+          <ToastProvider>
+            <div className="flex flex-col h-screen overflow-hidden">
+            <div className="shrink-0">
+              <ConnectedMenuBar />
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <Routes>
+                <Route path="/" element={<Navigate to="/simple" replace />} />
+                <Route path="/simple" element={<SimplePage />} />
+                <Route path="/kanban" element={<KanbanPage />} />
+                <Route path="/workboard" element={<WorkPage />} />
+                <Route path="/ata" element={<AtaPage />} />
+                <Route path="/claw" element={<ClawPage />} />
+                <Route path="/docs" element={<DocsPage />} />
+                <Route path="/ta-planner" element={<TAPlannerPage />} />
+                <Route path="/portal" element={<WorkerPortalWrapper />} />
+                <Route path="/admin" element={<AdminDashboardWrapper />} />
+                <Route path="/super-admin" element={<SuperAdminDashboardWrapper />} />
+                <Route path="/client" element={<ClientDashboardWrapper />} />
+                <Route path="/profile" element={<UserProfileWrapper />} />
+              </Routes>
+            </div>
           </div>
-          <div className="flex-1 overflow-hidden">
-            <Routes>
-              <Route path="/" element={<Navigate to="/simple" replace />} />
-              <Route path="/simple" element={<SimplePage />} />
-              <Route path="/kanban" element={<KanbanPage />} />
-              <Route path="/workboard" element={<WorkPage />} />
-              <Route path="/ata" element={<ClawPage />} />
-              <Route path="/docs" element={<DocsPage />} />
-              <Route path="/portal" element={<WorkerPortalWrapper />} />
-              <Route path="/admin" element={<AdminDashboardWrapper />} />
-              <Route path="/super-admin" element={<SuperAdminDashboardWrapper />} />
-              <Route path="/client" element={<ClientDashboardWrapper />} />
-              <Route path="/profile" element={<UserProfileWrapper />} />
-            </Routes>
-          </div>
-        </div>
-        </ToastProvider>
-      </PageHeaderProvider>
+          </ToastProvider>
+        </PageHeaderProvider>
+      </LanguageProvider>
     </RefactorProvider>
   );
 }

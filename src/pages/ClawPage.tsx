@@ -13,7 +13,7 @@ import type { ViewMenuTechnicalOptions } from "../types/technicalShell";
 import { WorkspaceStaticAnalysisProvider } from "../context/WorkspaceStaticAnalysisContext";
 import type { WorkspaceStaticAnalysisContextValue } from "../context/WorkspaceStaticAnalysisContext";
 
-const WOP_PUBLIC_REPO_URL = "https://github.com/zerwiz/wayofpi";
+const WOP_PUBLIC_REPO_URL = "https://github.com/zerwiz/wayofwork";
 
 export function ClawPage() {
   const {

@@ -64,7 +64,7 @@ export async function executeClawAutomation(
 	}
 
 	const intro = [
-		`You are executing an **automated Claw ${payload.source}** run in Way of Pi.`,
+		`You are executing an **automated Claw ${payload.source}** run in Way of Work.`,
 		`**Job name:** ${payload.name}`,
 		`**Workspace cwd:** \`${cwd}\``,
 		`Complete the task in the user message. Prefer tools over speculation; keep the final summary concise.`,

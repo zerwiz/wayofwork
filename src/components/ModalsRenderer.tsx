@@ -14,7 +14,7 @@ import { NewWorkspaceFileModal } from "./NewWorkspaceFileModal";
 import { ClawHelpModal, type ClawHelpSectionId } from "./claw/ClawHelpModal";
 import type { LaunchSnippetId } from "../utils/launchJsonMutate";
 
-const WOP_PUBLIC_REPO_URL = "https://github.com/zerwiz/wayofpi";
+const WOP_PUBLIC_REPO_URL = "https://github.com/zerwiz/wayofwork";
 
 interface ModalsRendererProps {
   commandPaletteOpen: boolean;

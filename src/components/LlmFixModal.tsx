@@ -98,7 +98,7 @@ export function LlmFixModal({
 						</li>
 						<li>
 							Switching <span className="font-mono text-[11px]">ollama</span> vs{" "}
-							<span className="font-mono text-[11px]">openrouter</span> requires restarting the Way of Pi server with
+							<span className="font-mono text-[11px]">openrouter</span> requires restarting the Way of Work server with
 							updated env.
 						</li>
 					</ul>

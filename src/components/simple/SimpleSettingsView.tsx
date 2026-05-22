@@ -1,6 +1,6 @@
 import type { SimpleColorMode } from "../../hooks/useSimplePreferences";
 import type { ServerConfig } from "../../hooks/useServerConfig";
-import { GithubManageSettingsCard } from "../GithubManageSettingsCard";
+import { GithubManageSettingsCard, ConstructionGithubCard } from "../GithubManageSettingsCard";
 import { TerminalSettingsSection } from "../technical/TerminalSettingsSection";
 
 export type ClawWorkspaceSettingsActions = {
@@ -100,6 +100,7 @@ export function SimpleSettingsView({
 
 				<div className="space-y-4">
 					<GithubManageSettingsCard appearanceDark={appearanceDark} />
+					<ConstructionGithubCard appearanceDark={appearanceDark} />
 
 					<div className={`rounded-2xl border p-6 shadow-sm ${card}`}>
 						<h3 className={`mb-2 font-bold ${heading}`}>Appearance</h3>
@@ -150,7 +151,7 @@ export function SimpleSettingsView({
 							<h3 className={`mb-2 font-bold ${heading}`}>Claw workspace folder</h3>
 							<p className={`mb-4 text-sm ${sub}`}>
 								The <strong className={heading}>Claw workspace folder</strong> is host-scoped: it lives under the
-								Way of Pi checkout as <code className="text-xs">.claw/workspace/</code> (not inside the folder you
+								Way of Work checkout as <code className="text-xs">.claw/workspace/</code> (not inside the folder you
 								opened as
 								the project workspace). It holds seven markdown files (SOUL, AGENTS, USER, MEMORY, HEARTBEAT,
 								TOOLS, SECURITY). Override the host root with <code className="text-xs">WOP_CLAW_HOST_ROOT</code>{" "}
@@ -165,7 +166,7 @@ export function SimpleSettingsView({
 							</p>
 							{!clawWorkspaceActions.workspacePresent ? (
 								<p className={`text-sm ${sub}`}>
-									Claw host paths are not available yet — ensure the Way of Pi Bun server is running and{" "}
+									Claw host paths are not available yet — ensure the Way of Work Bun server is running and{" "}
 									<code className="text-xs">GET /api/config</code> returns <code className="text-xs">
 										clawWorkspaceDirAbs
 									</code>
@@ -239,10 +240,11 @@ export function SimpleSettingsView({
 						<div className={`rounded-2xl border p-6 shadow-sm ${card}`}>
 							<h3 className={`font-bold ${heading}`}>Indexing & Docs</h3>
 							<p className={`mt-1 text-sm ${sub}`}>
-								Local workspace manifest under <code className="text-xs">.wayofpi/index</code>, optional chat
+								Local workspace manifest under <code className="text-xs">.index</code>, optional chat
 								context, and HTTP(S) doc crawls — same product area as Cursor’s Indexing & Docs (without cloud
 								embeddings).
 							</p>
+
 							<button
 								type="button"
 								onClick={onOpenIndexingDocs}

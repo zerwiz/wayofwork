@@ -1,6 +1,6 @@
 /**
  * Workspace-local secret for **POST /api/claw/inbound** (Claw Phase E).
- * Stored only under the primary workspace `.wayofpi/` (never committed by default).
+ * Stored only under the primary workspace (never committed — gitignored).
  */
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { existsSync } from "node:fs";
@@ -9,7 +9,7 @@ import { dirname, join } from "node:path";
 
 import { getPrimaryWorkspacePath } from "./workspace-state";
 
-const FILE = "claw-webhook.v1.json";
+// Using constant filename .claw-webhook.json directly in path()
 
 interface WebhookFile {
 	version: 1;
@@ -18,7 +18,7 @@ interface WebhookFile {
 }
 
 function path(): string {
-	return join(getPrimaryWorkspacePath(), ".wayofpi", FILE);
+	return join(getPrimaryWorkspacePath(), ".claw-webhook.json");
 }
 
 async function ensureDir(): Promise<void> {

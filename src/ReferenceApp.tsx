@@ -265,7 +265,7 @@ const TASKS_JSON_TEMPLATE = `{
 `;
 
 /** Public source repo (Help menu links, View License on GitHub). */
-const WOP_PUBLIC_REPO_URL = "https://github.com/zerwiz/wayofpi";
+const WOP_PUBLIC_REPO_URL = "https://github.com/zerwiz/wayofwork";
 
 /** Help → Give Feedback — [WhyNot Productions contact](https://whynotproductions.netlify.app/contact/). */
 const WOP_FEEDBACK_CONTACT_URL =
@@ -4259,7 +4259,7 @@ description:
       },
       {
         id: "how-to-use",
-        label: "Help: How to use Way of Pi",
+        label: "Help: How to use Way of Work",
         detail: "Getting started modal + doc links",
         keywords: ["help", "start", "guide", "tutorial", "onboarding"],
         run: () => {
@@ -4398,7 +4398,7 @@ description:
             })
             .catch(() =>
               injectIntoChatComposer(
-                "Could not load `/api/plans` — is the Way of Pi server running?",
+                "Could not load `/api/plans` — is the Way of Work server running?",
               ),
             );
         },
@@ -4571,7 +4571,7 @@ description:
         label:
           uiMode === "claw"
             ? "Help: Claw guide & roadmap"
-            : "Help: How to use Way of Pi",
+            : "Help: How to use Way of Work",
         detail:
           uiMode === "claw"
             ? "Claw Help — operator shell, phases, schedules, channels"

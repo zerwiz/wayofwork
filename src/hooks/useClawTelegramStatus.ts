@@ -22,7 +22,7 @@ async function loadTelegramStatus(): Promise<LoadResult> {
 			ok: false,
 			issue: "network",
 			message:
-				`Could not load server settings (${message}). Start the Way of Pi Bun API (same checkout as this UI), e.g. \`cd apps/wayofwork-ui && bun run dev\` or \`bun run server/index.ts\`, then refresh.`,
+				`Could not load server settings (${message}). Start the Way of Work Bun API (same checkout as this UI), e.g. \`cd apps/wayofwork-ui && bun run dev\` or \`bun run server/index.ts\`, then refresh.`,
 		};
 	}
 
@@ -42,7 +42,7 @@ async function loadTelegramStatus(): Promise<LoadResult> {
 			ok: false,
 			issue: "invalid_payload",
 			message:
-				"The API reported Telegram support but returned an unexpected payload. Restart the Way of Pi server from this repository.",
+				"The API reported Telegram support but returned an unexpected payload. Restart the Way of Work server from this repository.",
 		};
 	}
 
@@ -50,7 +50,7 @@ async function loadTelegramStatus(): Promise<LoadResult> {
 		ok: false,
 		issue: "stale_api",
 		message:
-			"The process answering on your API port is an older Way of Pi Bun build (no Telegram snapshot in /api/config). Stop that process, then start the server from this checkout — e.g. `cd apps/wayofwork-ui && bun run dev` or `bun run server/index.ts` — and click Refresh status.",
+			"The process answering on your API port is an older Way of Work Bun build (no Telegram snapshot in /api/config). Stop that process, then start the server from this checkout — e.g. `cd apps/wayofwork-ui && bun run dev` or `bun run server/index.ts` — and click Refresh status.",
 	};
 }
 

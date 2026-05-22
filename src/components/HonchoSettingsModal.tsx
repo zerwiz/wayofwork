@@ -118,7 +118,7 @@ export function HonchoSettingsModal({
 					<div className={`mb-4 rounded-lg border p-4 ${card}`}>
 						<h3 className="mb-2 font-semibold">Install Honcho</h3>
 						<p className={`mb-2 text-[12px] ${sub}`}>
-							The Way of Pi app does <strong className={appearanceDark ? "text-[#e0e0e0]" : "text-[#111]"}>not</strong> bundle Honcho.
+							The Way of Work app does <strong className={appearanceDark ? "text-[#e0e0e0]" : "text-[#111]"}>not</strong> bundle Honcho.
 							Install Docker, then clone the official server and follow its README (Docker /{" "}
 							<Mono dark={appearanceDark}>docker-compose.yml.example</Mono>):
 						</p>

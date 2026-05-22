@@ -337,7 +337,7 @@ export function ClawApp({
     }
     if (
       !window.confirm(
-        "Delete `.claw/workspace/` from the Way of Pi host checkout?\n\nThis removes the seven scaffold files and `memory/` under that folder. It does **not** remove `.claw/telegram.json` (that stays next to `workspace/` if present). This cannot be undone.",
+        "Delete `.claw/workspace/` from the Way of Work host checkout?\n\nThis removes the seven scaffold files and `memory/` under that folder. It does **not** remove `.claw/telegram.json` (that stays next to `workspace/` if present). This cannot be undone.",
       )
     ) {
       return;
@@ -502,6 +502,8 @@ export function ClawApp({
         ? "hidden md:block"
         : "hidden md:block !bg-[#ececec] hover:!bg-[#007acc]/35 active:!bg-[#007acc]/55";
 
+  const [showFilePanel, setShowFilePanel] = useState(false);
+
   const bg = isDark
     ? "bg-[#1e1e1e] text-[#cccccc] selection:bg-[#264f78]"
     : "bg-[#f3f3f3] text-[#333333] selection:bg-[#add6ff]/60";
@@ -553,6 +555,14 @@ export function ClawApp({
               connected={connected}
               appearanceDark={isDark}
               activeTab={activeTab}
+              onNew={activeTab === "chat" ? onNewSession : undefined}
+              onToggleWorkspace={activeTab === "chat" ? () => setShowFilePanel(!showFilePanel) : undefined}
+              workspaceActive={showFilePanel}
+              streaming={streaming}
+              chatTabs={chatTabs}
+              activeChatTabId={activeChatTabId}
+              onSelectChatTab={onSelectChatTab}
+              onCloseChatTab={onCloseChatTab}
             />
           )}
           {activeTab === "mission" ? (
@@ -609,6 +619,8 @@ export function ClawApp({
               onChatModeChange={onChatModeChange}
               contextFillPct={contextFillPct}
               contextTitle={contextTitle}
+              showFilePanel={showFilePanel}
+              onToggleClawFiles={() => setShowFilePanel(!showFilePanel)}
               filePanelNodes={clawHostFileTree.nodes}
               filePanelTreeLoading={clawHostFileTree.loading}
               onRefreshFilePanelTree={() => void clawHostFileTree.refresh()}
@@ -639,6 +651,7 @@ export function ClawApp({
               addClawMarkdownDocumentBusy={addClawMarkdownDocumentBusy}
               layoutVariant={layoutVariant}
               menuFileFocusRev={clawMenuFileFocusRev}
+              onSetupClawWorkspace={() => setClawWorkspaceOnboardingOpen(true)}
             />
           ) : activeTab === "team" ? (
             <SimpleTeamView
@@ -817,6 +830,10 @@ export function ClawApp({
                         onMoveFileToDirectory={moveWithClawTreeSync}
                         allowWorkspaceRootDrop={false}
                         emptyTreeHint="No files under host .claw/ yet. Use Mission → workspace setup, Add document, or create .claw/ on disk."
+                        emptyTreeAction={{
+                          label: "Setup",
+                          onClick: () => setClawWorkspaceOnboardingOpen(true),
+                        }}
                       />
                     )}
                   </div>

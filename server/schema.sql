@@ -165,7 +165,78 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TEXT DEFAULT (datetime('now'))
 );
 
-CREATE INDEX IF NOT EXISTS idx_audit_tenant_time ON audit_logs(tenant_id, created_at);
+-- ============================================
+-- 9. NOTES (Project Documentation)
+-- ============================================
+CREATE TABLE IF NOT EXISTS notes (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    content TEXT,
+    created_by TEXT REFERENCES users(id),
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_notes_tenant ON notes(tenant_id);
+-- ============================================
+-- 10. CALENDAR_EVENTS (Project Scheduling)
+-- ============================================
+CREATE TABLE IF NOT EXISTS calendar_events (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    start_date TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    all_day BOOLEAN DEFAULT 0,
+    created_by TEXT REFERENCES users(id),
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_calendar_tenant ON calendar_events(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_calendar_project ON calendar_events(project_id);
+
+-- ============================================
+-- 11. PROJECT_MEMBERS (Access Control)
+-- ============================================
+CREATE TABLE IF NOT EXISTS project_members (
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role TEXT NOT NULL DEFAULT 'WORKER',
+    created_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (project_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_members_user ON project_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_project_members_tenant ON project_members(tenant_id);
+
+-- ============================================
+-- 12. TA_PLANS (Traffic Arrangement Plans)
+-- ============================================
+CREATE TABLE IF NOT EXISTS ta_plans (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    road_number TEXT,
+    speed_limit INTEGER,
+    traffic_volume_adt INTEGER,
+    work_type TEXT,                       -- 'fixed', 'moving', 'intermittent'
+    sketch_id TEXT,                        -- Reference to TDOK 2024:0043 sketch
+    risk_assessment_json TEXT,            -- Generated risk assessment data
+    validation_status TEXT,                -- 'valid', 'invalid', 'warning'
+    status TEXT DEFAULT 'draft',          -- 'draft', 'pending_approval', 'approved', 'submitted'
+    created_by TEXT REFERENCES users(id),
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ta_plans_tenant ON ta_plans(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ta_plans_project ON ta_plans(project_id);
 
 -- ============================================
 -- SAMPLE DATA (Development Only - Remove in Production)
@@ -195,6 +266,13 @@ VALUES
 -- Insert Sample Project
 INSERT OR IGNORE INTO projects (id, tenant_id, name, description, budget_allocated)
 VALUES ('proj_1', 'tenant_demo', 'Foundation Work', 'Main building foundation phase', 50000);
+
+-- Insert Project Members
+INSERT OR IGNORE INTO project_members (tenant_id, project_id, user_id, role)
+VALUES 
+    ('tenant_demo', 'proj_1', 'user_leader', 'LEADER'),
+    ('tenant_demo', 'proj_1', 'user_worker1', 'WORKER'),
+    ('tenant_demo', 'proj_1', 'user_worker2', 'WORKER');
 
 -- Insert Sample Tasks
 INSERT OR IGNORE INTO tasks (id, tenant_id, project_id, title, assigned_to, status, estimated_hours)

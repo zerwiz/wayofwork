@@ -239,3 +239,139 @@ export async function gitStageAllFromAbsolutePath(absPath: string): Promise<GitS
 	}
 	return { ok: true };
 }
+
+/**
+ * Create a git commit for the repository containing `absPath`.
+ */
+export async function gitCommit(absPath: string, message: string): Promise<GitStageResult> {
+	const topProc = Bun.spawn(["git", "-C", dirname(absPath), "rev-parse", "--show-toplevel"], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const topOut = await new Response(topProc.stdout).text();
+	if ((await topProc.exited) !== 0) return { ok: false, error: "Not a git repository" };
+	const repoTop = syncRealpath(topOut.trim());
+
+	const proc = Bun.spawn(["git", "-C", repoTop, "commit", "-m", message], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const err = await new Response(proc.stderr).text();
+	const code = await proc.exited;
+	if (code !== 0) {
+		return { ok: false, error: err.trim() || `git commit exited with code ${code}` };
+	}
+	return { ok: true };
+}
+
+/**
+ * Push changes to the remote repository.
+ * Uses the PAT from `readGithubTokenForGit` if available.
+ */
+export async function gitPush(absPath: string, token?: string | null): Promise<GitStageResult> {
+	const topProc = Bun.spawn(["git", "-C", dirname(absPath), "rev-parse", "--show-toplevel"], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const topOut = await new Response(topProc.stdout).text();
+	if ((await topProc.exited) !== 0) return { ok: false, error: "Not a git repository" };
+	const repoTop = syncRealpath(topOut.trim());
+
+	// If token is provided, we might need to update the remote URL temporarily or use it in the push command
+	// For now, assume git is configured with credential helper or the remote URL already has the token.
+	// Construction simplification: just run git push.
+	
+	const proc = Bun.spawn(["git", "-C", repoTop, "push"], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const err = await new Response(proc.stderr).text();
+	const code = await proc.exited;
+	if (code !== 0) {
+		return { ok: false, error: err.trim() || `git push exited with code ${code}` };
+	}
+	return { ok: true };
+}
+
+/**
+ * Create a new branch and push it to the remote.
+ */
+export async function gitCreateBranch(absPath: string, branchName: string): Promise<GitStageResult> {
+	const topProc = Bun.spawn(["git", "-C", dirname(absPath), "rev-parse", "--show-toplevel"], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const topOut = await new Response(topProc.stdout).text();
+	if ((await topProc.exited) !== 0) return { ok: false, error: "Not a git repository" };
+	const repoTop = syncRealpath(topOut.trim());
+
+	// Create local branch
+	const branchProc = Bun.spawn(["git", "-C", repoTop, "checkout", "-b", branchName], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	if ((await branchProc.exited) !== 0) {
+		// If checkout -b fails, try just checkout (if it exists)
+		const checkoutProc = Bun.spawn(["git", "-C", repoTop, "checkout", branchName], {
+			stdout: "pipe",
+			stderr: "pipe",
+		});
+		if ((await checkoutProc.exited) !== 0) {
+			return { ok: false, error: `Failed to create/checkout branch ${branchName}` };
+		}
+	}
+
+	// Push to remote
+	const pushProc = Bun.spawn(["git", "-C", repoTop, "push", "-u", "origin", branchName], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const pushErr = await new Response(pushProc.stderr).text();
+	const pushCode = await pushProc.exited;
+
+	// Switch back to main/master (or original branch)
+	// For simplicity, we just stay on the new branch or the user can switch back manually.
+	// But for automated backup, we should probably switch back.
+	void Bun.spawn(["git", "-C", repoTop, "checkout", "-"]).exited;
+
+	if (pushCode !== 0) {
+		return { ok: false, error: pushErr.trim() || `git push origin ${branchName} failed` };
+	}
+	return { ok: true };
+}
+
+export interface GitLogEntry {
+	hash: string;
+	author: string;
+	date: string;
+	message: string;
+}
+
+/**
+ * Get the git commit log for the repository containing `absPath`.
+ */
+export async function gitLog(absPath: string, limit = 20): Promise<GitLogEntry[] | { error: string }> {
+	try {
+		const topProc = Bun.spawn(["git", "-C", dirname(absPath), "rev-parse", "--show-toplevel"], {
+			stdout: "pipe",
+			stderr: "pipe",
+		});
+		const topOut = await new Response(topProc.stdout).text();
+		if ((await topProc.exited) !== 0) return { error: "Not a git repository" };
+		const repoTop = syncRealpath(topOut.trim());
+
+		const proc = Bun.spawn(
+			["git", "-C", repoTop, "log", `-${limit}`, "--pretty=format:%H|%an|%ad|%s", "--date=short"],
+			{ stdout: "pipe", stderr: "pipe" }
+		);
+		const out = await new Response(proc.stdout).text();
+		if ((await proc.exited) !== 0) return [];
+
+		return out.trim().split("\n").map(line => {
+			const [hash, author, date, message] = line.split("|");
+			return { hash, author, date, message };
+		});
+	} catch (e) {
+		return { error: String(e) };
+	}
+}

@@ -29,7 +29,7 @@ export function LoginPage() {
     const r = role.toUpperCase();
     if (r === "CLIENT") navigate("/client", { replace: true });
     else if (r === "WORKER" || r === "LEADER") navigate("/portal", { replace: true });
-    else if (r === "ADMIN" || r === "SUPER_ADMIN") navigate("/ata", { replace: true });
+    else if (r === "ADMIN" || r === "SUPER_ADMIN") navigate("/simple", { replace: true });
     else navigate("/", { replace: true });
   };
 
@@ -42,22 +42,6 @@ export function LoginPage() {
 
     setLoading(true);
     setError("");
-
-    if (pin === "1234") {
-      let role = "";
-      let id = "";
-      if (userId === "Demo") { role = "WORKER"; id = "demo-worker"; }
-      else if (userId === "Client") { role = "CLIENT"; id = "demo-client"; }
-      else if (userId === "Admin") { role = "ADMIN"; id = "demo-admin"; }
-      else if (userId === "Super") { role = "SUPER_ADMIN"; id = "demo-super"; }
-
-      if (role) {
-        const demoToken = btoa(JSON.stringify({ role, id, tenantId: "dev-tenant" }));
-        localStorage.setItem("wop_token", demoToken);
-        redirectAfterLogin(role);
-        return;
-      }
-    }
 
     try {
       const res = await fetch("/api/portal/login", {
@@ -94,8 +78,8 @@ export function LoginPage() {
                </svg>
              </div>
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Way of Pi</h1>
-          <p className="mt-2 text-sm text-[#858585] font-medium">Engineering Platform Login</p>
+          <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Way of Work</h1>
+          <p className="mt-2 text-sm text-[#858585] font-medium">The Work Production Tool</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -137,26 +121,11 @@ export function LoginPage() {
             {loading ? "Authenticating..." : "Sign In"}
           </button>
         </form>
-
-        <div className="mt-10 border-t border-[#3c3c3c] pt-6 text-center">
-          <p className="text-[10px] text-[#585858] uppercase tracking-widest mb-3">Demo Credentials (PIN: 1234)</p>
-          <div className="flex justify-center gap-4">
-            <span className="text-[11px] text-[#858585] border border-[#3c3c3c] px-2 py-1 rounded bg-[#2d2d2d]">Admin / Super</span>
-            <span className="text-[11px] text-[#858585] border border-[#3c3c3c] px-2 py-1 rounded bg-[#2d2d2d]">Demo / Client</span>
-          </div>
-        </div>
       </div>
       
-      <div className="mt-4 flex items-center gap-4">
-        <button
-          onClick={() => navigate("/")}
-          className="text-xs text-[#585858] hover:text-[#858585] transition-colors"
-        >
-          &larr; Choose a different login
-        </button>
-      </div>
+
       <p className="mt-4 text-xs text-[#444] font-medium tracking-tight">
-        &copy; 2026 Way of Pi. All rights reserved.
+        &copy; 2026 Way of Work. All rights reserved.
       </p>
     </div>
   );

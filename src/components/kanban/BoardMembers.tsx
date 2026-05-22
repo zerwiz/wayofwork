@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Mail, Search, Shield, Eye, User, Trash2, Building2 } from 'lucide-react';
 import type { Board, BoardMember } from '../../types/kanban';
-import { kanbanService } from '../../services/mockKanbanService';
+import { kanbanService } from '../../services/kanbanService';
 import { useToast } from '../../contexts/ToastContext';
 import ConfirmationModal from '../modals/ConfirmationModal';
 
@@ -57,7 +57,7 @@ export const BoardMembers: React.FC<BoardMembersProps> = ({ board, isOpen, onClo
         const data: CompanyUser[] = await res.json();
         setCompanyUsers(data);
       } else {
-        // Fallback: seed users from mockKanbanService
+        // Fallback: seed users from kanbanService
         setCompanyUsers([
           { id: 'user-1', username: 'alice', full_name: 'Alice Johnson', email: 'alice@example.com', role: 'ADMIN', job_title: 'Project Manager' },
           { id: 'user-2', username: 'bob', full_name: 'Bob Smith', email: 'bob@example.com', role: 'WORKER', job_title: 'Developer' },

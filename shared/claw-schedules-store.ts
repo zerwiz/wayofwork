@@ -1,5 +1,5 @@
 /**
- * Host **`.claw/schedule/`** on the Way of Pi checkout (see `getClawDotDirAbs()`): definitions
+ * Host **`.claw/schedule/`** on the Way of Work checkout (see `getClawDotDirAbs()`): definitions
  * **`claw-schedules.v1.json`** plus server-owned **`claw-schedule-runs.v1.json`**.
  *
  * Legacy: older builds used **`<WOP_WORKSPACE>/.wayofpi/`** — migrated once on read when the new

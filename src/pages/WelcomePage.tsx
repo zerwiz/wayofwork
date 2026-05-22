@@ -14,8 +14,8 @@ export function WelcomePage() {
             </svg>
           </div>
         </div>
-        <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Way of Pi</h1>
-        <p className="mt-2 text-sm text-[#858585]">Engineering Platform</p>
+        <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Way of Work</h1>
+        <p className="mt-2 text-sm text-[#858585]">The Work Production Tool</p>
       </div>
 
       <div className="flex flex-col gap-3 w-full max-w-xs">
@@ -28,7 +28,7 @@ export function WelcomePage() {
         </button>
       </div>
 
-      <p className="mt-8 text-xs text-[#444]">&copy; 2026 Way of Pi</p>
+      <p className="mt-8 text-xs text-[#444]">&copy; 2026 Way of Work</p>
     </div>
   );
 }

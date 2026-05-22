@@ -119,7 +119,7 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
     setTasks([...DEMO_TASKS]);
     setFiles([...DEMO_FILES]);
     setProfileId("demo-worker");
-    setProfileEmail("demo@wayofpi.dev");
+    setProfileEmail("demo@wayofwork.dev");
     setProfilePhone("+46-555-0123");
     setProfileRole("WORKER");
     setProfileJobTitle("Worker");
@@ -128,31 +128,6 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
   const handleLogin = async () => {
     if (!workerId || !pin) {
       setLoginError("Worker ID and PIN required");
-      return;
-    }
-    // Demo mode
-    if (workerId === "Demo" && pin === "1234") {
-      const demoToken = btoa(JSON.stringify({ role: "WORKER", id: "demo-worker" }));
-      localStorage.setItem("wop_token", demoToken);
-      setIsLoggedIn(true);
-      setLoginError("");
-      loadPortalData();
-      return;
-    }
-    if (workerId === "Admin" && pin === "1234") {
-      const demoToken = btoa(JSON.stringify({ role: "ADMIN", id: "demo-admin" }));
-      localStorage.setItem("wop_token", demoToken);
-      setIsLoggedIn(true);
-      setLoginError("");
-      loadPortalData();
-      return;
-    }
-    if (workerId === "Super" && pin === "1234") {
-      const demoToken = btoa(JSON.stringify({ role: "SUPER_ADMIN", id: "demo-super" }));
-      localStorage.setItem("wop_token", demoToken);
-      setIsLoggedIn(true);
-      setLoginError("");
-      loadPortalData();
       return;
     }
     try {
@@ -242,7 +217,7 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
               <p className="text-xs text-[#858585]">
                 {loginError.includes("not ready") || loginError.includes("not running") ? (
                   <div>
-                    The Way of Pi backend API isn't available. This is expected in demo mode.
+                    The Way of Work backend API isn't available. This is expected in demo mode.
                     <br />
                     Use <strong className="text-[#f0f0f0]">Worker ID: "Demo"</strong> and <strong className="text-[#f0f0f0]">PIN: "1234"</strong> to test.
                   </div>

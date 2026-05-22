@@ -6,9 +6,9 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { kanbanService } from '../../../services/mockKanbanService';
-import { tasksService } from '../../../services/mockTasksService';
-import { useToast } from '../../../context/ToastContext';
+import { kanbanService } from '../../../services/kanbanService';
+import { tasksService } from '../../../services/tasksService';
+import { useToast } from '../../../contexts/ToastContext';
 import type { Board, BoardColumn, BoardCard } from '../../../types/kanban';
 import type { TaskList, Task } from '../../../types/tasks';
 import { X, LayoutGrid, Folder, Check, List } from 'lucide-react';
@@ -49,7 +49,7 @@ export function PushTaskListToKanbanModal({
         }
 
         // Load tasks in the list
-        const tasks = tasksService.getTasksByTaskList(taskList.id);
+        const tasks = (await tasksService.getTasksByTaskList(taskList.id)) as any[];
         setTasksInList(tasks);
         setSelectedTasks(tasks.map((t) => t.id));
 
@@ -215,7 +215,7 @@ export function PushTaskListToKanbanModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg text-[#858585] hover:text-[#cccccc] transition-all duration-200 hover:bg-gradient-to-r hover:from-[#ea580c]/20 hover:to-[#c2410c]/20 hover:shadow-lg hover:shadow-orange-500/10"
+            className="p-2 rounded-lg text-[#858585] hover:text-white transition-all duration-200 hover:bg-gradient-to-r hover:from-orange-600/20 hover:to-orange-600/20 hover:shadow-lg hover:shadow-orange-500/10"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -226,8 +226,8 @@ export function PushTaskListToKanbanModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {/* Board Selector */}
           <div>
-            <label className="block text-sm font-semibold text-[#cccccc] mb-2 flex items-center gap-2">
-              <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-[#ea580c]/20 to-[#c2410c]/20 flex items-center justify-center">
+            <label className="block text-sm font-semibold text-white mb-2 flex items-center gap-2">
+              <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-orange-600/20 to-orange-700/20 flex items-center justify-center">
                 <LayoutGrid className="w-3 h-3 text-orange-400" />
               </div>
               Select Board
@@ -235,7 +235,7 @@ export function PushTaskListToKanbanModal({
             <select
               value={selectedBoardId}
               onChange={(e) => setSelectedBoardId(e.target.value)}
-              className="w-full px-4 py-2 bg-[#1e1e1e]/60 backdrop-blur-sm border border-orange-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-[#cccccc] select transition-all hover:border-orange-500/50"
+              className="w-full px-4 py-2 bg-[#252526]/60 backdrop-blur-sm border border-orange-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-white select transition-all hover:border-orange-500/50"
             >
               <option value="">Choose a board...</option>
               {boards.map((board) => (
@@ -249,8 +249,8 @@ export function PushTaskListToKanbanModal({
           {/* Column Selector */}
           {selectedBoardId && (
             <div>
-              <label className="block text-sm font-semibold text-[#cccccc] mb-2 flex items-center gap-2">
-                <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-[#ea580c]/20 to-[#c2410c]/20 flex items-center justify-center">
+              <label className="block text-sm font-semibold text-white mb-2 flex items-center gap-2">
+                <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-orange-600/20 to-orange-700/20 flex items-center justify-center">
                   <Folder className="w-3 h-3 text-orange-400" />
                 </div>
                 Select Column
@@ -258,7 +258,7 @@ export function PushTaskListToKanbanModal({
               <select
                 value={selectedColumnId}
                 onChange={(e) => setSelectedColumnId(e.target.value)}
-                className="w-full px-4 py-2 bg-[#1e1e1e]/60 backdrop-blur-sm border border-orange-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-[#cccccc] select transition-all hover:border-orange-500/50"
+                className="w-full px-4 py-2 bg-[#252526]/60 backdrop-blur-sm border border-orange-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-white select transition-all hover:border-orange-500/50"
               >
                 <option value="">Choose a column...</option>
                 {columns.map((column) => (
@@ -274,7 +274,7 @@ export function PushTaskListToKanbanModal({
           {tasksInList.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3">
-                <label className="block text-sm font-semibold text-[#cccccc] flex items-center gap-2">
+                <label className="block text-sm font-semibold text-white flex items-center gap-2">
                   <List className="w-4 h-4" />
                   Select Tasks ({selectedTasks.length}/{tasksInList.length})
                 </label>
@@ -282,20 +282,20 @@ export function PushTaskListToKanbanModal({
                   <button
                     type="button"
                     onClick={handleSelectAll}
-                    className="px-3 py-1 text-xs bg-[#1e1e1e]/60 hover:bg-[#252526]/80 text-[#cccccc] hover:text-[#cccccc] rounded-lg transition-all border border-gray-700/50 hover:border-[#3c3c3c]"
+                    className="px-3 py-1 text-xs bg-[#252526]/60 hover:bg-[#333333]/80 text-[#a0a0a0] hover:text-white rounded-lg transition-all border border-[#333333]/50 hover:border-[#444444]"
                   >
                     Select All
                   </button>
                   <button
                     type="button"
                     onClick={handleDeselectAll}
-                    className="px-3 py-1 text-xs bg-[#1e1e1e]/60 hover:bg-[#252526]/80 text-[#cccccc] hover:text-[#cccccc] rounded-lg transition-all border border-gray-700/50 hover:border-[#3c3c3c]"
+                    className="px-3 py-1 text-xs bg-[#252526]/60 hover:bg-[#333333]/80 text-[#a0a0a0] hover:text-white rounded-lg transition-all border border-[#333333]/50 hover:border-[#444444]"
                   >
                     Deselect All
                   </button>
                 </div>
               </div>
-              <div className="max-h-64 overflow-y-auto space-y-2 border border-orange-500/30 rounded-lg p-3 bg-[#1e1e1e]/30">
+              <div className="max-h-64 overflow-y-auto space-y-2 border border-orange-500/30 rounded-lg p-3 bg-[#252526]/30">
                 {tasksInList.map((task) => {
                   const isSelected = selectedTasks.includes(task.id);
                   return (
@@ -303,18 +303,18 @@ export function PushTaskListToKanbanModal({
                       key={task.id}
                       className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
                         isSelected
-                          ? 'bg-gradient-to-r from-[#ea580c]/20 to-[#c2410c]/20 border border-orange-500/50'
-                          : 'bg-[#1e1e1e]/60 border border-gray-700/50 hover:border-[#3c3c3c]'
+                          ? 'bg-gradient-to-r from-orange-600/20 to-orange-700/20 border border-orange-500/50'
+                          : 'bg-[#252526]/60 border border-[#333333]/50 hover:border-[#444444]'
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleToggleTask(task.id)}
-                        className="w-4 h-4 rounded border-orange-500/50 bg-[#1e1e1e]/60 text-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all"
+                        className="w-4 h-4 rounded border-orange-500/50 bg-[#252526]/60 text-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-[#cccccc]">{task.title}</div>
+                        <div className="text-sm font-medium text-white">{task.title}</div>
                         {task.description && (
                           <div className="text-xs text-[#858585] mt-1 line-clamp-1">{task.description}</div>
                         )}
@@ -349,7 +349,7 @@ export function PushTaskListToKanbanModal({
           )}
 
           {tasksInList.length === 0 && (
-            <div className="text-center py-8 text-[#858585] border border-gray-700/50 rounded-lg bg-[#1e1e1e]/30">
+            <div className="text-center py-8 text-[#858585] border border-[#333333]/50 rounded-lg bg-[#252526]/30">
               <List className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No tasks in this list</p>
             </div>
@@ -360,7 +360,7 @@ export function PushTaskListToKanbanModal({
         <div className="flex items-center justify-end gap-3 p-6 border-t border-orange-500/20 flex-shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-[#1e1e1e]/60 hover:bg-[#252526]/80 text-[#cccccc] rounded-lg transition-all duration-200 border border-gray-700/50 hover:border-[#3c3c3c]"
+            className="px-4 py-2 bg-[#252526]/60 hover:bg-[#333333]/80 text-white rounded-lg transition-all duration-200 border border-[#333333]/50 hover:border-[#444444]"
           >
             Cancel
           </button>
@@ -372,7 +372,7 @@ export function PushTaskListToKanbanModal({
               !selectedColumnId ||
               selectedTasks.length === 0
             }
-            className="px-4 py-2 bg-gradient-to-r from-[#ea580c] to-[#c2410c] hover:from-orange-700 hover:to-orange-700 text-[#cccccc] rounded-lg transition-all font-medium shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
+            className="px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-700 text-white rounded-lg transition-all font-medium shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
           >
             {isCreating ? (
               <>

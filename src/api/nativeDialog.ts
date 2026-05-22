@@ -1,5 +1,5 @@
 /**
- * Ask the Way of Pi server to open a host-native file/folder dialog (zenity/kdialog,
+ * Ask the Way of Work server to open a host-native file/folder dialog (zenity/kdialog,
  * macOS osascript, or Windows PowerShell). Paths are on the machine running the server.
  */
 export type NativePickResponse =

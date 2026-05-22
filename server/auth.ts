@@ -1,9 +1,14 @@
 import { SignJWT, jwtVerify } from "jose";
 
-const SECRET = new TextEncoder().encode(process.env.WOP_AUTH_SECRET || "way-of-pi-secret-key-change-me");
+const SECRET_RAW = process.env.WOP_AUTH_SECRET;
+if (!SECRET_RAW && process.env.NODE_ENV === "production") {
+	console.error("FATAL: WOP_AUTH_SECRET must be set in production");
+	process.exit(1);
+}
+const SECRET = new TextEncoder().encode(SECRET_RAW || "dev-secret-change-me-in-production");
 
-export async function createToken(userId: string, tenantId: string) {
-	return await new SignJWT({ userId, tenantId })
+export async function createToken(userId: string, tenantId: string, role?: string) {
+	return await new SignJWT({ userId, tenantId, role })
 		.setProtectedHeader({ alg: "HS256" })
 		.setIssuedAt()
 		.setExpirationTime("24h")
@@ -13,7 +18,7 @@ export async function createToken(userId: string, tenantId: string) {
 export async function verifyToken(token: string) {
 	try {
 		const { payload } = await jwtVerify(token, SECRET);
-		return payload as { userId: string; tenantId: string };
+		return payload as { userId: string; tenantId: string; role?: string };
 	} catch {
 		return null;
 	}

@@ -26,7 +26,15 @@ import { imageMimeFromPath } from "./workspace-file-mime";
 import { listPlansCatalog } from "./plans-catalog";
 import { readPackageScripts } from "./package-scripts";
 import { readUiViewsCatalog, seedUiViewsCatalogIfMissing } from "./ui-views-catalog";
-import { gitStageAbsolutePath, gitStageAllFromAbsolutePath } from "./git";
+import {
+	gitCommit,
+	gitLog,
+	gitPush,
+	gitStageAbsolutePath,
+	gitStageAllFromAbsolutePath,
+	gitStatusMap,
+	gitWorktreeSnapshot,
+} from "./git";
 import { buildClawHostTree, buildWorkspaceTree } from "./tree";
 import {
 	addFolder,
@@ -69,6 +77,7 @@ import {
 	verifyWebhookBearer,
 } from "./claw-webhook-store";
 import { getClawTelegramIntegrationStatus } from "./claw-telegram-status";
+import { getClawWhatsAppIntegrationStatus } from "./claw-whatsapp-status";
 import { collectDiagnostics, collectUpstreamSnapshot } from "./diagnostics";
 import { runWorkspaceProblemsAnalysis, type WorkspaceProblemsRunResult } from "./workspace-problems";
 import { resolveOllamaHost, resolveOllamaModelDefault } from "./pi-ollama-env";
@@ -79,12 +88,12 @@ import {
 	unregisterChatSocketForToolLogs,
 } from "./tool-log-broadcast";
 import {
-	appendWayofpiSessionMessage,
-	loadWayofpiSessionMessages,
+	appendWoSessionMessage,
+	loadWoSessionMessages,
 	sanitizeSessionKey,
-	syncWayofpiSessionFile,
-	wayofpiSessionBasename,
-} from "./wop-session-jsonl";
+	syncWoSessionFile,
+	woSessionBasename,
+} from "./wo-session-jsonl";
 import { tryAutoDispatchFromUserText } from "./orchestrator-dispatch-intent";
 import {
 	orchestratorBashEnabled,
@@ -122,6 +131,8 @@ import {
 import { db } from "./db";
 import { createToken, verifyToken } from "./auth";
 import { handleTicketApi } from "./tickets-api";
+import { handleOfferInvoiceApi } from "./offers-api";
+import { handlePendingChangesApi } from "./pending-changes-api";
 import {
 	configureNgrokAuthtokenDev,
 	getNgrokTunnelDevJson,
@@ -137,6 +148,15 @@ import {
 	tunnelGateUnauthorizedResponse,
 } from "./tunnel-gate";
 import { getShareUrlHintsJson } from "./share-url-hints";
+import { json, logLine } from "./utils";
+import { Router } from "./router";
+import { registerAuthRoutes } from "./routes/auth";
+import { registerPortalRoutes } from "./routes/portal";
+import { registerAdminRoutes } from "./routes/admin";
+import { registerClientRoutes } from "./routes/client";
+import { registerProjectRoutes } from "./routes/projects";
+import { registerCalendarRoutes } from "./routes/calendar";
+import { registerTAPlannerRoutes } from "./routes/ta-planner";
 
 // Integrated terminal: in production (`NODE_ENV=production`) keep opt-in via WOP_ALLOW_TERMINAL only.
 // In non-production, default on when unset so local `npm run dev` gets a real shell; disable with WOP_ALLOW_TERMINAL=0|false|no|off.
@@ -180,20 +200,34 @@ type ChatWsData = {
 	agentName: string | null;
 	/** Resolved agent markdown body (after frontmatter); mirrors last successful `agentName`. */
 	cachedAgentBody: string | null;
+	/** Comma-separated skills string from agent frontmatter, cached alongside `cachedAgentBody`. */
+	cachedAgentSkills: string | null;
 	/** Abort in-flight LLM stream (Pi-style stop generation). */
 	chatAbort: AbortController | null;
 	/** Cumulative prompt + completion tokens (Pi footer-style — sums per finished assistant turn). */
 	cumPromptTokens: number;
 	cumCompletionTokens: number;
-	/** Client chat tab id — persists transcript under `agent/sessions/wayofpi-chat-*.jsonl`. */
+	/** Client chat tab id — persists transcript under `agent/sessions/wo-chat-*.jsonl`. */
 	wopSessionKey: string | null;
+	/** UI surface name for session isolation (e.g. claw, docs, kanban). */
+	surface: string | null;
 	tenantId: string;
 	userId: string;
 };
 
 type ServerWsData = ChatWsData | TerminalWsData;
 
-function applyLeadFromCache(
+async function resolveAgentSkillsFromName(agentName: string, tenantId: string): Promise<string | null> {
+	try {
+		const { agents } = await loadWorkspaceAgents(tenantId);
+		const hit = agents.find((a) => a.name.toLowerCase() === agentName.trim().toLowerCase());
+		return hit?.skills ?? null;
+	} catch {
+		return null;
+	}
+}
+
+async function applyLeadFromCache(
 	data: ChatWsData,
 	opts?: {
 		/**
@@ -212,35 +246,17 @@ function applyLeadFromCache(
 		plannerBody = readPlannerAgentBodySync(getPrimaryWorkspacePath(data.tenantId));
 	}
 	const piJson = shouldUsePiJsonChat();
-	applyLeadSystem(data.messages, {
+	await applyLeadSystem(data.messages, {
 		mode: data.chatMode,
 		envSystemPrompt: process.env.WOP_SYSTEM_PROMPT,
 		agentBody: data.cachedAgentBody,
+		agentSkills: data.cachedAgentSkills,
 		agentNameLower,
 		plannerAgentBody: plannerBody,
 		orchestratorPiToolsEnabled: orchestratorToolsEnabled() && !piJson,
 		piJsonChatRuntime: piJson,
 		workspaceIndexBoost: getWorkspaceIndexChatBoostSync(),
 	});
-}
-
-function json(data: unknown, status = 200): Response {
-	return new Response(JSON.stringify(data), {
-		status,
-		headers: {
-			"Content-Type": "application/json; charset=utf-8",
-			"Cache-Control": "no-store",
-		},
-	});
-}
-
-function logLine(
-	level: "INFO" | "WARN" | "SUCCESS" | "ERROR",
-	source: string,
-	msg: string,
-): string {
-	const time = new Date().toISOString().split("T")[1]?.slice(0, 12) ?? "";
-	return JSON.stringify({ type: "log", time, level, source, msg });
 }
 
 function sendQueueState(ws: { send: (data: string) => void }, queue: PendingChatItem[]) {
@@ -358,7 +374,7 @@ async function processActivateSession(
 
 	let hydratedFromDisk = false;
 	if (next.length === 0 && sessionKey) {
-		const disk = await loadWayofpiSessionMessages(sessionKey);
+		const disk = await loadWoSessionMessages(sessionKey, ws.data.surface || undefined);
 		if (disk.length > 0) {
 			ws.data.messages = disk;
 			hydratedFromDisk = true;
@@ -373,16 +389,16 @@ async function processActivateSession(
 	ws.data.cumPromptTokens = 0;
 	ws.data.cumCompletionTokens = 0;
 	sendQueueState(ws, []);
-	applyLeadFromCache(ws.data);
+	await applyLeadFromCache(ws.data);
 
 	if (sessionKey) {
 		try {
-			await syncWayofpiSessionFile(sessionKey, ws.data.messages);
+			await syncWoSessionFile(sessionKey, ws.data.messages, ws.data.surface || undefined);
 			const n = ws.data.messages.filter((m) => m.role === "user" || m.role === "assistant").length;
 			broadcastToolLog(
 				"INFO",
 				"session",
-				`JSONL ${wayofpiSessionBasename(sessionKey)} (${n} turn${n === 1 ? "" : "s"})`,
+				`JSONL ${woSessionBasename(sessionKey, ws.data.surface || undefined)} (${n} turn${n === 1 ? "" : "s"})`,
 			);
 		} catch (e) {
 			const m = e instanceof Error ? e.message : String(e);
@@ -400,7 +416,7 @@ async function processActivateSession(
 			"INFO",
 			"chat",
 			hydratedFromDisk && sessionKey
-				? `Restored ${userAsstCount} message(s) from ${wayofpiSessionBasename(sessionKey)}`
+				? `Restored ${userAsstCount} message(s) from ${woSessionBasename(sessionKey)}`
 				: `Chat tab active — ${userAsstCount} message${userAsstCount === 1 ? "" : "s"} for this connection.`,
 		),
 	);
@@ -437,7 +453,7 @@ async function applySlashMutations(
 	}
 	if (mutation.setChatMode) {
 		data.chatMode = mutation.setChatMode;
-		applyLeadFromCache(data);
+		await applyLeadFromCache(data);
 		ws.send(JSON.stringify({ type: "chat_mode", mode: mutation.setChatMode }));
 		ws.send(
 			logLine(
@@ -449,17 +465,35 @@ async function applySlashMutations(
 			),
 		);
 	}
+	if (mutation.reload) {
+		// Re-scan cache: if an agent is active, refresh its body and skills from disk
+		if (data.agentName) {
+			const freshBody = await getAgentBodyByName(data.agentName, data.tenantId);
+			if (freshBody) {
+				data.cachedAgentBody = freshBody;
+				data.cachedAgentSkills = await resolveAgentSkillsFromName(data.agentName, data.tenantId);
+			}
+		}
+		await applyLeadFromCache(data);
+		try {
+			ws.send(JSON.stringify({ type: "agents_catalog_changed" }));
+		} catch {
+			/* ignore */
+		}
+	}
 	if (mutation.setAgentName !== undefined) {
 		const name = mutation.setAgentName;
 		if (name) {
 			const body = await getAgentBodyByName(name, ws.data.tenantId);
 			data.agentName = name;
 			data.cachedAgentBody = body ?? null;
+			data.cachedAgentSkills = await resolveAgentSkillsFromName(name, ws.data.tenantId);
 		} else {
 			data.agentName = null;
 			data.cachedAgentBody = null;
+			data.cachedAgentSkills = null;
 		}
-		applyLeadFromCache(data);
+		await applyLeadFromCache(data);
 		ws.send(JSON.stringify({ type: "agent", name: data.agentName }));
 		ws.send(
 			logLine(
@@ -498,10 +532,10 @@ async function runChatTurn(
 				data.cumPromptTokens = 0;
 				data.cumCompletionTokens = 0;
 				sendQueueState(ws, []);
-				applyLeadFromCache(data);
+				await applyLeadFromCache(data);
 				if (data.wopSessionKey) {
 					try {
-						await syncWayofpiSessionFile(data.wopSessionKey, data.messages);
+						await syncWoSessionFile(data.wopSessionKey, data.messages, data.surface || undefined);
 					} catch (e) {
 						const m = e instanceof Error ? e.message : String(e);
 						ws.send(logLine("WARN", "session", `sync JSONL after /clear: ${m}`));
@@ -517,14 +551,14 @@ async function runChatTurn(
 			if (!slash.skipUserEcho) {
 				if (notifyUser) ws.send(JSON.stringify({ type: "user_message", content: trimmed }));
 				data.messages.push({ role: "user", content: trimmed });
-				if (data.wopSessionKey) await appendWayofpiSessionMessage(data.wopSessionKey, "user", trimmed).catch(() => {});
+				if (data.wopSessionKey) await appendWoSessionMessage(data.wopSessionKey, "user", trimmed, data.surface || undefined).catch(() => {});
 			}
 			ws.send(JSON.stringify({ type: "assistant_turn_start" }));
 			const reply = slash.assistantText;
 			if (reply.length > 0) {
 				ws.send(JSON.stringify({ type: "assistant_delta", content: reply }));
 				data.messages.push({ role: "assistant", content: reply });
-				if (data.wopSessionKey) await appendWayofpiSessionMessage(data.wopSessionKey, "assistant", reply).catch(() => {});
+				if (data.wopSessionKey) await appendWoSessionMessage(data.wopSessionKey, "assistant", reply, data.surface || undefined).catch(() => {});
 			}
 			ws.send(JSON.stringify({ type: "done" }));
 			return;
@@ -547,7 +581,7 @@ async function runChatTurn(
 
 			if (data.wopSessionKey) {
 				try {
-					await appendWayofpiSessionMessage(data.wopSessionKey, "user", historyText);
+					await appendWoSessionMessage(data.wopSessionKey, "user", historyText, data.surface || undefined);
 				} catch (e) {
 					const m = e instanceof Error ? e.message : String(e);
 					ws.send(logLine("WARN", "session", `append user JSONL: ${m}`));
@@ -555,7 +589,7 @@ async function runChatTurn(
 			}
 
 			/** Re-merge lead system from disk + env (planner.md, WOP_SYSTEM_PROMPT) before phrase-dispatch and the model. */
-			applyLeadFromCache(data);
+			await applyLeadFromCache(data);
 
 			const sendLog = (level: "INFO" | "WARN" | "ERROR", source: string, m: string) => {
 				ws.send(logLine(level, source, m));
@@ -568,7 +602,7 @@ async function runChatTurn(
 				data.messages.push({ role: "assistant", content: reply });
 				if (data.wopSessionKey) {
 					try {
-						await appendWayofpiSessionMessage(data.wopSessionKey, "assistant", reply);
+						await appendWoSessionMessage(data.wopSessionKey, "assistant", reply, data.surface || undefined);
 					} catch (e) {
 						const m = e instanceof Error ? e.message : String(e);
 						ws.send(logLine("WARN", "session", `append assistant JSONL: ${m}`));
@@ -586,7 +620,7 @@ async function runChatTurn(
 		data.messages.push({ role: "user", content: text });
 		if (data.wopSessionKey) {
 			try {
-				await appendWayofpiSessionMessage(data.wopSessionKey, "user", text);
+				await appendWoSessionMessage(data.wopSessionKey, "user", text, data.surface || undefined);
 			} catch (e) {
 				const m = e instanceof Error ? e.message : String(e);
 				ws.send(logLine("WARN", "session", `append user JSONL: ${m}`));
@@ -594,7 +628,7 @@ async function runChatTurn(
 		}
 
 		/** Re-merge lead `system` from disk + env (planner.md, WOP_SYSTEM_PROMPT) before phrase-dispatch and the model. */
-		applyLeadFromCache(data);
+		await applyLeadFromCache(data);
 
 		const sendLog = (level: "INFO" | "WARN" | "ERROR", source: string, m: string) => {
 			ws.send(logLine(level, source, m));
@@ -610,8 +644,9 @@ async function runChatTurn(
 			if (disp.kind === "orchestrator") {
 				data.agentName = null;
 				data.cachedAgentBody = null;
+				data.cachedAgentSkills = null;
 				phraseDispatchRestoreCached = undefined;
-				applyLeadFromCache(data);
+				await applyLeadFromCache(data);
 				ws.send(JSON.stringify({ type: "agent", name: data.agentName }));
 				sendLog(
 					"INFO",
@@ -622,7 +657,7 @@ async function runChatTurn(
 			} else if (disp.kind === "agent") {
 				phraseDispatchRestoreCached = data.cachedAgentBody;
 				data.cachedAgentBody = disp.body;
-				applyLeadFromCache(data, { effectiveAgentNameLower: disp.canonicalName.trim().toLowerCase() });
+				await applyLeadFromCache(data, { effectiveAgentNameLower: disp.canonicalName.trim().toLowerCase() });
 				try {
 					ws.send(JSON.stringify({ type: "dispatch_turn", agent: disp.canonicalName }));
 				} catch {
@@ -653,7 +688,7 @@ async function runChatTurn(
 			data.messages.length = lenBeforeUserMsg;
 			if (data.wopSessionKey) {
 				try {
-					await syncWayofpiSessionFile(data.wopSessionKey, data.messages);
+					await syncWoSessionFile(data.wopSessionKey, data.messages, data.surface || undefined);
 				} catch {
 					/* ignore */
 				}
@@ -664,7 +699,7 @@ async function runChatTurn(
 		const budget = applyChatContextBudget(data.messages, sendLog);
 		if (budget.droppedMessages > 0 && data.wopSessionKey) {
 			try {
-				await syncWayofpiSessionFile(data.wopSessionKey, data.messages);
+				await syncWoSessionFile(data.wopSessionKey, data.messages, data.surface || undefined);
 			} catch (e) {
 				const m = e instanceof Error ? e.message : String(e);
 				sendLog("WARN", "session", `sync JSONL after context budget trim: ${m}`);
@@ -750,6 +785,8 @@ async function runChatTurn(
 								/* closing */
 							}
 						},
+						tenantId: data.tenantId,
+						userId: data.userId,
 					},
 				);
 				result = o.result;
@@ -795,7 +832,7 @@ async function runChatTurn(
 						data.messages.push({ role: "assistant", content: full });
 						if (data.wopSessionKey) {
 							try {
-								await appendWayofpiSessionMessage(data.wopSessionKey, "assistant", full);
+								await appendWoSessionMessage(data.wopSessionKey, "assistant", full, data.surface || undefined);
 							} catch (e) {
 								const m = e instanceof Error ? e.message : String(e);
 								sendLog("WARN", "session", `append assistant JSONL: ${m}`);
@@ -814,7 +851,7 @@ async function runChatTurn(
 					data.messages.length = lenBeforeUserMsg;
 					if (data.wopSessionKey) {
 						try {
-							await syncWayofpiSessionFile(data.wopSessionKey, data.messages);
+							await syncWoSessionFile(data.wopSessionKey, data.messages, data.surface || undefined);
 						} catch {
 							/* ignore */
 						}
@@ -836,7 +873,7 @@ async function runChatTurn(
 			}
 			if (data.wopSessionKey && full.length > 0) {
 				try {
-					await appendWayofpiSessionMessage(data.wopSessionKey, "assistant", full);
+					await appendWoSessionMessage(data.wopSessionKey, "assistant", full, data.surface || undefined);
 				} catch (e) {
 					const m = e instanceof Error ? e.message : String(e);
 					sendLog("WARN", "session", `append assistant JSONL: ${m}`);
@@ -850,7 +887,7 @@ async function runChatTurn(
 			data.messages.length = lenBeforeUserMsg;
 			if (data.wopSessionKey) {
 				try {
-					await syncWayofpiSessionFile(data.wopSessionKey, data.messages);
+					await syncWoSessionFile(data.wopSessionKey, data.messages, data.surface || undefined);
 				} catch {
 					/* ignore */
 				}
@@ -860,7 +897,7 @@ async function runChatTurn(
 		if (phraseDispatchRestoreCached !== undefined) {
 			data.cachedAgentBody = phraseDispatchRestoreCached;
 			phraseDispatchRestoreCached = undefined;
-			applyLeadFromCache(data);
+			await applyLeadFromCache(data);
 		}
 		data.chatAbort = null;
 		data.busy = false;
@@ -916,9 +953,27 @@ function applySessionRuntimePostBody(body: Record<string, unknown>): Response {
 	});
 }
 
+const apiRouter = new Router();
+registerAuthRoutes(apiRouter);
+registerPortalRoutes(apiRouter);
+registerAdminRoutes(apiRouter);
+registerClientRoutes(apiRouter);
+registerProjectRoutes(apiRouter);
+registerCalendarRoutes(apiRouter);
+registerTAPlannerRoutes(apiRouter);
+
 async function handleApi(url: URL, req: Request): Promise<Response> {
 	/** Collapse duplicate slashes; strip trailing slash (except root). */
 	const p = url.pathname.replace(/\/{2,}/g, "/").replace(/\/+$/, "") || "/";
+
+	// Extract auth before any route handling so router-based routes get it too
+	const authHeader = req.headers.get("Authorization");
+	const token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
+	let auth = token ? await verifyToken(token) : null;
+
+	// Check router-based routes first (login portals) — passes auth so portal/admin routes work
+	const routerRes = await apiRouter.handle(url, req, auth);
+	if (routerRes) return routerRes;
 
 	if (req.method === "OPTIONS" && p.startsWith("/api/")) {
 		return new Response(null, {
@@ -932,82 +987,12 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 		});
 	}
 
-	if (p === "/api/login" && req.method === "POST") {
-		let body: { username?: string; password?: string };
-		try {
-			body = (await req.json()) as { username?: string; password?: string };
-		} catch {
-			return json({ error: "Invalid JSON" }, 400);
-		}
-		const { username, password } = body;
-		if (!username || !password) {
-			return json({ error: "Username and password required" }, 400);
-		}
-
-		const user = db.query("SELECT * FROM users WHERE username = ?").get(username) as any;
-		if (!user || !(await Bun.password.verify(password, user.password_hash))) {
-			return json({ error: "Invalid credentials" }, 401);
-		}
-
-		const token = await createToken(user.id, user.tenant_id);
-		return json({
-			token,
-			user: {
-				id: user.id,
-				username: user.username,
-				role: user.role,
-				tenantId: user.tenant_id,
-			},
-		});
-	}
-
-	// Worker Portal login (ID + PIN)
-	if (p === "/api/portal/login" && req.method === "POST") {
-		let body: { workerId?: string; pin?: string };
-		try {
-			body = (await req.json()) as { workerId?: string; pin?: string };
-		} catch {
-			return json({ error: "Invalid JSON" }, 400);
-		}
-		const { workerId, pin } = body;
-		if (!workerId || !pin) {
-			return json({ error: "Worker ID and PIN required" }, 400);
-		}
-
-		const user = db.query("SELECT * FROM users WHERE username = ? AND pin = ?").get(workerId, pin) as any;
-		if (!user) {
-			return json({ error: "Invalid credentials" }, 401);
-		}
-
-		const token = await createToken(user.id, user.tenant_id);
-		return json({
-			token,
-			user: {
-				id: user.id,
-				username: user.username,
-				role: user.role,
-				tenantId: user.tenant_id,
-			},
-		});
-	}
-
-	// Auth check for all other /api routes
-	const authHeader = req.headers.get("Authorization");
-	const token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
-	let auth = token ? await verifyToken(token) : null;
-
-	// DEV MODE: Allow requests without auth when WOP_DEV_MODE=true
-	const isDevMode = process.env.WOP_DEV_MODE === "true";
 	const isPublicRoute = p === "/api/manifest" || p === "/api/config" || p === "/api/health";
 
-	if (!auth && !isDevMode) {
+	if (!auth) {
 		if (!isPublicRoute) {
 			return json({ error: "Unauthorized" }, 401);
 		}
-	}
-	// In dev mode, create a fake auth for compatibility
-	if (!auth && isDevMode) {
-		auth = { userId: "dev-user", tenantId: "dev-tenant", role: "SUPER_ADMIN" };
 	}
 
 	if (p === "/api/health") {
@@ -1031,6 +1016,14 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	// Ticket system (ÄTA) API
 	const ticketRes = await handleTicketApi(p, req.method, auth, req);
 	if (ticketRes) return ticketRes;
+
+	// Offer/Invoice system API
+	const offerRes = await handleOfferInvoiceApi(p, req.method, auth, req);
+	if (offerRes) return offerRes;
+
+	// Pending changes (human-in-the-loop) API
+	const pendingRes = await handlePendingChangesApi(p, req.method, auth, req);
+	if (pendingRes) return pendingRes;
 
 	if (p === "/api/claw/tree" && req.method === "GET") {
 		try {
@@ -1099,11 +1092,51 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 		return json({ id: user.id, username: user.username, role: user.role, tenantId: user.tenant_id });
 	}
 
+	if (p === "/api/portal/me" && req.method === "PUT") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: any;
+		try {
+			body = await req.json();
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		try {
+			db.query(`
+				UPDATE users 
+				SET full_name = COALESCE(?, full_name), 
+				    email = COALESCE(?, email),
+				    phone = COALESCE(?, phone)
+				WHERE id = ? AND tenant_id = ?
+			`).run(body.full_name, body.email, body.phone, auth.userId, auth.tenantId);
+			const user = db.query("SELECT id, username, role, tenant_id, full_name, email, phone FROM users WHERE id = ?").get(auth.userId);
+			return json(user);
+		} catch (e) {
+			return json({ error: "Failed to update profile" }, 500);
+		}
+	}
+
+	if (p === "/api/portal/change-pin" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: { pin?: string };
+		try {
+			body = await req.json();
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		if (!body.pin || body.pin.length !== 4) return json({ error: "4-digit PIN required" }, 400);
+		try {
+			db.query("UPDATE users SET pin = ? WHERE id = ? AND tenant_id = ?").run(body.pin, auth.userId, auth.tenantId);
+			return json({ ok: true });
+		} catch (e) {
+			return json({ error: "Failed to update PIN" }, 500);
+		}
+	}
+
 	if (p === "/api/portal/tasks" && req.method === "GET") {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
 		try {
 			// Workers see only their tasks, Leaders/Admins see all tasks for the tenant
-			const isLeader = auth.role === "leader" || auth.role === "admin" || auth.role === "super_admin";
+			const isLeader = auth.role === "LEADER" || auth.role === "ADMIN" || auth.role === "SUPER_ADMIN";
 			
 			if (isLeader) {
 				const tasks = db.query(`
@@ -1112,7 +1145,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 					LEFT JOIN users u ON t.assigned_to = u.id
 					LEFT JOIN projects p ON t.project_id = p.id
 					WHERE t.tenant_id = ?
-					ORDER BY t.deadline ASC, t.created_at DESC
+					ORDER BY t.due_date ASC, t.created_at DESC
 				`).all(auth.tenantId) as any[];
 				return json(tasks || []);
 			} else {
@@ -1121,7 +1154,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 					FROM tasks t
 					LEFT JOIN projects p ON t.project_id = p.id
 					WHERE t.tenant_id = ? AND t.assigned_to = ?
-					ORDER BY t.deadline ASC, t.created_at DESC
+					ORDER BY t.due_date ASC, t.created_at DESC
 				`).all(auth.tenantId, auth.userId) as any[];
 				return json(tasks || []);
 			}
@@ -1144,6 +1177,53 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ error: "Failed to fetch files", details: message }, 500);
+		}
+	}
+
+	if (p.startsWith("/api/portal/files/") && req.method === "GET") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		try {
+			const file = db.query("SELECT * FROM workspace_files WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
+			if (!file) return json({ error: "File not found" }, 404);
+			return json(file);
+		} catch (e) {
+			return json({ error: "Failed to fetch file" }, 500);
+		}
+	}
+
+	if (p.startsWith("/api/portal/files/") && req.method === "PUT") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		let body: any;
+		try {
+			body = await req.json();
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		try {
+			db.query(`
+				UPDATE workspace_files 
+				SET kanban_card_id = COALESCE(?, kanban_card_id), 
+				    kanban_board_id = COALESCE(?, kanban_board_id)
+				WHERE id = ? AND tenant_id = ?
+			`).run(body.kanban_card_id, body.kanban_board_id, id, auth.tenantId);
+			const file = db.query("SELECT * FROM workspace_files WHERE id = ?").get(id);
+			return json(file);
+		} catch (e) {
+			return json({ error: "Failed to update file" }, 500);
+		}
+	}
+
+	if (p.startsWith("/api/portal/files/") && req.method === "DELETE") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		try {
+			const result = db.query("DELETE FROM workspace_files WHERE id = ? AND tenant_id = ?").run(id, auth.tenantId);
+			if (result.changes === 0) return json({ error: "File not found" }, 404);
+			return json({ ok: true });
+		} catch (e) {
+			return json({ error: "Failed to delete file" }, 500);
 		}
 	}
 
@@ -1197,6 +1277,65 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 		}
 	}
 
+	if (p.startsWith("/api/portal/time/") && req.method === "GET") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		if (id === "approve" || id === "reject") {
+			// handled by other regexes
+		} else {
+			try {
+				const entry = db.query("SELECT * FROM time_entries WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
+				if (!entry) return json({ error: "Entry not found" }, 404);
+				return json(entry);
+			} catch (e) {
+				return json({ error: "Failed to fetch time entry" }, 500);
+			}
+		}
+	}
+
+	if (p.startsWith("/api/portal/time/") && req.method === "PUT") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		if (id === "approve" || id === "reject") {
+			// handled by other regexes
+		} else {
+			let body: any;
+			try {
+				body = await req.json();
+			} catch {
+				return json({ error: "Invalid JSON" }, 400);
+			}
+			try {
+				db.query(`
+					UPDATE time_entries 
+					SET hours = COALESCE(?, hours), 
+					    date = COALESCE(?, date),
+					    description = COALESCE(?, description),
+					    drawing_ref = COALESCE(?, drawing_ref),
+					    project_id = COALESCE(?, project_id),
+					    task_id = COALESCE(?, task_id)
+					WHERE id = ? AND tenant_id = ?
+				`).run(body.hours, body.date, body.description, body.drawing_ref, body.project_id, body.task_id, id, auth.tenantId);
+				const entry = db.query("SELECT * FROM time_entries WHERE id = ?").get(id);
+				return json(entry);
+			} catch (e) {
+				return json({ error: "Failed to update time entry" }, 500);
+			}
+		}
+	}
+
+	if (p.startsWith("/api/portal/time/") && req.method === "DELETE") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		try {
+			const result = db.query("DELETE FROM time_entries WHERE id = ? AND tenant_id = ?").run(id, auth.tenantId);
+			if (result.changes === 0) return json({ error: "Entry not found" }, 404);
+			return json({ ok: true });
+		} catch (e) {
+			return json({ error: "Failed to delete time entry" }, 500);
+		}
+	}
+
 	// Time Entry Approve
 	if (p.match(/^\/api\/portal\/time\/[^/]+\/approve$/) && req.method === "POST") {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
@@ -1236,25 +1375,92 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	// Task Management - Create task
 	if (p === "/api/portal/tasks" && req.method === "POST") {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
-		let body: { title?: string; assignedTo?: string; projectId?: string; estimatedHours?: number; deadline?: string };
+		let body: { title?: string; assigned_to?: string; project_id?: string; estimated_hours?: number; due_date?: string; kanban_card_id?: string; kanban_board_id?: string };
 		try {
-			body = (await req.json()) as { title?: string; assignedTo?: string; projectId?: string; estimatedHours?: number; deadline?: string };
+			body = (await req.json()) as any;
 		} catch {
 			return json({ error: "Invalid JSON" }, 400);
 		}
-		if (!body.title || !body.assignedTo) {
-			return json({ error: "Title and assignedTo required" }, 400);
+		if (!body.title) {
+			return json({ error: "Title required" }, 400);
 		}
 		try {
 			const id = `task_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 			db.query(`
-				INSERT INTO tasks (id, tenant_id, title, assigned_to, project_id, estimated_hours, deadline, status, created_by)
-				VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?)
-			`).run(id, auth.tenantId, body.title, body.assignedTo, body.projectId || null, body.estimatedHours || null, body.deadline || null, auth.userId);
-			return json({ ok: true, id });
+				INSERT INTO tasks (id, tenant_id, title, assigned_to, project_id, estimated_hours, due_date, status, created_by, kanban_card_id, kanban_board_id)
+				VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)
+			`).run(id, auth.tenantId, body.title, body.assigned_to || null, body.project_id || null, body.estimated_hours || null, body.due_date || null, auth.userId, body.kanban_card_id || null, body.kanban_board_id || null);
+			const task = db.query("SELECT * FROM tasks WHERE id = ?").get(id);
+			return json(task);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ error: "Failed to create task", details: message }, 500);
+		}
+	}
+
+	if (p.startsWith("/api/portal/tasks/") && req.method === "GET") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		if (id === "status") {
+			// handled by regex
+		} else {
+			try {
+				const task = db.query("SELECT * FROM tasks WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
+				if (!task) return json({ error: "Task not found" }, 404);
+				return json(task);
+			} catch (e) {
+				return json({ error: "Failed to fetch task" }, 500);
+			}
+		}
+	}
+
+	if (p.startsWith("/api/portal/tasks/") && req.method === "PUT") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		if (id === "status") {
+			// handled below
+		} else {
+			let body: any;
+			try {
+				body = await req.json();
+			} catch {
+				return json({ error: "Invalid JSON" }, 400);
+			}
+			try {
+				const existing = db.query("SELECT * FROM tasks WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
+				if (!existing) return json({ error: "Task not found" }, 404);
+				
+				db.query(`
+					UPDATE tasks 
+					SET title = COALESCE(?, title), 
+					    assigned_to = COALESCE(?, assigned_to),
+					    project_id = COALESCE(?, project_id),
+					    estimated_hours = COALESCE(?, estimated_hours),
+					    due_date = COALESCE(?, due_date),
+					    status = COALESCE(?, status),
+					    kanban_card_id = COALESCE(?, kanban_card_id),
+					    kanban_board_id = COALESCE(?, kanban_board_id),
+					    updated_at = datetime('now')
+					WHERE id = ? AND tenant_id = ?
+				`).run(body.title, body.assigned_to, body.project_id, body.estimated_hours, body.due_date, body.status, body.kanban_card_id, body.kanban_board_id, id, auth.tenantId);
+				
+				const task = db.query("SELECT * FROM tasks WHERE id = ?").get(id);
+				return json(task);
+			} catch (e) {
+				return json({ error: "Failed to update task" }, 500);
+			}
+		}
+	}
+
+	if (p.startsWith("/api/portal/tasks/") && req.method === "DELETE") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const id = p.split("/")[4];
+		try {
+			const result = db.query("DELETE FROM tasks WHERE id = ? AND tenant_id = ?").run(id, auth.tenantId);
+			if (result.changes === 0) return json({ error: "Task not found" }, 404);
+			return json({ ok: true });
+		} catch (e) {
+			return json({ error: "Failed to delete task" }, 500);
 		}
 	}
 
@@ -1432,18 +1638,66 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	}
 
 	if (p === "/api/admin/users" && req.method === "GET") {
-		if (!auth || auth.role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const isSuper = auth.role === "SUPER_ADMIN";
+		const isAdmin = auth.role === "ADMIN";
+		if (!isSuper && !isAdmin) return json({ error: "Forbidden" }, 403);
+		
 		try {
-			const users = db.query(`
-				SELECT u.*, t.name as tenant_name
-				FROM users u
-				LEFT JOIN tenants t ON u.tenant_id = t.id
-				ORDER BY u.created_at DESC
-			`).all() as any[];
+			let users;
+			if (isSuper) {
+				users = db.query(`
+					SELECT u.id, u.username, u.role, u.tenant_id, u.full_name, u.job_title, u.email, u.phone, t.name as tenant_name
+					FROM users u
+					LEFT JOIN tenants t ON u.tenant_id = t.id
+					ORDER BY u.created_at DESC
+				`).all() as any[];
+			} else {
+				users = db.query(`
+					SELECT id, username, role, tenant_id, full_name, job_title, email, phone
+					FROM users
+					WHERE tenant_id = ?
+					ORDER BY created_at DESC
+				`).all(auth.tenantId) as any[];
+			}
 			return json(users || []);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ error: "Failed to fetch users", details: message }, 500);
+		}
+	}
+
+	if (p === "/api/admin/users" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const isSuper = auth.role === "SUPER_ADMIN";
+		const isAdmin = auth.role === "ADMIN";
+		if (!isSuper && !isAdmin) return json({ error: "Forbidden" }, 403);
+
+		let body: any;
+		try {
+			body = await req.json();
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+
+		if (!body.username || !body.password || !body.role) {
+			return json({ error: "Username, password and role required" }, 400);
+		}
+
+		const targetTenantId = isSuper ? (body.tenantId || auth.tenantId) : auth.tenantId;
+
+		try {
+			const id = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+			const hash = await Bun.password.hash(body.password);
+			db.query(`
+				INSERT INTO users (id, tenant_id, username, password_hash, role, full_name, job_title, email, phone, pin)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`).run(id, targetTenantId, body.username, hash, body.role, body.full_name || null, body.job_title || null, body.email || null, body.phone || null, body.pin || null);
+			
+			const user = db.query("SELECT id, username, role, tenant_id, full_name FROM users WHERE id = ?").get(id);
+			return json(user);
+		} catch (e) {
+			return json({ error: "Failed to create user (username might already exist)" }, 400);
 		}
 	}
 
@@ -1680,7 +1934,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 				v === "0" || v === "false" || v === "no" || v === "off"
 					? "WOP_ALLOW_SERVER_RESTART disables this exit. Unset it for the usual dev default (on), or set it to 1, then use Settings → Restart server again."
 					: process.env.NODE_ENV === "production"
-						? "Set WOP_ALLOW_SERVER_RESTART=1 on the Way of Pi Bun process, then use Settings → Restart server again. Otherwise stop and start your dev command in the terminal (e.g. npm run dev from apps/wayofwork-ui)."
+						? "Set WOP_ALLOW_SERVER_RESTART=1 on the Way of Work Bun process, then use Settings → Restart server again. Otherwise stop and start your dev command in the terminal (e.g. npm run dev from apps/wayofwork-ui)."
 						: `Unrecognized WOP_ALLOW_SERVER_RESTART value. Use 1, true, yes, or on; unset for the dev default. Current: ${raw || "(empty)"}`;
 			return json(
 				{
@@ -1698,7 +1952,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 			ok: true,
 			exiting: true,
 			message:
-				"Way of Pi server process will exit. Start it again from the terminal (npm run dev / bun run server/index.ts).",
+				"Way of Work server process will exit. Start it again from the terminal (npm run dev / bun run server/index.ts).",
 		});
 	}
 
@@ -2040,7 +2294,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 		return json({
 			provider,
 			chatEngine,
-			/** Absolute Way of Pi checkout root where host-scoped **`.claw/`** lives (not `WOP_WORKSPACE`). */
+			/** Absolute Way of Work checkout root where host-scoped **`.claw/`** lives (not `WOP_WORKSPACE`). */
 			clawHostRepoRoot: getClawHostRepoRoot(),
 			/** Absolute path to host **`.claw/`** (e.g. optional `telegram.json`). */
 			clawDotDirAbs: getClawDotDirAbs(),
@@ -2063,6 +2317,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 				configRuntimePost: true,
 				clawHostTreeGet: true,
 				clawTelegramStatusGet: true,
+				clawWhatsAppStatusGet: true,
 			},
 			manifestUrl: "/api/manifest",
 			ollamaHost: resolveOllamaHost(),
@@ -2077,6 +2332,8 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 			clawAutomation: getClawAutomationStatus(),
 			/** Same payload as **`GET /api/claw/telegram/status`** — embedded so Claw Channels works even if a proxy drops that path. */
 			clawTelegramStatus: getClawTelegramIntegrationStatus(),
+			/** Same payload as **`GET /api/claw/whatsapp/status`** — embedded so Claw Channels works even if a proxy drops that path. */
+			clawWhatsAppStatus: getClawWhatsAppIntegrationStatus(),
 		});
 	}
 
@@ -2092,6 +2349,15 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	if (p === "/api/claw/telegram/status" && req.method === "GET") {
 		try {
 			return json(getClawTelegramIntegrationStatus());
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ version: 1, error: message }, 500);
+		}
+	}
+
+	if (p === "/api/claw/whatsapp/status" && req.method === "GET") {
+		try {
+			return json(getClawWhatsAppIntegrationStatus());
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ version: 1, error: message }, 500);
@@ -2127,6 +2393,7 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	}
 
 	if (p === "/api/claw/inbound" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
 		const secret = await readWebhookSecret();
 		if (!secret) {
 			return json({ ok: false, error: "No webhook secret — use POST /api/claw/webhook/ensure first." }, 404);
@@ -2155,17 +2422,113 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 					: null;
 		const name = String(body.name ?? "Inbound webhook").trim() || "Inbound webhook";
 		try {
-			const r = await executeClawAutomation({
-				name,
-				prompt,
-				agentName,
-				source: "webhook",
-			});
+				const r = await executeClawAutomation({
+					name,
+					prompt,
+					agentName,
+					source: "webhook",
+					tenantId: auth?.tenantId,
+					userId: auth?.userId,
+				});
 			if (r.ok) return json({ ok: true });
 			return json({ ok: false, error: r.error }, 500);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ ok: false, error: message }, 500);
+		}
+	}
+
+	// ── Self-service channel link management ──
+
+	if (p === "/api/channels/links" && req.method === "GET") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		try {
+			const links = db.query(`
+				SELECT l.*, u.username as user_name
+				FROM user_channel_links l
+				LEFT JOIN users u ON l.user_id = u.id
+				WHERE l.tenant_id = ? AND l.user_id = ?
+				ORDER BY l.created_at DESC
+			`).all(auth.tenantId, auth.userId) as any[];
+			return json(links.map((l: any) => ({
+				id: l.id,
+				channel: l.channel,
+				channelUserId: l.channel_user_id,
+				channelUsername: l.channel_username,
+				channelBotId: l.channel_bot_id,
+				active: l.active === 1,
+				lastActivityAt: l.last_activity_at,
+				createdAt: l.created_at,
+			})));
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to fetch links", details: message }, 500);
+		}
+	}
+
+	if (p === "/api/channels/link" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: { channel?: string; channelUserId?: string; channelUsername?: string; channelBotId?: string };
+		try {
+			body = (await req.json()) as any;
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		if (!body.channel || !body.channelUserId) {
+			return json({ error: "channel and channelUserId required" }, 400);
+		}
+		const id = `cl_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+		const existing = db.query(
+			"SELECT id FROM user_channel_links WHERE user_id = ? AND tenant_id = ? AND channel = ?"
+		).get(auth.userId, auth.tenantId, body.channel) as { id: string } | undefined;
+		if (existing) {
+			db.query(`
+				UPDATE user_channel_links SET channel_user_id = ?, channel_username = ?, channel_bot_id = ?, active = 1 WHERE id = ?
+			`).run(body.channelUserId, body.channelUsername || null, body.channelBotId || null, existing.id);
+			return json({ ok: true, id: existing.id, updated: true });
+		}
+		try {
+			db.query(`
+				INSERT INTO user_channel_links (id, tenant_id, user_id, channel, channel_user_id, channel_username, channel_bot_id)
+				VALUES (?, ?, ?, ?, ?, ?, ?)
+			`).run(id, auth.tenantId, auth.userId, body.channel, body.channelUserId, body.channelUsername || null, body.channelBotId || null);
+			return json({ ok: true, id });
+		} catch (e) {
+			return json({ error: "Failed to create link (may already exist)" }, 409);
+		}
+	}
+
+	if (p === "/api/channels/unlink" && req.method === "DELETE") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const linkId = url.searchParams.get("id") || "";
+		if (!linkId) return json({ error: "id parameter required" }, 400);
+		try {
+			const existing = db.query("SELECT * FROM user_channel_links WHERE id = ? AND user_id = ? AND tenant_id = ?").get(linkId, auth.userId, auth.tenantId);
+			if (!existing) return json({ error: "Link not found" }, 404);
+			db.query("DELETE FROM user_channel_links WHERE id = ? AND user_id = ? AND tenant_id = ?").run(linkId, auth.userId, auth.tenantId);
+			return json({ ok: true });
+		} catch (e) {
+			return json({ error: "Failed to delete link" }, 500);
+		}
+	}
+
+	if (p === "/api/channels/log" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: { channel?: string; channelUserId?: string; direction?: string; messageText?: string; messageType?: string; handledBy?: string; botId?: string };
+		try {
+			body = (await req.json()) as any;
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		try {
+			const id = `cml_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+			db.query(`
+				INSERT INTO channel_message_logs (id, tenant_id, user_id, channel, channel_user_id, direction, message_text, message_type, handled_by, bot_id)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`).run(id, auth.tenantId, auth.userId, body.channel || "unknown", body.channelUserId || null, body.direction || "inbound", body.messageText || null, body.messageType || "text", body.handledBy || null, body.botId || null);
+			return json({ ok: true, id });
+		} catch (e) {
+			return json({ error: "Failed to log message" }, 500);
 		}
 	}
 
@@ -2185,13 +2548,61 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	}
 
 	if (p === "/api/github/disconnect" && req.method === "POST") {
+		await removeGithubCredentials();
+		return json({ ok: true });
+	}
+
+	if (p === "/api/github/save-version" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: { message?: string };
 		try {
-			await removeGithubCredentials();
+			body = (await req.json()) as any;
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		const message = body.message?.trim() || `Version saved by ${auth.userId} at ${new Date().toLocaleString()}`;
+		const root = getWorkspaceRoot();
+
+		try {
+			// 1. Stage all
+			const stageRes = await gitStageAllFromAbsolutePath(root);
+			if (!stageRes.ok) return json({ error: `Stage failed: ${stageRes.error}` }, 500);
+
+			// 2. Commit
+			const commitRes = await gitCommit(root, message);
+			if (!commitRes.ok) {
+				if (commitRes.error.includes("nothing to commit")) {
+					return json({ ok: true, message: "Nothing to save" });
+				}
+				return json({ error: `Commit failed: ${commitRes.error}` }, 500);
+			}
+
+			// 3. Push
+			const token = await readGithubTokenForGit();
+			const pushRes = await gitPush(root, token);
+			if (!pushRes.ok) return json({ error: `Push failed: ${pushRes.error}` }, 500);
+
+			auditLog({
+				tenantId: auth.tenantId,
+				userId: auth.userId,
+				action: "SAVE_VERSION",
+				resourceType: "git",
+				summary: `User saved a new version: ${message}`
+			});
+
 			return json({ ok: true });
 		} catch (e) {
-			const message = e instanceof Error ? e.message : String(e);
-			return json({ ok: false, error: message }, 500);
+			const m = e instanceof Error ? e.message : String(e);
+			return json({ error: `Save version failed: ${m}` }, 500);
 		}
+	}
+
+	if (p === "/api/github/version-history" && req.method === "GET") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const root = getWorkspaceRoot();
+		const history = await gitLog(root);
+		if ("error" in history) return json({ error: history.error }, 500);
+		return json(history);
 	}
 
 	if (p === "/api/manifest" && req.method === "GET") {
@@ -2641,9 +3052,6 @@ const server = Bun.serve<ServerWsData>({
 		}
 		const url = new URL(req.url);
 
-		// DEV MODE: Allow all WebSocket upgrades when WOP_DEV_MODE=true
-		const devMode = process.env.WOP_DEV_MODE === "true";
-
 		if (url.pathname === "/ws/terminal" && req.headers.get("upgrade") === "websocket") {
 			if (!terminalAllowed()) {
 				return new Response(
@@ -2668,22 +3076,17 @@ const server = Bun.serve<ServerWsData>({
                 ) {
                         let auth: any = null;
                         
-                        // In dev mode, allow WebSocket upgrades without auth
-                        if (!devMode) {
-                        	const authHeader = req.headers.get("Authorization");
-                        	let token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
+                        const authHeader = req.headers.get("Authorization");
+                        let token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
                                 
-                                // Support token in query param (common for WebSockets)
-                                if (!token) {
-                                        token = url.searchParams.get("token");
-                                }
+                        // Support token in query param (common for WebSockets)
+                        if (!token) {
+                                token = url.searchParams.get("token");
+                        }
                                 
-                        	auth = token ? await verifyToken(token) : null;
-                        	if (!auth) {
-                        		return new Response("Unauthorized", { status: 401 });
-                        	}
-                        } else {
-                                auth = { userId: "dev-user", tenantId: "dev-tenant", role: "ADMIN" };
+                        auth = token ? await verifyToken(token) : null;
+                        if (!auth) {
+                                return new Response("Unauthorized", { status: 401 });
                         }
                         
                         const upgraded = srv.upgrade(req, {
@@ -2697,14 +3100,17 @@ const server = Bun.serve<ServerWsData>({
                                         chatMode: "build",
                                         agentName: null,
                                         cachedAgentBody: null,
+                                        cachedAgentSkills: null,
                                         chatAbort: null,
                                         cumPromptTokens: 0,
                                         cumCompletionTokens: 0,
-                                        wopSessionKey: null,
+                                        wopSessionKey: url.searchParams.get("wopSessionKey") || null,
+                                        surface: url.searchParams.get("surface") || null,
 					tenantId: auth?.tenantId || "dev-tenant",
 					userId: auth?.userId || "dev-user",
                                 } satisfies ChatWsData,
                         });
+
                         if (upgraded) return undefined as unknown as Response;
                         return new Response("WebSocket upgrade failed", { status: 500 });
                 }
@@ -2718,13 +3124,26 @@ const server = Bun.serve<ServerWsData>({
 		return new Response("Not found", { status: 404 });
 	},
 	websocket: {
-		open(ws) {
+		async open(ws) {
 			try {
 				if (ws.data.kind === "terminal") {
 					attachTerminalSession(ws);
 					return;
 				}
-				applyLeadFromCache(ws.data);
+
+				// Auto-select agent based on surface if not already set
+				if (!ws.data.agentName && ws.data.surface) {
+					const s = ws.data.surface;
+					if (s === "claw") ws.data.agentName = "claw";
+					else if (s === "docs") ws.data.agentName = "docs";
+					else if (s === "kanban") ws.data.agentName = "kanban";
+					else if (s === "ata") ws.data.agentName = "ata";
+					else if (s === "billing") ws.data.agentName = "fakturering";
+					else if (s === "planning") ws.data.agentName = "schemaplanerare";
+					else if (s === "project") ws.data.agentName = "projektledare";
+				}
+
+				await applyLeadFromCache(ws.data);
 				const provider = (process.env.WOP_LLM_PROVIDER || "ollama").toLowerCase();
 				const envOllama = resolveOllamaModelDefault();
 				const envOr = process.env.OPENROUTER_MODEL || "openrouter/auto";
@@ -2836,7 +3255,7 @@ const server = Bun.serve<ServerWsData>({
 				}
 				const next: ChatSessionMode = String(msg.mode ?? "") === "plan" ? "plan" : "build";
 				ws.data.chatMode = next;
-				applyLeadFromCache(ws.data);
+				await applyLeadFromCache(ws.data);
 				ws.send(JSON.stringify({ type: "chat_mode", mode: next }));
 				ws.send(
 					logLine(
@@ -2877,11 +3296,13 @@ const server = Bun.serve<ServerWsData>({
 					}
 					ws.data.agentName = nextName;
 					ws.data.cachedAgentBody = body;
+					ws.data.cachedAgentSkills = await resolveAgentSkillsFromName(nextName, ws.data.tenantId);
 				} else {
 					ws.data.agentName = null;
 					ws.data.cachedAgentBody = null;
+					ws.data.cachedAgentSkills = null;
 				}
-				applyLeadFromCache(ws.data);
+				await applyLeadFromCache(ws.data);
 				ws.send(JSON.stringify({ type: "agent", name: ws.data.agentName }));
 				ws.send(
 					logLine(
@@ -2923,7 +3344,7 @@ const server = Bun.serve<ServerWsData>({
 				ws.data.cumPromptTokens = 0;
 				ws.data.cumCompletionTokens = 0;
 				sendQueueState(ws, []);
-				applyLeadFromCache(ws.data);
+				await applyLeadFromCache(ws.data);
 				ws.send(JSON.stringify({ type: "session_reset" }));
 				ws.send(JSON.stringify({ type: "chat_mode", mode: ws.data.chatMode }));
 				ws.send(JSON.stringify({ type: "agent", name: ws.data.agentName }));
@@ -3018,7 +3439,7 @@ const server = Bun.serve<ServerWsData>({
 const _bootEngineMode = wopChatEngineFromEnv();
 const _bootPiDrives = shouldUsePiJsonChat();
 console.log(
-	`Way of Pi server http://127.0.0.1:${server.port} workspace=${getWorkspaceRoot()} chatEngine=${_bootEngineMode} piDrivesChat=${_bootPiDrives} manifest=/api/manifest`,
+	`Way of Work server http://127.0.0.1:${server.port} workspace=${getWorkspaceRoot()} chatEngine=${_bootEngineMode} piDrivesChat=${_bootPiDrives} manifest=/api/manifest`,
 );
 
 // Start the workspace-index auto-sync timer based on saved options.
@@ -3031,6 +3452,12 @@ void applyAutoSync((result) => {
 });
 
 startClawScheduler();
+
+// Start Telegram bot (if token is configured)
+void (async () => {
+	const { startTelegramBot } = await import("./telegram-bot");
+	await startTelegramBot();
+})();
 
 if (process.env.WOP_NGROK_DOMAIN) {
 	void (async () => {

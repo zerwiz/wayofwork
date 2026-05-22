@@ -37,7 +37,7 @@ async function openLearnUrl(href: string): Promise<void> {
 /**
  * Same idea as VS Code / Cursor **Run → Install Additional Debuggers…**:
  * full breakpoint debugging for most languages uses **DAP** extensions in the desktop editor;
- * Way of Pi can still edit `launch.json` and use the integrated terminal for quick runs.
+ * Way of Work can still edit `launch.json` and use the integrated terminal for quick runs.
  */
 export function InstallDebuggersModal({
 	open,
@@ -146,7 +146,7 @@ export function InstallDebuggersModal({
 						>
 							Debug Adapter Protocol (DAP)
 						</a>{" "}
-						so the editor gets breakpoints, stacks, and variables. Way of Pi focuses on the workspace shell and terminal;
+						so the editor gets breakpoints, stacks, and variables. Way of Work focuses on the workspace shell and terminal;
 						install the extensions <strong className={strongBody}>in Cursor</strong> for this repo, then use{" "}
 						<strong className={strongBody}>Run → Open Configurations</strong> here to edit the same{" "}
 						<code className={codeClass}>launch.json</code>.

@@ -1,6 +1,6 @@
 /**
  * Claw Phase F — append-only automation log for Mission view (schedule/webhook runs).
- * Stored under host **`.claw/mission-events/`** on the Way of Pi checkout (not **`WOP_WORKSPACE`**).
+ * Stored under host **`.claw/mission-events/`** on the Way of Work checkout (not **`WOP_WORKSPACE`**).
  *
  * Legacy: **`WOP_WORKSPACE/.wayofpi/claw-mission-events.v1.json`** — migrated on first read when
  * the new file is missing but the legacy file exists.

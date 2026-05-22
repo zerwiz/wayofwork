@@ -1,6 +1,6 @@
-# Way of Pi Server Scripts Documentation
+# Way of Work Server Scripts Documentation
 
-This document provides a comprehensive overview of all server-side scripts in the `apps/wayofwork-ui/server` directory. These scripts form the backend API and runtime for the Way of Pi Technical IDE, handling chat orchestration, authentication, file system operations, LLM interactions, ngrok tunneling, and more.
+This document provides a comprehensive overview of all server-side scripts in the `apps/wayofwork-ui/server` directory. These scripts form the backend API and runtime for the Way of Work Technical IDE, handling chat orchestration, authentication, file system operations, LLM interactions, ngrok tunneling, and more.
 
 ---
 
@@ -199,7 +199,7 @@ Created and initialized by `db.ts` on first run.
 ### `ngrok-tunnel-manager.ts`
 **NGrok tunnel process management.**
 
-Manages the ngrok CLI process spawned by Way of Pi. Features:
+Manages the ngrok CLI process spawned by Way of Work. Features:
 - Detecting ngrok CLI on PATH or bundled npm package
 - Spawning ngrok with `--web-addr` and `--url/--hostname` arguments
 - Tracking tunnel status and polling for public URL via inspector
@@ -530,7 +530,7 @@ Provides dynamic configuration and variable resolution for Ollama integration.
 Lists and manages plan documents (e.g., `plans/PLAN-*.md`) allowing selection for planning and execution.
 
 ### `wop-session-jsonl.ts`
-**Way of Pi session logger.**
+**Way of Work session logger.**
 Logs web chat turns into Pi-shaped JSONL files under the workspace `agent/sessions/` directory.
 
 ### `tool-log-broadcast.ts`
@@ -578,7 +578,7 @@ All scripts are written in TypeScript and optimized for Bun runtime. They levera
 
 ## Related Documentation
 
-- [Project Structure](../docs/STRUCTURE.md) — Overall Way of Pi layout
+- [Project Structure](../docs/STRUCTURE.md) — Overall Way of Work layout
 - [CHANGELOG](../CHANGELOG.md) — Recent updates and changes
 - [AGENTS.md](../AGENTS.md) — Agent communication protocol
 

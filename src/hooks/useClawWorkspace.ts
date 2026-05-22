@@ -124,8 +124,9 @@ function reducer(state: State, action: Action): State {
 /** Check whether a workspace-relative path exists by trying GET /api/file. */
 async function checkFileExists(path: string, signal: AbortSignal): Promise<"exists" | "missing"> {
 	try {
-		const res = await fetch(`/api/file?path=${encodeURIComponent(path)}`, { signal });
-		return res.ok ? "exists" : "missing";
+		const { apiGet } = await import("../api/client");
+		await apiGet<unknown>(`/api/file?path=${encodeURIComponent(path)}`, { signal });
+		return "exists";
 	} catch {
 		return "missing";
 	}
@@ -149,15 +150,11 @@ async function checkScaffoldFilePresence(
 /** Ensure **`.claw/workspace/`** exists (409 if it already exists — OK). */
 async function ensureClawDirectoryExists(): Promise<string | null> {
 	try {
-		const res = await fetch("/api/fs/entry", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ path: ".claw/workspace", kind: "dir" }),
-		});
-		if (res.ok || res.status === 409) return null;
-		const t = await res.text();
-		return `${res.status}: ${t}`;
+		const { apiPostJson } = await import("../api/client");
+		await apiPostJson<unknown>("/api/fs/entry", { path: ".claw/workspace", kind: "dir" });
+		return null;
 	} catch (e) {
+		if (e instanceof Error && e.message.startsWith("409")) return null;
 		return e instanceof Error ? e.message : String(e);
 	}
 }
@@ -165,15 +162,8 @@ async function ensureClawDirectoryExists(): Promise<string | null> {
 /** Write a workspace file via PUT /api/file. Returns error string or null on success. */
 async function writeWorkspaceFile(path: string, content: string): Promise<string | null> {
 	try {
-		const res = await fetch("/api/file", {
-			method: "PUT",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ path, content }),
-		});
-		if (!res.ok) {
-			const t = await res.text();
-			return `${res.status}: ${t}`;
-		}
+		const { apiPutJson } = await import("../api/client");
+		await apiPutJson<unknown>("/api/file", { path, content });
 		return null;
 	} catch (e) {
 		return e instanceof Error ? e.message : String(e);

@@ -6,12 +6,12 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { kanbanService } from '../../../services/mockKanbanService';
-import { tasksService } from '../../../services/mockTasksService';
-import { calendarService } from '../../../services/mockCalendarService';
-import { developmentWorkflowService } from '../../../services/mockDevelopmentWorkflowService';
-import { notesService } from '../../../services/mockNotesService';
-import { useToast } from '../../../context/ToastContext';
+import { kanbanService } from '../../../services/kanbanService';
+import { tasksService } from '../../../services/tasksService';
+import { calendarService } from '../../../services/calendarService';
+import { developmentWorkflowService } from '../../../services/developmentWorkflowService';
+import { notesService } from '../../../services/notesService';
+import { useToast } from '../../../contexts/ToastContext';
 import type { Board, BoardColumn, BoardCard } from '../../../types/kanban';
 import { X, LayoutGrid, Folder, Check, FileText, Plus } from 'lucide-react';
 
@@ -194,9 +194,9 @@ export function PushToKanbanModal({
             calendarService.updateEvent(sourceId, { kanbanCardId: card.id, boardId: selectedBoardId });
           } else if (sourceType === 'developmentStep') {
             // Find the workflow and step
-            const allWorkflows = developmentWorkflowService.getAllWorkflows();
+            const allWorkflows = await developmentWorkflowService.getAllWorkflows();
             for (const workflow of allWorkflows) {
-              const step = workflow.steps.find((s) => s.id === sourceId);
+              const step = workflow.steps.find((s: any) => s.id === sourceId);
               if (step) {
                 const updatedKanbanCardIds = [...(step.kanbanCardIds || []), card.id];
                 developmentWorkflowService.updateStep(workflow.id, sourceId, { kanbanCardIds: updatedKanbanCardIds });
@@ -272,9 +272,9 @@ export function PushToKanbanModal({
             calendarService.updateEvent(sourceId, { kanbanCardId: selectedCardId, boardId: selectedBoardId });
           } else if (sourceType === 'developmentStep') {
             // Find the workflow and step
-            const allWorkflows = developmentWorkflowService.getAllWorkflows();
+            const allWorkflows = await developmentWorkflowService.getAllWorkflows();
             for (const workflow of allWorkflows) {
-              const step = workflow.steps.find((s) => s.id === sourceId);
+              const step = workflow.steps.find((s: any) => s.id === sourceId);
               if (step && !step.kanbanCardIds?.includes(selectedCardId)) {
                 const updatedKanbanCardIds = [...(step.kanbanCardIds || []), selectedCardId];
                 developmentWorkflowService.updateStep(workflow.id, sourceId, { kanbanCardIds: updatedKanbanCardIds });

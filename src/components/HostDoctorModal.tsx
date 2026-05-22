@@ -151,7 +151,7 @@ function inferFallbackChecks(d: HostDoctorDiagnostics): DoctorCheck[] {
 				title: "OpenRouter API key",
 				status: "error",
 				summary: "OPENROUTER_API_KEY is not set",
-				hint: "Set the key for the Way of Pi server process and restart.",
+				hint: "Set the key for the Way of Work server process and restart.",
 			});
 		}
 	}
@@ -436,7 +436,7 @@ export function HostDoctorModal({
 						<h2 id="host-doctor-title" className="text-lg font-bold">
 							Host doctor
 						</h2>
-						<p className={`mt-0.5 text-xs ${muted}`}>Live snapshot from this Way of Pi server</p>
+						<p className={`mt-0.5 text-xs ${muted}`}>Live snapshot from this Way of Work server</p>
 					</div>
 					<button
 						type="button"
@@ -621,7 +621,7 @@ export function HostDoctorModal({
 										if (!bundle) return null;
 										return (
 											<div>
-												<span className="font-semibold text-inherit">Way of Pi install / bundle (not your project by default)</span>
+												<span className="font-semibold text-inherit">Way of Work install / bundle (not your project by default)</span>
 												<div className="mt-1 font-mono break-all">{bundle}</div>
 												<p className={`mt-1 leading-relaxed ${appearanceDark ? "text-[#9d9d9d]" : "text-[#555]"}`}>
 													Unless these paths are identical, file tools and agent scans use the workspace line above — not the app checkout. Opening a file tab does not change the server workspace.

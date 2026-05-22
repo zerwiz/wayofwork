@@ -9,8 +9,8 @@ import { ConfirmationModal } from '../modals/ConfirmationModal';
 import { Save, Palette, Eye, EyeOff, LayoutGrid, Trash2, Archive, FolderKanban, Check, Columns } from 'lucide-react';
 import type { Board, BoardViewType } from '../../types/kanban';
 import type { Project } from '../../types/projects';
-import { kanbanService } from '../../services/mockKanbanService';
-import { projectsService } from '../../services/mockProjectsService';
+import { kanbanService } from '../../services/kanbanService';
+import { projectsService } from '../../services/projectsService';
 import { useToast } from '../../contexts/ToastContext';
 import { boardColorOptions, boardIconOptions } from '../../utils/boardConstants';
 
@@ -41,25 +41,28 @@ export const BoardSettingsModal: React.FC<BoardSettingsModalProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setBoardName(board.name);
-      setBoardDescription(board.description || '');
-      setBoardIcon(board.icon || '📋');
-      setBoardColor(board.color || '#6366f1');
-      setDefaultView(board.defaultView || 'kanban');
-      setVisibility(board.visibility || 'private');
-      setColumnWidth(board.columnWidth || 190);
-      setSelectedProjectIds(board.projectIds || []);
+    const loadProjects = async () => {
+      if (isOpen) {
+        setBoardName(board.name);
+        setBoardDescription(board.description || '');
+        setBoardIcon(board.icon || '📋');
+        setBoardColor(board.color || '#6366f1');
+        setDefaultView(board.defaultView || 'kanban');
+        setVisibility(board.visibility || 'private');
+        setColumnWidth(board.columnWidth || 190);
+        setSelectedProjectIds(board.projectIds || []);
 
-      // Load all available projects
-      try {
-        const projects = projectsService.getAllProjects();
-        setAvailableProjects(projects);
-      } catch (error) {
-        console.error('Failed to load projects:', error);
-        setAvailableProjects([]);
+        // Load all available projects
+        try {
+          const projects = await projectsService.getAllProjects();
+          setAvailableProjects(projects);
+        } catch (error) {
+          console.error('Failed to load projects:', error);
+          setAvailableProjects([]);
+        }
       }
-    }
+    };
+    loadProjects();
   }, [isOpen, board]);
 
   const handleSave = async () => {
@@ -80,32 +83,32 @@ export const BoardSettingsModal: React.FC<BoardSettingsModalProps> = ({
       const currentProjectIds = board.projectIds || [];
       
       // Add board to projects that are newly linked
-      selectedProjectIds.forEach((projectId) => {
+      for (const projectId of selectedProjectIds) {
         if (!currentProjectIds.includes(projectId)) {
-          const project = projectsService.getProject(projectId);
+          const project = await projectsService.getProject(projectId);
           if (project) {
             const updatedBoardIds = project.kanbanBoardIds || [];
             if (!updatedBoardIds.includes(board.id)) {
-              projectsService.updateProject(projectId, {
+              await projectsService.updateProject(projectId, {
                 kanbanBoardIds: [...updatedBoardIds, board.id],
               });
             }
           }
         }
-      });
+      }
 
       // Remove board from projects that are unlinked
-      currentProjectIds.forEach((projectId) => {
+      for (const projectId of currentProjectIds) {
         if (!selectedProjectIds.includes(projectId)) {
-          const project = projectsService.getProject(projectId);
+          const project = await projectsService.getProject(projectId);
           if (project) {
             const updatedBoardIds = (project.kanbanBoardIds || []).filter((id) => id !== board.id);
-            projectsService.updateProject(projectId, {
+            await projectsService.updateProject(projectId, {
               kanbanBoardIds: updatedBoardIds.length > 0 ? updatedBoardIds : undefined,
             });
           }
         }
-      });
+      }
 
       onUpdated();
       onClose();

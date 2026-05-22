@@ -6,9 +6,9 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { kanbanService } from '../../../services/mockKanbanService';
+import { kanbanService } from '../../../services/kanbanService';
 import { developmentWorkflowService } from '../../../services/mockDevelopmentWorkflowService';
-import { useToast } from '../../../context/ToastContext';
+import { useToast } from '../../../contexts/ToastContext';
 import type { Board, BoardColumn } from '../../../types/kanban';
 import type { DevelopmentWorkflow } from '../../../types/developmentWorkflow';
 import { X, LayoutGrid, Folder, Check, Plus, FileText } from 'lucide-react';
@@ -49,14 +49,14 @@ export function PushWorkflowToKanbanModal({
           setNewBoardName(`${loaded.name} - Development Board`);
           // Auto-select appropriate template based on workflow track
           if (loaded.track === 'bmad-method') {
-            const template = BOARD_TEMPLATES.find(t => t.name.includes('BMad Method'));
+            const template = BOARD_TEMPLATES.find((t: any) => t.name.includes('BMad Method'));
             if (template) setNewBoardTemplateId(template.id);
           } else if (loaded.track === 'quick-flow') {
-            const template = BOARD_TEMPLATES.find(t => t.name.includes('Quick Flow'));
+            const template = BOARD_TEMPLATES.find((t: any) => t.name.includes('Quick Flow'));
             if (template) setNewBoardTemplateId(template.id);
           } else {
             // Default to Development Workflow template
-            const template = BOARD_TEMPLATES.find(t => t.name.includes('Development'));
+            const template = BOARD_TEMPLATES.find((t: any) => t.name.includes('Development'));
             if (template) setNewBoardTemplateId(template.id);
           }
         }
@@ -269,7 +269,7 @@ export function PushWorkflowToKanbanModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg text-[#858585] hover:text-[#cccccc] transition-all duration-200 hover:bg-gradient-to-r hover:from-[#ea580c]/20 hover:to-[#c2410c]/20 hover:shadow-lg hover:shadow-orange-500/10"
+            className="p-2 rounded-lg text-[#858585] hover:text-white transition-all duration-200 hover:bg-gradient-to-r hover:from-orange-600/20 hover:to-orange-600/20 hover:shadow-lg hover:shadow-orange-500/10"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -279,13 +279,13 @@ export function PushWorkflowToKanbanModal({
         {/* Content */}
         <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           {/* Workflow Info */}
-          <div className="p-4 bg-[#ea580c]/10 border border-orange-500/30 rounded-lg">
+          <div className="p-4 bg-orange-600/10 border border-orange-500/30 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <FileText className="w-5 h-5 text-orange-400" />
-              <h3 className="font-semibold text-[#cccccc]">{workflow.name}</h3>
+              <h3 className="font-semibold text-white">{workflow.name}</h3>
             </div>
             {workflow.description && (
-              <p className="text-sm text-[#cccccc] mb-2">{workflow.description}</p>
+              <p className="text-sm text-[#a0a0a0] mb-2">{workflow.description}</p>
             )}
             <div className="flex items-center gap-2 text-xs text-[#858585]">
               <span>{workflow.steps.length} step{workflow.steps.length !== 1 ? 's' : ''}</span>
@@ -296,15 +296,15 @@ export function PushWorkflowToKanbanModal({
 
           {/* Push Mode Selector */}
           <div>
-            <label className="block text-sm font-semibold text-[#cccccc] mb-3">Push Mode</label>
+            <label className="block text-sm font-semibold text-white mb-3">Push Mode</label>
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setPushMode('existing')}
                 className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
                   pushMode === 'existing'
-                    ? 'bg-gradient-to-r from-[#ea580c]/20 to-[#c2410c]/20 border-orange-500/50 text-[#cccccc]'
-                    : 'bg-[#1e1e1e]/60 border-gray-700/50 text-[#cccccc] hover:border-[#3c3c3c]'
+                    ? 'bg-gradient-to-r from-orange-600/20 to-orange-700/20 border-orange-500/50 text-white'
+                    : 'bg-[#252526]/60 border-[#333333]/50 text-[#a0a0a0] hover:border-[#444444]'
                 }`}
               >
                 <div className="flex items-center justify-center gap-2">
@@ -318,8 +318,8 @@ export function PushWorkflowToKanbanModal({
                 onClick={() => setPushMode('new-board')}
                 className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
                   pushMode === 'new-board'
-                    ? 'bg-gradient-to-r from-[#ea580c]/20 to-[#c2410c]/20 border-orange-500/50 text-[#cccccc]'
-                    : 'bg-[#1e1e1e]/60 border-gray-700/50 text-[#cccccc] hover:border-[#3c3c3c]'
+                    ? 'bg-gradient-to-r from-orange-600/20 to-orange-700/20 border-orange-500/50 text-white'
+                    : 'bg-[#252526]/60 border-[#333333]/50 text-[#a0a0a0] hover:border-[#444444]'
                 }`}
               >
                 <div className="flex items-center justify-center gap-2">
@@ -336,8 +336,8 @@ export function PushWorkflowToKanbanModal({
             <>
               {/* Board Selector */}
               <div>
-                <label className="block text-sm font-semibold text-[#cccccc] mb-2 flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-[#ea580c]/20 to-[#c2410c]/20 flex items-center justify-center">
+                <label className="block text-sm font-semibold text-white mb-2 flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-orange-600/20 to-orange-700/20 flex items-center justify-center">
                     <LayoutGrid className="w-3 h-3 text-orange-400" />
                   </div>
                   Select Board
@@ -345,7 +345,7 @@ export function PushWorkflowToKanbanModal({
                 <select
                   value={selectedBoardId}
                   onChange={(e) => setSelectedBoardId(e.target.value)}
-                  className="w-full px-4 py-2 bg-[#1e1e1e]/60 backdrop-blur-sm border border-orange-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-[#cccccc] select transition-all hover:border-orange-500/50"
+                  className="w-full px-4 py-2 bg-[#252526]/60 backdrop-blur-sm border border-orange-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-white select transition-all hover:border-orange-500/50"
                 >
                   <option value="">Choose a board...</option>
                   {boards.map((board) => (
@@ -359,8 +359,8 @@ export function PushWorkflowToKanbanModal({
               {/* Column Selector */}
               {selectedBoardId && (
                 <div>
-                  <label className="block text-sm font-semibold text-[#cccccc] mb-2 flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-[#ea580c]/20 to-[#c2410c]/20 flex items-center justify-center">
+                  <label className="block text-sm font-semibold text-white mb-2 flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-orange-600/20 to-orange-700/20 flex items-center justify-center">
                       <Folder className="w-3 h-3 text-orange-400" />
                     </div>
                     Select Column
@@ -368,7 +368,7 @@ export function PushWorkflowToKanbanModal({
                   <select
                     value={selectedColumnId}
                     onChange={(e) => setSelectedColumnId(e.target.value)}
-                    className="w-full px-4 py-2 bg-[#1e1e1e]/60 backdrop-blur-sm border border-orange-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-[#cccccc] select transition-all hover:border-orange-500/50"
+                    className="w-full px-4 py-2 bg-[#252526]/60 backdrop-blur-sm border border-orange-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-white select transition-all hover:border-orange-500/50"
                   >
                     <option value="">Choose a column...</option>
                     {columns.map((column) => (
@@ -387,20 +387,20 @@ export function PushWorkflowToKanbanModal({
             <>
               {/* Board Name */}
               <div>
-                <label className="block text-sm font-semibold text-[#cccccc] mb-2">Board Name</label>
+                <label className="block text-sm font-semibold text-white mb-2">Board Name</label>
                 <input
                   type="text"
                   value={newBoardName}
                   onChange={(e) => setNewBoardName(e.target.value)}
-                  className="w-full px-4 py-2 bg-[#1e1e1e]/60 backdrop-blur-sm border border-orange-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-[#cccccc] input-text transition-all hover:border-orange-500/50"
+                  className="w-full px-4 py-2 bg-[#252526]/60 backdrop-blur-sm border border-orange-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-white input-text transition-all hover:border-orange-500/50"
                   placeholder="Enter board name..."
                 />
               </div>
 
               {/* Template Selector */}
               <div>
-                <label className="block text-sm font-semibold text-[#cccccc] mb-2 flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-[#ea580c]/20 to-[#c2410c]/20 flex items-center justify-center">
+                <label className="block text-sm font-semibold text-white mb-2 flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-orange-600/20 to-orange-700/20 flex items-center justify-center">
                     <LayoutGrid className="w-3 h-3 text-orange-400" />
                   </div>
                   Board Template (Optional)
@@ -408,7 +408,7 @@ export function PushWorkflowToKanbanModal({
                 <select
                   value={newBoardTemplateId}
                   onChange={(e) => setNewBoardTemplateId(e.target.value)}
-                  className="w-full px-4 py-2 bg-[#1e1e1e]/60 backdrop-blur-sm border border-orange-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-[#cccccc] select transition-all hover:border-orange-500/50"
+                  className="w-full px-4 py-2 bg-[#252526]/60 backdrop-blur-sm border border-orange-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-white select transition-all hover:border-orange-500/50"
                 >
                   <option value="">Default (To Do, In Progress, Done)</option>
                   {BOARD_TEMPLATES.map((template) => (
@@ -425,15 +425,15 @@ export function PushWorkflowToKanbanModal({
           )}
 
           {/* Options */}
-          <div className="space-y-3 p-4 bg-[#ea580c]/5 border border-orange-500/20 rounded-lg">
+          <div className="space-y-3 p-4 bg-orange-600/5 border border-orange-500/20 rounded-lg">
             <label className="flex items-center gap-3 cursor-pointer group">
               <input
                 type="checkbox"
                 checked={createCardsForAllSteps}
                 onChange={(e) => setCreateCardsForAllSteps(e.target.checked)}
-                className="w-4 h-4 rounded border-orange-500/50 bg-[#1e1e1e]/60 text-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all"
+                className="w-4 h-4 rounded border-orange-500/50 bg-[#252526]/60 text-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all"
               />
-              <span className="text-sm text-[#cccccc] group-hover:text-[#cccccc] transition-colors">
+              <span className="text-sm text-[#a0a0a0] group-hover:text-white transition-colors">
                 Create cards for all workflow steps ({workflow.steps.length} cards)
               </span>
             </label>
@@ -449,7 +449,7 @@ export function PushWorkflowToKanbanModal({
         <div className="flex items-center justify-end gap-3 p-6 border-t border-orange-500/20">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-[#1e1e1e]/60 hover:bg-[#252526]/80 text-[#cccccc] rounded-lg transition-all duration-200 border border-gray-700/50 hover:border-[#3c3c3c]"
+            className="px-4 py-2 bg-[#252526]/60 hover:bg-[#333333]/80 text-white rounded-lg transition-all duration-200 border border-[#333333]/50 hover:border-[#444444]"
           >
             Cancel
           </button>
@@ -460,7 +460,7 @@ export function PushWorkflowToKanbanModal({
               (pushMode === 'existing' && (!selectedBoardId || !selectedColumnId)) ||
               (pushMode === 'new-board' && !newBoardName.trim())
             }
-            className="px-4 py-2 bg-gradient-to-r from-[#ea580c] to-[#c2410c] hover:from-orange-700 hover:to-orange-700 text-[#cccccc] rounded-lg transition-all font-medium shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
+            className="px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-700 text-white rounded-lg transition-all font-medium shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
           >
             {isCreating ? (
               <>

@@ -1,0 +1,5 @@
+{"type":"session","version":3,"id":"019e4e14-2db0-7ca4-a69b-84b4c7b75fbe","timestamp":"2026-05-22T05:06:45.808Z","cwd":"/home/zerwiz/CodeP/wayofwork"}
+{"type":"model_change","id":"2fff146c","parentId":null,"timestamp":"2026-05-22T05:06:45.821Z","provider":"ollama","modelId":"qwen3.5:9b"}
+{"type":"thinking_level_change","id":"d22559c5","parentId":"2fff146c","timestamp":"2026-05-22T05:06:45.821Z","thinkingLevel":"off"}
+{"type":"message","id":"197f13b8","parentId":"d22559c5","timestamp":"2026-05-22T05:06:45.828Z","message":{"role":"user","content":[{"type":"text","text":"Say hello in one word"}],"timestamp":1779426405825}}
+{"type":"message","id":"550437c2","parentId":"197f13b8","timestamp":"2026-05-22T05:06:45.856Z","message":{"role":"assistant","content":[],"api":"openai-completions","provider":"ollama","model":"qwen3.5:9b","usage":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0,"totalTokens":0,"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0,"total":0}},"stopReason":"error","timestamp":1779426405848,"errorMessage":"404 404 page not found"}}

@@ -2,7 +2,7 @@
  * useServerConfig Hook
  *
  * @description Manages server configuration state including connection status,
- *              API endpoints, and refresh mechanisms for Way of Pi backend communication
+ *              API endpoints, and refresh mechanisms for Way of Work backend communication
  * @returns Object containing config object, refresh function, and related state
  *
  * @example

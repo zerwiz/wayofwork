@@ -82,13 +82,13 @@ function SectionWelcome() {
 	return (
 		<>
 			<P>
-				<strong className="text-white">Way of Pi</strong> is a desktop app that wraps an AI coding assistant
+				<strong className="text-white">Way of Work</strong> is a desktop app that wraps an AI coding assistant
 				in a friendly interface — a file browser, chat window, code editor, and controls, all in one place.
 			</P>
 			<InfoBox>
 				<strong className="text-white">The simplest explanation:</strong> Imagine a super-smart robot called{" "}
 				<strong>Pi</strong> that is amazing at writing code. Normally you type at it in a plain black terminal.
-				Way of Pi gives that robot a proper <em>control center</em> — windows, buttons, and a file browser —
+				Way of Work gives that robot a proper <em>control center</em> — windows, buttons, and a file browser —
 				so it's much easier to work with.
 			</InfoBox>
 
@@ -99,7 +99,7 @@ function SectionWelcome() {
 					value="The AI brain that reads code, writes files, runs commands, and follows your instructions."
 				/>
 				<Row
-					label="🖥️ Way of Pi (the shell)"
+					label="🖥️ Way of Work (the shell)"
 					value="The app you see: file tree, chat, editor, agent roster, and model picker."
 				/>
 			</div>
@@ -129,7 +129,7 @@ function SectionWelcome() {
 			</UL>
 
 			<DevBox>
-				Way of Pi runs a <Chip>Bun</Chip> server (<Chip>apps/wayofwork-ui/server/</Chip>) and a Vite+React
+				Way of Work runs a <Chip>Bun</Chip> server (<Chip>apps/wayofwork-ui/server/</Chip>) and a Vite+React
 				frontend. Chat uses <Chip>WOP_CHAT_ENGINE</Chip> to route turns: when unset or <Chip>auto</Chip>, the
 				server uses headless <Chip>pi --mode json</Chip> when the Pi CLI resolves, otherwise direct
 				Ollama/OpenRouter; <Chip>pi</Chip> requires Pi; <Chip>bundled</Chip>/<Chip>bun</Chip> forces Bun-only. See{" "}
@@ -226,466 +226,15 @@ function SectionGettingStarted() {
 			</div>
 
 			<DevBox>
-				Start the server with <Chip>./start-wayofpi-electron.sh</Chip> (Electron, recommended) or{" "}
+				Start the server with <Chip>./start-wo-electron.sh</Chip> (Electron, recommended) or{" "}
 				<Chip>./start-wayofwork-ui.sh</Chip> (browser). The Bun server binds to port{" "}
 				<Chip>WOP_SERVER_PORT</Chip> (default 3333). Set <Chip>WOP_WORKSPACE</Chip> in a root-level{" "}
-				<Chip>.env</Chip> to pre-load a workspace without clicking. Use <Chip>just wayofpi-electron</Chip>{" "}
+				<Chip>.env</Chip> to pre-load a workspace without clicking. Use <Chip>just wo-electron</Chip>{" "}
 				from the repo root for the canonical dev command.
 			</DevBox>
-		</>
-	);
-}
-
-/** Shown first in Help → Agents — the usual coding roster. */
-const PRIMARY_BUILTIN_AGENTS: [string, string][] = [
-	["🔭 Scout", "Explores and maps your codebase. Great first step for any task."],
-	["📋 Planner", "Breaks down your request into a structured step-by-step plan."],
-	["🔨 Builder", "Writes and edits code to implement features or fix bugs."],
-	["🔍 Reviewer", "Reads code and points out problems, risks, and improvements."],
-	["📝 Documenter", "Updates README files and docs to match the current code."],
-	["🌐 Web Searcher", "Searches the web and fetches pages for research tasks."],
-];
-
-/** Additional personas shipped in this playground’s `.pi/agents/` (expand in the modal). */
-const MORE_BUILTIN_AGENTS: [string, string][] = [
-	["📄 Code Documenter", "Docstrings, comments, and code-facing markdown — never changes program behavior."],
-	["🗂️ Indexer", "Walks a folder and writes INDEX.md so others can orient without re-scanning the tree."],
-	["🎫 Ralph", "File-queue worker: one .txt ticket at a time with HTML output; pairs with planner/builder in teams."],
-	["🎮 Bowser", "Headless browser automation via Playwright (UI tests, screenshots, scraping)."],
-	["📡 Hermes", "Bridge to the external Hermes CLI — send a prompt, relay stdout back to the user."],
-	["🔎 Project Scanner", "Bootstraps ~/.pi/projects/<slug>/ docs from the template for a new workspace."],
-	["🚪 Playground Portal", "Ports extensions, skills, and shims from the Pi playground into your app repo."],
-	["🦾 Claw", "Way of Pi Claw shell lead — operator flows, .claw/ workspace, Telegram setup guidance."],
-	["🛡️ Red Team", "Adversarial review: vulnerabilities, edge cases, severity — read-only, no file edits."],
-	["✅ Plan Reviewer", "Critiques plans/PLAN-*.md: assumptions, risks, ordering, and missing steps."],
-	["🧠 Pi orchestrator (Pi Pi)", "Meta-agent that coordinates Pi-internal experts (extensions, themes, skills, …)."],
-	[
-		"🧩 Pi product experts",
-		"Focused personas for extending Pi itself: extensions, themes, skills, config, TUI, prompts, agents, CLI, keybindings.",
-	],
-];
-
-function SectionAgents() {
-	const [moreAgentsOpen, setMoreAgentsOpen] = useState(false);
-
-	return (
-		<>
-			<P>
-				An <strong className="text-white">agent</strong> is an AI helper with a specific job and
-				personality. Way of Pi ships with agents for the most common coding roles.
-			</P>
-
-			<InfoBox>
-				<strong className="text-white">Think of it like hiring a specialist:</strong> instead of one
-				general assistant, you have a <em>Planner</em> who lays out the strategy, a <em>Builder</em> who
-				writes the code, a <em>Reviewer</em> who checks quality, and a <em>Scout</em> who explores the
-				codebase first. You can talk to each one individually, or let them work as a team.
-			</InfoBox>
-
-			<H>Built-in agents</H>
-			<div className="overflow-hidden rounded-xl border border-[#3c3c3c] text-[12px]">
-				{PRIMARY_BUILTIN_AGENTS.map(([name, desc]) => (
-					<Row key={String(name)} label={name} value={desc} />
-				))}
-			</div>
-			<button
-				type="button"
-				onClick={() => setMoreAgentsOpen((o) => !o)}
-				className="mb-4 mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[#3c3c3c] bg-[#252526] px-3 py-2 text-[12px] font-semibold text-[#cccccc] transition-colors hover:border-[#ea580c]/50 hover:bg-[#2d2d2d] hover:text-white"
-				aria-expanded={moreAgentsOpen}
-			>
-				<span className="text-[#ea580c]">{moreAgentsOpen ? "▲" : "▼"}</span>
-				{moreAgentsOpen ? "Hide additional built-in agents" : "Show more built-in agents"}
-			</button>
-			{moreAgentsOpen ? (
-				<>
-					<div className="mb-3 overflow-hidden rounded-xl border border-[#3c3c3c] text-[12px]">
-						{MORE_BUILTIN_AGENTS.map(([name, desc]) => (
-							<Row key={String(name)} label={name} value={desc} />
-						))}
-					</div>
-					<P>
-						On top of these, this repo ships{" "}
-						<strong className="text-white">well over a hundred domain specialists</strong> under{" "}
-						<Chip>.pi/agents/domain-specialists/</Chip> (language stacks, infra, security, data/AI,
-						research, and more). Open <strong className="text-white">My AI Team</strong> and hit{" "}
-						<strong className="text-white">Refresh</strong> to see every agent your workspace scan loads.
-					</P>
-				</>
-			) : null}
-
-			<H>How to switch agents</H>
-			<UL>
-				<li>
-					In <strong className="text-white">Simple mode</strong>: use the agent dropdown in the chat
-					panel, or go to <strong className="text-white">My AI Team</strong> in the side nav.
-				</li>
-				<li>
-					In <strong className="text-white">Technical mode</strong>: the agent selector appears in the
-					chat panel header.
-				</li>
-				<li>
-					Changing agent changes the AI's <em>personality and focus</em> for that conversation — it does
-					not restart or lose your chat history.
-				</li>
-			</UL>
 
 			<DevBox>
-				Agents are <Chip>.md</Chip> files with YAML frontmatter (<Chip>name</Chip>,{" "}
-				<Chip>description</Chip>, <Chip>tools</Chip>) and a body that becomes the system prompt.
-				Scan order: <Chip>agents/</Chip> → <Chip>.claude/agents/</Chip> → <Chip>.pi/agents/</Chip> →{" "}
-				<Chip>.cursor/agents/</Chip> (first <Chip>name</Chip> wins). Create or edit agent files in your
-				workspace and hit <strong className="text-white">Refresh</strong> in My AI Team. Tools in the
-				frontmatter are only enforced when turns route through Pi (<Chip>WOP_CHAT_ENGINE=pi</Chip>);
-				otherwise they document intent only.
-			</DevBox>
-		</>
-	);
-}
-
-function SectionTeams() {
-	return (
-		<>
-			<P>
-				A <strong className="text-white">team</strong> is a named group of agents. Instead of picking
-				agents one by one, you define a team once and re-use it for any task that needs those roles.
-			</P>
-
-			<InfoBox>
-				<strong className="text-white">Think of it like assembling your squad before a game.</strong> The
-				"full" team might have a Scout, Planner, Builder, Reviewer, and Documenter. A "frontend" team
-				might only have a Planner, Builder, and a React specialist. You choose the squad; the AI decides
-				who does what.
-			</InfoBox>
-
-			<H>How to manage teams</H>
-			<UL>
-				<li>
-					Go to <strong className="text-white">My AI Team</strong> in the Simple side nav.
-				</li>
-				<li>
-					Click <strong className="text-white">New team</strong> to create a team and give it a name.
-				</li>
-				<li>
-					Click <strong className="text-white">Edit Teams</strong> to open the visual editor — add or
-					remove agents with checkboxes, no YAML required.
-				</li>
-				<li>
-					Click <strong className="text-white">Edit roster</strong> on any existing team card to change
-					its members.
-				</li>
-				<li>
-					Press <strong className="text-white">Save changes</strong> when you're done — nothing is saved
-					until you click that button.
-				</li>
-			</UL>
-
-			<H>Pre-built teams</H>
-			<div className="mb-4 overflow-hidden rounded-xl border border-[#3c3c3c] text-[12px]">
-				{[
-					["full", "Scout + Planner + Builder + Reviewer + Documenter — all-rounder"],
-					["plan-build", "Planner + Builder + Reviewer + Code Documenter — focused coding"],
-					["frontend", "Planner + Builder + Bowser (browser automation)"],
-					["info", "All research/info agents — scout, web-searcher, indexer, documenter"],
-					["ralph", "Ralph (ticket queue) + Builder + Planner + Reviewer — ticket-driven work"],
-				].map(([name, desc]) => (
-					<Row key={name} label={<Chip>{name}</Chip>} value={desc} />
-				))}
-			</div>
-
-			<DevBox>
-				Teams are stored in <Chip>.pi/agents/teams.yaml</Chip> (workspace-relative). Format: each key is
-				a team name, value is a YAML list of agent <Chip>name</Chip> fields. The{" "}
-				<Chip>GET /api/agents</Chip> endpoint returns both agents and teams. Mutations via the GUI write
-				the file with <Chip>PUT /api/file</Chip>. The orchestrator's{" "}
-				<Chip>team_member_add / remove</Chip> tools in <Chip>server/teams-yaml-mutate.ts</Chip> offer the
-				same via chat commands.
-			</DevBox>
-		</>
-	);
-}
-
-function SectionModels() {
-	return (
-		<>
-			<P>
-				<strong className="text-white">AI Brains</strong> is where you choose which AI model powers
-				your chat. Think of it like picking an engine — a bigger model gives smarter answers but may be
-				slower; a smaller local model replies instantly but knows less.
-			</P>
-
-			<H>Two ways to run AI</H>
-			<div className="mb-4 overflow-hidden rounded-xl border border-[#3c3c3c]">
-				<Row
-					label="🏠 Ollama (local)"
-					value="Runs on your own computer. Private, free, works offline. Install Ollama, pull a model (e.g. llama3), and it appears automatically."
-				/>
-				<Row
-					label="☁️ OpenRouter (cloud)"
-					value="Access models like Claude, GPT-4, Gemini, and many more via the internet. Requires an API key from openrouter.ai. Costs vary per model."
-				/>
-			</div>
-
-			<H>Session model vs provider</H>
-			<UL>
-				<li>
-					<strong className="text-white">Session model</strong> — the model you pick for this browser
-					session right now. Quick to change; saved in your browser.
-				</li>
-				<li>
-					<strong className="text-white">Provider files</strong> — the JSON files on disk that configure
-					which models are available. Advanced; usually you only touch these once when setting up.
-				</li>
-			</UL>
-
-			<H>Quick setup guide</H>
-			<UL>
-				<li>
-					<strong className="text-white">Using Ollama:</strong> install from ollama.com, run{" "}
-					<Chip>ollama pull llama3</Chip> (or any model), start Ollama, then open AI Brains — your model
-					will appear in the list.
-				</li>
-				<li>
-					<strong className="text-white">Using OpenRouter:</strong> create a free account at
-					openrouter.ai, get an API key, add <Chip>OPENROUTER_API_KEY=sk-...</Chip> to your{" "}
-					<Chip>.env</Chip> file, and restart the server.
-				</li>
-			</UL>
-
-			<DevBox>
-				Provider is set by <Chip>WOP_LLM_PROVIDER</Chip> (<Chip>ollama</Chip> or{" "}
-				<Chip>openrouter</Chip>). Ollama host defaults to <Chip>OLLAMA_HOST</Chip> (default{" "}
-				<Chip>http://localhost:11434</Chip>). Default model: <Chip>OLLAMA_MODEL</Chip> or{" "}
-				<Chip>OPENROUTER_MODEL</Chip>. The session model override is sent over WebSocket as{" "}
-				<Chip>set_model</Chip> and stored in <Chip>localStorage</Chip> as{" "}
-				<Chip>wayofpi.activeLlmModel</Chip>. Restart the Bun server after changing env. Full var list:{" "}
-				<Chip>apps/wayofwork-ui/.env.sample</Chip>.
-			</DevBox>
-		</>
-	);
-}
-
-function SectionLayout() {
-	return (
-		<>
-			<P>
-				Way of Pi has three layout modes selectable from the top bar. Each is optimised for a different
-				style of working.
-			</P>
-
-			<div className="mb-6 flex flex-col gap-3">
-				{[
-					{
-						icon: "💬",
-						name: "Simple",
-						badge: "Recommended for beginners",
-						desc: "Chat-first layout with a side nav for My AI Team, AI Brains, files, and settings. Everything is one click away. Great for people who mainly want to chat with AI about their project.",
-						tips: [
-							"Side nav on the left: Chat, Files, My AI Team, AI Brains, Projects, Settings.",
-							"File panel opens files side-by-side with chat.",
-							"AI Brains lets you pick your model without touching any config files.",
-						],
-					},
-					{
-						icon: "⚙️",
-						name: "Technical",
-						badge: "For developers",
-						desc: "IDE-style layout with a multi-pane grid (up to 3×4 cells), file tree, terminal, dockable panels, and full workspace control. Designed for people who work like they're in VS Code or Zed.",
-						tips: [
-							"Drag and drop panel tabs between cells.",
-							"Resize panels by dragging the split handles.",
-							"Command Palette: Ctrl+Shift+P (Cmd+Shift+P on Mac).",
-							"Status bar at the bottom shows model, context, and tokens.",
-						],
-					},
-					{
-						icon: "🦾",
-						name: "Claw",
-						badge: "Experimental",
-						desc: "Mission-control shell for autonomous Pi agent operations. Has its own navigation rail with Mission, Chat, Team, Schedule, Channels, Files, and Settings tabs. Distinct from Technical — designed for running persistent, scheduled, and multi-agent tasks rather than IDE-style editing.",
-						tips: [
-							"Mission tab: agent status dashboard, workspace health, and quick actions.",
-							"Chat tab: multi-session conversations with session strip for switching threads.",
-							"Schedule tab: cron or one-shot Pi turns — saved on host .claw/schedule/; set WOP_CLAW_SCHEDULER=1 and Pi-backed chat to run them automatically.",
-							"Channels tab: Telegram bot integration setup and future webhook/email channels.",
-							"Files tab: browse and preview workspace files — Markdown opens in Preview by default.",
-							"The .claw/ folder stores agent identity, memory, and tool config (isolated from Simple/Technical).",
-						],
-					},
-				].map((m) => (
-					<div key={m.name} className="rounded-xl border border-[#3c3c3c] bg-[#1e1e1e] p-4">
-						<div className="mb-2 flex items-center gap-2">
-							<span className="text-lg">{m.icon}</span>
-							<span className="font-bold text-white">{m.name}</span>
-							<span className="rounded-full border border-[#ea580c]/40 bg-[#ea580c]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#fb923c]">
-								{m.badge}
-							</span>
-						</div>
-						<p className="mb-2 text-[12px] leading-relaxed text-[#cccccc]">{m.desc}</p>
-						<ul className="space-y-1 text-[11px] text-[#858585]">
-							{m.tips.map((t) => (
-								<li key={t} className="flex gap-1.5">
-									<span className="shrink-0 text-[#ea580c]">›</span>
-									{t}
-								</li>
-							))}
-						</ul>
-					</div>
-				))}
-			</div>
-
-			<DevBox>
-				Layout mode is stored in <Chip>localStorage</Chip> as <Chip>wayofpi.uiMode</Chip>. The
-				Technical/Claw grid state is persisted under <Chip>wayofpi.technical.workspaceGrid.v1</Chip>.
-				Dock weights (row/col split sizes) are part of the same JSON. Panel tabs follow{" "}
-				<Chip>PanelDockLayout</Chip> v3 (<Chip>{"{ tabs, activeIndex }"}</Chip>). Switching modes does not
-				reset workspace or chat.
-			</DevBox>
-		</>
-	);
-}
-
-function SectionWorkspace() {
-	return (
-		<>
-			<P>
-				A <strong className="text-white">workspace</strong> is the folder on your computer that Way of Pi
-				works inside. Everything — the file tree, chat context, and AI actions — is scoped to that
-				folder. You choose it; the app can't see anything outside it.
-			</P>
-
-			<InfoBox>
-				<strong className="text-white">Analogy:</strong> Think of the workspace like opening a drawer.
-				The AI can only see and touch things inside that drawer. To work on a different project, you
-				"open a different drawer" (switch workspace). Nothing from the old drawer mixes in.
-			</InfoBox>
-
-			<H>How to open or change the workspace</H>
-			<UL>
-				<li>
-					<strong className="text-white">Simple mode:</strong> go to the{" "}
-					<strong className="text-white">Projects &amp; Workspace</strong> tab in the side nav. Click{" "}
-					<strong className="text-white">Choose folder…</strong> and type the path, or click a recently
-					used folder to switch instantly.
-				</li>
-				<li>
-					<strong className="text-white">Any mode:</strong> use{" "}
-					<strong className="text-white">File → Open Folder</strong> from the menu bar.
-				</li>
-				<li>
-					<strong className="text-white">At startup:</strong> set <Chip>WOP_WORKSPACE=/path/to/project</Chip>{" "}
-					in your <Chip>.env</Chip> file (next to <Chip>apps/</Chip>) and restart the server.
-				</li>
-			</UL>
-
-			<H>Important rules</H>
-			<UL>
-				<li>
-					The workspace is set by the <strong className="text-white">server</strong>, not by which file
-					tab you have open. Opening a file doesn't change the workspace.
-				</li>
-				<li>
-					All <Chip>/api/file</Chip> calls, the file tree, and the AI's working directory refer to the
-					workspace root — not to wherever the Way of Pi app lives.
-				</li>
-				<li>
-					If the workspace shows a "Way of Pi" path when you mean to work on your own project, use{" "}
-					<strong className="text-white">Open Folder</strong> to switch.
-				</li>
-			</UL>
-
-			<DevBox>
-				Workspace roots come from <Chip>WOP_WORKSPACE</Chip> env or the{" "}
-				<Chip>POST /api/workspace</Chip> op (<Chip>open_folder</Chip>, <Chip>add_folder</Chip>,{" "}
-				<Chip>remove_folder</Chip>). Multiple roots are supported (multi-root workspace); the first root
-				is the primary for <Chip>teams.yaml</Chip>, Pi <Chip>cwd</Chip>, and relative path resolution.
-				Recent folders are stored in <Chip>localStorage</Chip> as{" "}
-				<Chip>wayofpi.workspace.recentFolders</Chip>. Server path jail: all <Chip>/api/file</Chip>{" "}
-				and <Chip>/api/tree</Chip> calls are resolved relative to the workspace roots — arbitrary absolute
-				paths outside the workspace are rejected.
-			</DevBox>
-		</>
-	);
-}
-
-function SectionForDevelopers() {
-	return (
-		<>
-			<P>
-				This section is for people who want to go deeper: configure the Pi engine, write extensions,
-				set up providers, or contribute to Way of Pi itself.
-			</P>
-
-			<H>Connecting Pi (the real AI engine)</H>
-			<P>
-				By default, chat routes directly to Ollama or OpenRouter (fast, no extra setup). To unlock Pi's
-				full power — real tools, extensions, <Chip>dispatch_agent</Chip>, slash commands — set:
-			</P>
-			<div className="mb-4 overflow-hidden rounded-xl border border-[#3c3c3c] bg-[#1a1a1a]">
-				<Row label={<Chip>WOP_CHAT_ENGINE</Chip>} value={<><Chip>pi</Chip> — require Pi CLI · <Chip>auto</Chip> or <em>unset</em> — Pi JSON when <Chip>pi</Chip> resolves, else provider · <Chip>bundled</Chip>/<Chip>bun</Chip> — Bun-only</>} />
-				<Row label={<Chip>WOP_PI_BINARY</Chip>} value="Absolute path to the pi CLI; leading ~/ is expanded. If unset, the server uses PATH (Bun.which)." />
-				<Row label={<Chip>WOP_HOME</Chip>} value="Isolates Pi's ~/.pi equivalent — useful for multi-project setups" />
-				<Row label={<Chip>WOP_WORKSPACE</Chip>} value="Pre-set the workspace folder at server boot" />
-				<Row label={<Chip>WOP_LLM_PROVIDER</Chip>} value={<><Chip>ollama</Chip> or <Chip>openrouter</Chip></>} />
-				<Row label={<Chip>WOP_ALLOW_TERMINAL</Chip>} value={<><Chip>1</Chip> to enable the embedded terminal (opt-in, use with care)</>} />
-			</div>
-			<P>
-				Put these in a <Chip>.env</Chip> file at the repository root (next to <Chip>apps/</Chip>) and
-				restart the server. Full list: <Chip>apps/wayofwork-ui/.env.sample</Chip>.
-			</P>
-
-			<H>Extensions</H>
-			<P>
-				Extensions are TypeScript files that teach Pi new tools, slash commands, TUI widgets, or hooks.
-				They live in <Chip>extensions/</Chip> with a re-export shim in <Chip>.pi/extensions/</Chip> and
-				are listed in <Chip>.pi/settings.json</Chip>.
-			</P>
-			<UL>
-				<li>Run a single extension: <Chip>pi -e extensions/my-ext.ts</Chip></li>
-				<li>Reload after editing: type <Chip>/reload</Chip> in a running Pi session</li>
-				<li>Register a tool: call <Chip>registerTool(name, schema, handler)</Chip> at extension top level</li>
-				<li>Add a slash command: <Chip>registerCommand("/mycommand", …)</Chip></li>
-			</UL>
-
-			<H>Agents & skills (disk format)</H>
-			<UL>
-				<li>
-					<strong className="text-white">Agent:</strong> <Chip>.md</Chip> file with YAML frontmatter{" "}
-					(<Chip>name</Chip>, <Chip>description</Chip>, <Chip>tools</Chip>) + body = system prompt.
-					Drop into <Chip>.pi/agents/</Chip>.
-				</li>
-				<li>
-					<strong className="text-white">Skill:</strong> folder <Chip>.pi/skills/&lt;name&gt;/SKILL.md</Chip>{" "}
-					with a frontmatter <Chip>name</Chip> matching the folder. Invoked with{" "}
-					<Chip>/skill:name</Chip> in Pi.
-				</li>
-				<li>
-					<strong className="text-white">Teams:</strong> <Chip>.pi/agents/teams.yaml</Chip> — a YAML
-					map of team name → list of agent <Chip>name</Chip> values.
-				</li>
-			</UL>
-
-			<H>Key server endpoints</H>
-			<div className="mb-4 overflow-hidden rounded-xl border border-[#3c3c3c] text-[12px]">
-				<Row label={<Chip>GET /api/agents</Chip>} value="Workspace agents + teams catalog (Pi scan order)" />
-				<Row label={<Chip>GET /api/file?path=…</Chip>} value="Read a workspace file (jailed to workspace roots)" />
-				<Row label={<Chip>PUT /api/file</Chip>} value="Write a workspace file" />
-				<Row label={<Chip>GET /api/tree</Chip>} value="Workspace file tree" />
-				<Row label={<Chip>GET /api/diagnostics</Chip>} value="Health, env, Ollama probe, Pi version" />
-				<Row label={<Chip>WS /ws</Chip>} value="Chat WebSocket: send_message, set_model, set_agent, streaming tokens" />
-			</div>
-
-			<H>Useful commands</H>
-			<UL>
-				<li><Chip>just wayofpi-electron</Chip> — start Electron shell (recommended)</li>
-				<li><Chip>just wayofwork-ui</Chip> — start browser dev server</li>
-				<li><Chip>just pi</Chip> — launch Pi TUI in the playground</li>
-				<li><Chip>just wop-upstream-check</Chip> — check for upstream Pi updates</li>
-				<li><Chip>Ctrl+Shift+P</Chip> — command palette (any mode)</li>
-			</UL>
-
-			<DevBox>
-				Way of Pi docs live in <Chip>docs/WOP_*.md</Chip>. Key reads:{" "}
+				Way of Work docs live in <Chip>docs/WOP_*.md</Chip>. Key reads:{" "}
 				<Chip>WOP_PI_BACKEND_WIRING_PLAN.md</Chip> (API wiring phases),{" "}
 				<Chip>WOP_TECHNICAL_UI.md</Chip> (shell architecture),{" "}
 				<Chip>WOP_NAMESPACE.md</Chip> (isolation rules),{" "}
@@ -717,7 +266,7 @@ function SectionHoncho() {
 			<H>Pi → Honcho mirror (this playground)</H>
 			<P>
 				The <Chip>honcho-mirror</Chip> extension (<Chip>extensions/honcho-mirror.ts</Chip>, listed in{" "}
-				<Chip>.pi/settings.json</Chip>) posts each <strong>completed</strong> user or assistant turn to
+				<Chip>.wo/settings.json</Chip>) posts each <strong>completed</strong> user or assistant turn to
 				Honcho&apos;s messages API so your local stack can correlate Pi work with Hermes sessions. It does{" "}
 				<strong className="text-white">not</strong> replace Pi prompts — it only copies finished text
 				(metadata includes <Chip>source: &quot;pi&quot;</Chip>, cwd, model id).
@@ -755,12 +304,12 @@ function SectionHoncho() {
 				at all. After env changes, <Chip>/reload</Chip> in Pi or restart the app.
 			</P>
 
-			<H>Way of Pi UI (today)</H>
+			<H>Way of Work UI (today)</H>
 			<P>
 				Simple, Technical, and Claw modes do <strong className="text-white">not</strong> yet show Honcho
 				connection health or browse Honcho data in-app. Use Honcho&apos;s <Chip>/docs</Chip> (Swagger), Hermes
 				tools, or the capability map in <Chip>docs/HONCHO_CAPABILITIES.md</Chip>. Shell integration is tracked
-				in <Chip>docs/WOP_OPEN_TODOS.md</Chip> (Honcho and Way of Pi UI).
+				in <Chip>docs/WOP_OPEN_TODOS.md</Chip> (Honcho and Way of Work UI).
 			</P>
 
 			<DevBox>
@@ -793,27 +342,27 @@ function SectionNgrok() {
 				>
 					ngrok.com
 				</a>
-				) that creates a <strong className="text-white">temporary public web link</strong> pointing at Way of Pi
+				) that creates a <strong className="text-white">temporary public web link</strong> pointing at Way of Work
 				while it runs on your computer. Think of it like forwarding a mobile number to your landline: people use
 				the new number; the call still lands on your machine.
 			</P>
 
 			<P>
-				<strong className="text-white">Optional for Way of Pi.</strong> You never have to install or run ngrok unless you want that public link.
+				<strong className="text-white">Optional for Way of Work.</strong> You never have to install or run ngrok unless you want that public link.
 				Local editing, chat, and the rest of the shell work the same without it.
 			</P>
 
 			<InfoBox>
-				<strong className="text-white">Why would I care?</strong> Normally you only open Way of Pi on the machine
+				<strong className="text-white">Why would I care?</strong> Normally you only open Way of Work on the machine
 				where Bun + Vite run (for example your home PC). With ngrok, you can open that <strong className="text-white">same</strong> setup
 				from <strong className="text-white">work, a café, or another network</strong> — the stack stays on the host; your browser uses the
-				public link. Same idea for a teammate demo or a cloud webhook test — <em>only while Way of Pi and ngrok both run on the host</em>.
+				public link. Same idea for a teammate demo or a cloud webhook test — <em>only while Way of Work and ngrok both run on the host</em>.
 			</InfoBox>
 
 			<H>Everyday uses</H>
 			<UL>
 				<li>
-					<strong className="text-white">Reach home (or your dev box) from elsewhere</strong> — leave Way of Pi + ngrok running on that
+					<strong className="text-white">Reach home (or your dev box) from elsewhere</strong> — leave Way of Work + ngrok running on that
 					machine; at work or on travel, paste the ngrok <code className="text-[#ce9178]">https://…</code> link in your browser.
 				</li>
 				<li>
@@ -874,11 +423,11 @@ function SectionCapabilities() {
 					["Simple / Technical / Claw UI", "Three layout modes, all switchable from the top bar"],
 					["File tree & editor", "Browse, read, edit, and save workspace files; markdown preview; binary read"],
 					["Chat with Ollama / OpenRouter", "Direct-to-provider chat; streaming; queue; agent persona merge"],
-					["Workspace agents catalog", "Scans .pi/agents/, agents/, .claude/agents/ — same order as Pi"],
+					["Workspace agents catalog", "Scans .wo/agents/, agents/, .claude/agents/ — same order as Wo Agent"],
 					["Teams editor GUI", "Create, edit, delete teams and members without touching YAML"],
 					["AI Brains model picker", "Select session model; configure provider files"],
 					["Projects & Workspace", "Switch workspace, recent folders, refresh tree"],
-					["Diagnostics / Host Doctor", "Health check, env, Ollama probe, Pi binary detection"],
+					["Diagnostics / Host Doctor", "Health check, env, Ollama probe, Wo Agent binary detection"],
 					["Electron desktop app", "Recommended for full file picker and shell integration"],
 				].map(([feat, note]) => (
 					<Row
@@ -896,10 +445,10 @@ function SectionCapabilities() {
 			<H>Partially implemented</H>
 			<div className="mb-4 overflow-hidden rounded-xl border border-[#3c3c3c] text-[12px]">
 				{[
-					["Pi as chat engine", "WOP_CHAT_ENGINE=pi routes turns through pi --mode json for real tools/extensions; long-lived Pi + WS tunnel is roadmap"],
+					["Wo Agent as chat engine", "WOP_CHAT_ENGINE=wo routes turns through wo --mode json for real tools/extensions; long-lived Wo Agent + WS tunnel is roadmap"],
 					["Agent persona in chat", "Merges agent .md body into system prompt — not real dispatch_agent subprocess yet"],
-					["Embedded terminal", "Opt-in via WOP_ALLOW_TERMINAL=1; policy with Pi approvals ongoing"],
-					["Manifest (extensions list)", "Lists extension paths; tool/slash introspection needs runtime Pi"],
+					["Embedded terminal", "Opt-in via WOP_ALLOW_TERMINAL=1; policy with Wo Agent approvals ongoing"],
+					["Manifest (extensions list)", "Lists extension paths; tool/slash introspection needs runtime Wo Agent"],
 				].map(([feat, note]) => (
 					<Row
 						key={feat}
@@ -918,10 +467,10 @@ function SectionCapabilities() {
 				{[
 					["Multi-agent real dispatch", "Per-agent streams, real dispatch_agent from UI, WebSocket per agent"],
 					["Autonomous Claw flows", "Scheduled, tool-using, approval-gated agent runs"],
-					["Persistent Pi sidecar", "Long-lived Pi process behind WS — full extensions + tools every turn"],
+					["Persistent Wo sidecar", "Long-lived Wo process behind WS — full extensions + tools every turn"],
 					[
 						"Honcho in the shell",
-						"Health, HONCHO_* transparency, optional read-only helpers — Pi/Hermes remain the interactive Honcho tool paths",
+						"Health, HONCHO_* transparency, optional read-only helpers — Wo Agent/Hermes remain the interactive Honcho tool paths",
 					],
 				].map(([feat, note]) => (
 					<Row
@@ -941,6 +490,433 @@ function SectionCapabilities() {
 				backlog: <Chip>docs/WOP_OPEN_TODOS.md</Chip>. Roadmap hub:{" "}
 				<Chip>docs/WOP_PLANNING.md</Chip>.
 			</InfoBox>
+		</>
+	);
+}
+
+/** Shown first in Help → Agents — the usual coding roster. */
+const PRIMARY_BUILTIN_AGENTS: [string, string][] = [
+	["🔭 Scout", "Explores and maps your codebase. Great first step for any task."],
+	["📋 Planner", "Breaks down your request into a structured step-by-step plan."],
+	["🔨 Builder", "Writes and edits code to implement features or fix bugs."],
+	["🔍 Reviewer", "Reads code and points out problems, risks, and improvements."],
+	["📝 Documenter", "Updates README files and docs to match the current code."],
+	["🌐 Web Searcher", "Searches the web and fetches pages for research tasks."],
+];
+
+/** Additional personas shipped in this playground’s .wo/agents/ (expand in the modal). */
+const MORE_BUILTIN_AGENTS: [string, string][] = [
+	["📄 Code Documenter", "Docstrings, comments, and code-facing markdown — never changes program behavior."],
+	["🗂️ Indexer", "Walks a folder and writes INDEX.md so others can orient without re-scanning the tree."],
+	["🎫 Ralph", "File-queue worker: one .txt ticket at a time with HTML output; pairs with planner/builder in teams."],
+	["🎮 Bowser", "Headless browser automation via Playwright (UI tests, screenshots, scraping)."],
+	["📡 Hermes", "Bridge to the external Hermes CLI — send a prompt, relay stdout back to the user."],
+	["🔎 Project Scanner", "Bootstraps ~/.wo/projects/<slug>/ docs from the template for a new workspace."],
+	["🚪 Playground Portal", "Ports extensions, skills, and shims from the Pi playground into your app repo."],
+	["🦾 Claw", "Way of Work Claw shell lead — operator flows, .wo/ workspace, Telegram setup guidance."],
+	["🛡️ Red Team", "Adversarial review: vulnerabilities, edge cases, severity — read-only, no file edits."],
+	["✅ Plan Reviewer", "Critiques plans/PLAN-*.md: assumptions, risks, ordering, and missing steps."],
+	["🧠 Wo Agent orchestrator", "Meta-agent that coordinates Wo-internal experts (extensions, themes, skills, …)."],
+	[
+		"🧩 Wo product experts",
+		"Focused personas for extending Wo itself: extensions, themes, skills, config, TUI, prompts, agents, CLI, keybindings.",
+	],
+];
+
+function SectionAgents() {
+	const [moreAgentsOpen, setMoreAgentsOpen] = useState(false);
+	return (
+		<>
+			<P>
+				An <strong className="text-white">agent</strong> is an AI helper with a specific job and
+				personality. Way of Work ships with agents for the most common coding roles.
+			</P>
+			<InfoBox>
+				<strong className="text-white">Think of it like hiring a specialist:</strong> instead of one
+				general assistant, you have a <em>Planner</em> who lays out the strategy, a <em>Builder</em> who
+				writes the code, a <em>Reviewer</em> who checks quality, and a <em>Scout</em> who explores the
+				codebase first. You can talk to each one individually, or let them work as a team.
+			</InfoBox>
+			<H>Built-in agents</H>
+			<div className="overflow-hidden rounded-xl border border-[#3c3c3c] text-[12px]">
+				{PRIMARY_BUILTIN_AGENTS.map(([name, desc]) => (
+					<Row key={String(name)} label={name} value={desc} />
+				))}
+			</div>
+			<button
+				type="button"
+				onClick={() => setMoreAgentsOpen((o) => !o)}
+				className="mb-4 mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[#3c3c3c] bg-[#252526] px-3 py-2 text-[12px] font-semibold text-[#cccccc] transition-colors hover:border-[#ea580c]/50 hover:bg-[#2d2d2d] hover:text-white"
+				aria-expanded={moreAgentsOpen}
+			>
+				<span className="text-[#ea580c]">{moreAgentsOpen ? "▲" : "▼"}</span>
+				{moreAgentsOpen ? "Hide additional built-in agents" : "Show more built-in agents"}
+			</button>
+			{moreAgentsOpen ? (
+				<>
+					<div className="mb-3 overflow-hidden rounded-xl border border-[#3c3c3c] text-[12px]">
+						{MORE_BUILTIN_AGENTS.map(([name, desc]) => (
+							<Row key={String(name)} label={name} value={desc} />
+						))}
+					</div>
+					<P>
+						On top of these, this repo ships{" "}
+						<strong className="text-white">well over a hundred domain specialists</strong> under{" "}
+						<Chip>.wo/agents/domain-specialists/</Chip> (language stacks, infra, security, data/AI,
+						research, and more). Open <strong className="text-white">My AI Team</strong> and hit{" "}
+						<strong className="text-white">Refresh</strong> to see every agent your workspace scan loads.
+					</P>
+				</>
+			) : null}
+			<H>How to switch agents</H>
+			<UL>
+				<li>
+					In <strong className="text-white">Simple mode</strong>: use the agent dropdown in the chat
+					panel, or go to <strong className="text-white">My AI Team</strong> in the side nav.
+				</li>
+				<li>
+					In <strong className="text-white">Technical mode</strong>: the agent selector appears in the
+					chat panel header.
+				</li>
+				<li>
+					Changing agent changes the AI's <em>personality and focus</em> for that conversation — it does
+					not restart or lose your chat history.
+				</li>
+			</UL>
+			<DevBox>
+				Agents are <Chip>.md</Chip> files with YAML frontmatter (<Chip>name</Chip>,{" "}
+				<Chip>description</Chip>, <Chip>tools</Chip>) and a body that becomes the system prompt.
+				Scan order: <Chip>agents/</Chip> → <Chip>.claude/agents/</Chip> → <Chip>.wo/agents/</Chip> →{" "}
+				<Chip>.cursor/agents/</Chip> (first <Chip>name</Chip> wins). Create or edit agent files in your
+				workspace and hit <strong className="text-white">Refresh</strong> in My AI Team. Tools in the
+				frontmatter are only enforced when turns route through the Wo Agent (<Chip>WOP_CHAT_ENGINE=wo</Chip>);
+				otherwise they document intent only.
+			</DevBox>
+		</>
+	);
+}
+
+function SectionTeams() {
+	return (
+		<>
+			<P>
+				A <strong className="text-white">team</strong> is a named group of agents. Instead of picking
+				agents one by one, you define a team once and re-use it for any task that needs those roles.
+			</P>
+			<InfoBox>
+				<strong className="text-white">Think of it like assembling your squad before a game.</strong> The
+				"full" team might have a Scout, Planner, Builder, Reviewer, and Documenter. A "frontend" team
+				might only have a Planner, Builder, and a React specialist. You choose the squad; the AI decides
+				who does what.
+			</InfoBox>
+			<H>How to manage teams</H>
+			<UL>
+				<li>
+					Go to <strong className="text-white">My AI Team</strong> in the Simple side nav.
+				</li>
+				<li>
+					Click <strong className="text-white">New team</strong> to create a team and give it a name.
+				</li>
+				<li>
+					Click <strong className="text-white">Edit Teams</strong> to open the visual editor — add or
+					remove agents with checkboxes, no YAML required.
+				</li>
+				<li>
+					Click <strong className="text-white">Edit roster</strong> on any existing team card to change
+					its members.
+				</li>
+				<li>
+					Press <strong className="text-white">Save changes</strong> when you're done — nothing is saved
+					until you click that button.
+				</li>
+			</UL>
+			<H>Pre-built teams</H>
+			<div className="mb-4 overflow-hidden rounded-xl border border-[#3c3c3c] text-[12px]">
+				{[
+					["full", "Scout + Planner + Builder + Reviewer + Documenter — all-rounder"],
+					["plan-build", "Planner + Builder + Reviewer + Code Documenter — focused coding"],
+					["frontend", "Planner + Builder + Bowser (browser automation)"],
+					["info", "All research/info agents — scout, web-searcher, indexer, documenter"],
+					["ralph", "Ralph (ticket queue) + Builder + Planner + Reviewer — ticket-driven work"],
+				].map(([name, desc]) => (
+					<Row key={name} label={<Chip>{name}</Chip>} value={desc} />
+				))}
+			</div>
+			<DevBox>
+				Teams are stored in <Chip>.wo/agents/teams.yaml</Chip> (workspace-relative). Format: each key is
+				a team name, value is a YAML list of agent <Chip>name</Chip> fields. The{" "}
+				<Chip>GET /api/agents</Chip> endpoint returns both agents and teams. Mutations via the GUI write
+				the file with <Chip>PUT /api/file</Chip>. The orchestrator's{" "}
+				<Chip>team_member_add / remove</Chip> tools in <Chip>server/teams-yaml-mutate.ts</Chip> offer the
+				same via chat commands.
+			</DevBox>
+		</>
+	);
+}
+
+function SectionModels() {
+	return (
+		<>
+			<P>
+				<strong className="text-white">AI Brains</strong> is where you choose which AI model powers
+				your chat. Think of it like picking an engine — a bigger model gives smarter answers but may be
+				slower; a smaller local model replies instantly but knows less.
+			</P>
+			<H>Two ways to run AI</H>
+			<div className="mb-4 overflow-hidden rounded-xl border border-[#3c3c3c]">
+				<Row
+					label="🏠 Ollama (local)"
+					value="Runs on your own computer. Private, free, works offline. Install Ollama, pull a model (e.g. llama3), and it appears automatically."
+				/>
+				<Row
+					label="☁️ OpenRouter (cloud)"
+					value="Access models like Claude, GPT-4, Gemini, and many more via the internet. Requires an API key from openrouter.ai. Costs vary per model."
+				/>
+			</div>
+			<H>Session model vs provider</H>
+			<UL>
+				<li>
+					<strong className="text-white">Session model</strong> — the model you pick for this browser
+					session right now. Quick to change; saved in your browser.
+				</li>
+				<li>
+					<strong className="text-white">Provider files</strong> — the JSON files on disk that configure
+					which models are available. Advanced; usually you only touch these once when setting up.
+				</li>
+			</UL>
+			<H>Quick setup guide</H>
+			<UL>
+				<li>
+					<strong className="text-white">Using Ollama:</strong> install from ollama.com, run{" "}
+					<Chip>ollama pull llama3</Chip> (or any model), start Ollama, then open AI Brains — your model
+					will appear in the list.
+				</li>
+				<li>
+					<strong className="text-white">Using OpenRouter:</strong> create a free account at
+					openrouter.ai, get an API key, add <Chip>OPENROUTER_API_KEY=sk-...</Chip> to your{" "}
+					<Chip>.env</Chip> file, and restart the server.
+				</li>
+			</UL>
+			<DevBox>
+				Provider is set by <Chip>WOP_LLM_PROVIDER</Chip> (<Chip>ollama</Chip> or{" "}
+				<Chip>openrouter</Chip>). Ollama host defaults to <Chip>OLLAMA_HOST</Chip> (default{" "}
+				<Chip>http://localhost:11434</Chip>). Default model: <Chip>OLLAMA_MODEL</Chip> or{" "}
+				<Chip>OPENROUTER_MODEL</Chip>. The session model override is sent over WebSocket as{" "}
+				<Chip>set_model</Chip> and stored in <Chip>localStorage</Chip> as{" "}
+				<Chip>wayofwork.activeLlmModel</Chip>. Restart the Bun server after changing env. Full var list:{" "}
+				<Chip>apps/wayofwork-ui/.env.sample</Chip>.
+			</DevBox>
+		</>
+	);
+}
+
+function SectionLayout() {
+	return (
+		<>
+			<P>
+				Way of Work has three layout modes selectable from the top bar. Each is optimised for a different
+				style of working.
+			</P>
+			<div className="mb-6 flex flex-col gap-3">
+				{[
+					{
+						icon: "💬",
+						name: "Simple",
+						badge: "Recommended for beginners",
+						desc: "Chat-first layout with a side nav for My AI Team, AI Brains, files, and settings. Everything is one click away. Great for people who mainly want to chat with AI about their project.",
+						tips: [
+							"Side nav on the left: Chat, Files, My AI Team, AI Brains, Projects, Settings.",
+							"File panel opens files side-by-side with chat.",
+							"AI Brains lets you pick your model without touching any config files.",
+						],
+					},
+					{
+						icon: "⚙️",
+						name: "Technical",
+						badge: "For developers",
+						desc: "IDE-style layout with a multi-pane grid (up to 3×4 cells), file tree, terminal, dockable panels, and full workspace control. Designed for people who work like they're in VS Code or Zed.",
+						tips: [
+							"Drag and drop panel tabs between cells.",
+							"Resize panels by dragging the split handles.",
+							"Command Palette: Ctrl+Shift+P (Cmd+Shift+P on Mac).",
+							"Status bar at the bottom shows model, context, and tokens.",
+						],
+					},
+					{
+						icon: "🦾",
+						name: "Claw",
+						badge: "Experimental",
+						desc: "Mission-control shell for autonomous AI operations. Has its own navigation rail with Mission, Chat, Team, Schedule, Channels, Files, and Settings tabs. Distinct from Technical — designed for running persistent, scheduled, and multi-agent tasks rather than IDE-style editing.",
+						tips: [
+							"Mission tab: agent status dashboard, workspace health, and quick actions.",
+							"Chat tab: multi-session conversations with tabs in the top toolbar for switching threads.",
+							"Schedule tab: cron or one-shot Wo Agent turns — saved on host .wo/schedule/; set WOP_CLAW_SCHEDULER=1 and Wo Agent-backed chat to run them automatically.",
+							"Channels tab: Telegram bot integration setup and future webhook/email channels.",
+							"Files tab: browse and preview workspace files — Markdown opens in Preview by default.",
+							"The .wo/ folder stores agent identity, memory, and tool config (isolated from Simple/Technical).",
+						],
+					},
+				].map((m) => (
+					<div key={m.name} className="rounded-xl border border-[#3c3c3c] bg-[#1e1e1e] p-4">
+						<div className="mb-2 flex items-center gap-2">
+							<span className="text-lg">{m.icon}</span>
+							<span className="font-bold text-white">{m.name}</span>
+							<span className="rounded-full border border-[#ea580c]/40 bg-[#ea580c]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#fb923c]">
+								{m.badge}
+							</span>
+						</div>
+						<p className="mb-2 text-[12px] leading-relaxed text-[#cccccc]">{m.desc}</p>
+						<ul className="space-y-1 text-[11px] text-[#858585]">
+							{m.tips.map((t) => (
+								<li key={t} className="flex gap-1.5">
+									<span className="shrink-0 text-[#ea580c]">›</span>
+									{t}
+								</li>
+							))}
+						</ul>
+					</div>
+				))}
+			</div>
+			<DevBox>
+				Layout mode is stored in <Chip>localStorage</Chip> as <Chip>wayofwork.uiMode</Chip>. The
+				Technical/Claw grid state is persisted under <Chip>wayofwork.technical.workspaceGrid.v1</Chip>.
+				Dock weights (row/col split sizes) are part of the same JSON. Panel tabs follow{" "}
+				<Chip>PanelDockLayout</Chip> v3 (<Chip>{"{ tabs, activeIndex }"}</Chip>). Switching modes does not
+				reset workspace or chat.
+			</DevBox>
+		</>
+	);
+}
+
+function SectionWorkspace() {
+	return (
+		<>
+			<P>
+				A <strong className="text-white">workspace</strong> is the folder on your computer that Way of Work
+				works inside. Everything — the file tree, chat context, and AI actions — is scoped to that
+				folder. You choose it; the app can't see anything outside it.
+			</P>
+			<InfoBox>
+				<strong className="text-white">Analogy:</strong> Think of the workspace like opening a drawer.
+				The AI can only see and touch things inside that drawer. To work on a different project, you
+				"open a different drawer" (switch workspace). Nothing from the old drawer mixes in.
+			</InfoBox>
+			<H>How to open or change the workspace</H>
+			<UL>
+				<li>
+					<strong className="text-white">Simple mode:</strong> go to the{" "}
+					<strong className="text-white">Projects &amp; Workspace</strong> tab in the side nav. Click{" "}
+					<strong className="text-white">Choose folder…</strong> and type the path, or click a recently
+					used folder to switch instantly.
+				</li>
+				<li>
+					<strong className="text-white">Any mode:</strong> use{" "}
+					<strong className="text-white">File → Open Folder</strong> from the menu bar.
+				</li>
+				<li>
+					<strong className="text-white">At startup:</strong> set <Chip>WOP_WORKSPACE=/path/to/project</Chip>{" "}
+					in your <Chip>.env</Chip> file (next to <Chip>apps/</Chip>) and restart the server.
+				</li>
+			</UL>
+			<H>Important rules</H>
+			<UL>
+				<li>
+					The workspace is set by the <strong className="text-white">server</strong>, not by which file
+					tab you have open. Opening a file doesn't change the workspace.
+				</li>
+				<li>
+					All <Chip>/api/file</Chip> calls, the file tree, and the AI's working directory refer to the
+					workspace root — not to wherever the Way of Work app lives.
+				</li>
+				<li>
+					If the workspace shows a "Way of Work" path when you mean to work on your own project, use{" "}
+					<strong className="text-white">Open Folder</strong> to switch.
+				</li>
+			</UL>
+			<DevBox>
+				Workspace roots come from <Chip>WOP_WORKSPACE</Chip> env or the{" "}
+				<Chip>POST /api/workspace</Chip> op (<Chip>open_folder</Chip>, <Chip>add_folder</Chip>,{" "}
+				<Chip>remove_folder</Chip>). Multiple roots are supported (multi-root workspace); the first root
+				is the primary for <Chip>teams.yaml</Chip>, Wo Agent <Chip>cwd</Chip>, and relative path resolution.
+				Recent folders are stored in <Chip>localStorage</Chip> as{" "}
+				<Chip>wayofwork.workspace.recentFolders</Chip>. Server path jail: all <Chip>/api/file</Chip>{" "}
+				and <Chip>/api/tree</Chip> calls are resolved relative to the workspace roots — arbitrary absolute
+				paths outside the workspace are rejected.
+			</DevBox>
+		</>
+	);
+}
+
+function SectionForDevelopers() {
+	return (
+		<>
+			<P>
+				This section is for people who want to go deeper: configure the Wo engine, write extensions,
+				set up providers, or contribute to Way of Work itself.
+			</P>
+			<H>Connecting Wo Agent (the real AI engine)</H>
+			<P>
+				By default, chat routes directly to Ollama or OpenRouter (fast, no extra setup). To unlock Wo Agent's
+				full power — real tools, extensions, <Chip>dispatch_agent</Chip>, slash commands — set:
+			</P>
+			<div className="mb-4 overflow-hidden rounded-xl border border-[#3c3c3c] bg-[#1a1a1a]">
+				<Row label={<Chip>WOP_CHAT_ENGINE</Chip>} value={<><Chip>wo</Chip> — require Wo Agent CLI · <Chip>auto</Chip> or <em>unset</em> — Wo Agent JSON when <Chip>wo</Chip> resolves, else provider · <Chip>bundled</Chip>/<Chip>bun</Chip> — Bun-only</>} />
+				<Row label={<Chip>WOP_WO_BINARY</Chip>} value="Absolute path to the wo CLI; leading ~/ is expanded. If unset, the server uses PATH (Bun.which)." />
+				<Row label={<Chip>WOP_HOME</Chip>} value="Isolates Wo Agent's ~/.wo equivalent — useful for multi-project setups" />
+				<Row label={<Chip>WOP_WORKSPACE</Chip>} value="Pre-set the workspace folder at server boot" />
+				<Row label={<Chip>WOP_LLM_PROVIDER</Chip>} value={<><Chip>ollama</Chip> or <Chip>openrouter</Chip></>} />
+				<Row label={<Chip>WOP_ALLOW_TERMINAL</Chip>} value={<><Chip>1</Chip> to enable the embedded terminal (opt-in, use with care)</>} />
+			</div>
+			<P>
+				Put these in a <Chip>.env</Chip> file at the repository root (next to <Chip>apps/</Chip>) and
+				restart the server. Full list: <Chip>apps/wayofwork-ui/.env.sample</Chip>.
+			</P>
+			<H>Extensions</H>
+			<P>
+				Extensions are TypeScript files that teach Wo Agent new tools, slash commands, TUI widgets, or hooks.
+				They live in <Chip>extensions/</Chip> with a re-export shim in <Chip>.wo/extensions/</Chip> and
+				are listed in <Chip>.wo/settings.json</Chip>.
+			</P>
+			<UL>
+				<li>Run a single extension: <Chip>wo -e extensions/my-ext.ts</Chip></li>
+				<li>Reload after editing: type <Chip>/reload</Chip> in a running Wo Agent session</li>
+				<li>Register a tool: call <Chip>registerTool(name, schema, handler)</Chip> at extension top level</li>
+				<li>Add a slash command: <Chip>registerCommand("/mycommand", …)</Chip></li>
+			</UL>
+			<H>Agents & skills (disk format)</H>
+			<UL>
+				<li>
+					<strong className="text-white">Agent:</strong> <Chip>.md</Chip> file with YAML frontmatter{" "}
+					(<Chip>name</Chip>, <Chip>description</Chip>, <Chip>tools</Chip>) + body = system prompt.
+					Drop into <Chip>.wo/agents/</Chip>.
+				</li>
+				<li>
+					<strong className="text-white">Skill:</strong> folder <Chip>.wo/skills/&lt;name&gt;/SKILL.md</Chip>{" "}
+					with a frontmatter <Chip>name</Chip> matching the folder. Invoked with{" "}
+					<Chip>/skill:name</Chip> in Wo Agent.
+				</li>
+				<li>
+					<strong className="text-white">Teams:</strong> <Chip>.wo/agents/teams.yaml</Chip> — a YAML
+					map of team name → list of agent <Chip>name</Chip> values.
+				</li>
+			</UL>
+			<H>Key server endpoints</H>
+			<div className="mb-4 overflow-hidden rounded-xl border border-[#3c3c3c] text-[12px]">
+				<Row label={<Chip>GET /api/agents</Chip>} value="Workspace agents + teams catalog (Wo scan order)" />
+				<Row label={<Chip>GET /api/file?path=…</Chip>} value="Read a workspace file (jailed to workspace roots)" />
+				<Row label={<Chip>PUT /api/file</Chip>} value="Write a workspace file" />
+				<Row label={<Chip>GET /api/tree</Chip>} value="Workspace file tree" />
+				<Row label={<Chip>GET /api/diagnostics</Chip>} value="Health, env, Ollama probe, Wo version" />
+				<Row label={<Chip>WS /ws</Chip>} value="Chat WebSocket: send_message, set_model, set_agent, streaming tokens" />
+			</div>
+			<H>Useful commands</H>
+			<UL>
+				<li><Chip>just wo-electron</Chip> — start Electron shell (recommended)</li>
+				<li><Chip>just wayofwork-ui</Chip> — start browser dev server</li>
+				<li><Chip>just wo</Chip> — launch Wo TUI in the playground</li>
+				<li><Chip>just wop-upstream-check</Chip> — check for upstream updates</li>
+				<li><Chip>Ctrl+Shift+P</Chip> — command palette (any mode)</li>
+			</UL>
 		</>
 	);
 }
@@ -1017,7 +993,7 @@ export function HowToUseModal({
 							<BookOpen size={16} className="shrink-0 text-[#ea580c]" />
 							<span className="text-[13px] font-bold text-white">Help Center</span>
 						</div>
-						<p className="mt-1 text-[11px] text-[#858585]">Way of Pi guide</p>
+						<p className="mt-1 text-[11px] text-[#858585]">Way of Work guide</p>
 					</div>
 					<nav className="flex-1 overflow-y-auto py-2">
 						{SECTIONS.map((s) => {
