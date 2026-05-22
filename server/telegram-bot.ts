@@ -5,7 +5,7 @@
  * Looks up users by their Telegram user ID in `user_channel_links`.
  */
 import { db } from "./db";
-import { processBotMessage } from "./claw-bot-bridge";
+import { routeInboundMessage } from "./channel-router";
 
 const TELEGRAM_API = "https://api.telegram.org";
 
@@ -92,54 +92,32 @@ async function handleMessage(token: string, botTenantId: string, update: Telegra
 
 	if (!text) return;
 
-	// Find the user by their Telegram user ID in channel links
-	// Scoped to the bot's tenant
-	const link = db.query(`
-		SELECT l.tenant_id, l.user_id, u.full_name
-		FROM user_channel_links l
-		JOIN users u ON l.user_id = u.id AND l.tenant_id = u.tenant_id
-		WHERE l.channel = 'telegram' AND l.channel_user_id = ? AND l.tenant_id = ?
-		LIMIT 1
-	`).get(fromId, botTenantId) as { tenant_id: string; user_id: string; full_name: string | null } | undefined;
-
-	if (!link) {
-		await sendTelegramMessage(token, chatId, [
-			`Hello ${userName}!`,
-			"",
-			"You are not linked to a Way of Work account for this bot yet.",
-			"To link your account:",
-			"1. Log into Way of Work",
-			"2. Go to your Profile → Channel Links",
-			`3. Link your Telegram ID: \`${fromId}\` (username: @${fromUsername || "none"})`,
-			"",
-			"Once linked, I can help you with tasks, time tracking, and more!",
-		].join("\n"));
-		return;
-	}
-
-	const displayName = link.full_name || userName;
-
-	// Log the inbound message
-	logChannelMessage(link.tenant_id, link.user_id, "telegram", fromId, text, "inbound", "text");
-
-	// Show typing indicator
-	await sendTelegramChatAction(token, chatId, "typing");
-
-	// Process through Claw AI (session persistence is automated in processBotMessage)
-	const result = await processBotMessage({
-		tenantId: link.tenant_id,
-		userId: link.user_id,
-		userName: displayName,
-		messageText: text,
+	// Use unified inbound router
+	const result = await routeInboundMessage({
 		channel: "telegram",
 		channelUserId: fromId,
+		text: text,
+		metadata: { botTenantId, userName, fromUsername, chatId }
 	});
 
 	if (result.ok && result.response) {
 		await sendTelegramMessage(token, chatId, result.response);
-		logChannelMessage(link.tenant_id, link.user_id, "telegram", fromId, result.response, "outbound", "text");
-	} else if (result.error) {
-		await sendTelegramMessage(token, chatId, `❌ Sorry, something went wrong: ${result.error}`);
+	} else if (!result.ok && result.error) {
+		if (result.error.includes("User not linked")) {
+			await sendTelegramMessage(token, chatId, [
+				`Hello ${userName}!`,
+				"",
+				"You are not linked to a Way of Work account for this bot yet.",
+				"To link your account:",
+				"1. Log into Way of Work",
+				"2. Go to your Profile → Channel Links",
+				`3. Link your Telegram ID: \`${fromId}\` (username: @${fromUsername || "none"})`,
+				"",
+				"Once linked, I can help you with tasks, time tracking, and more!",
+			].join("\n"));
+		} else {
+			await sendTelegramMessage(token, chatId, `❌ Sorry, something went wrong: ${result.error}`);
+		}
 	} else {
 		await sendTelegramMessage(token, chatId, "🤔 I received your message but couldn't generate a response.");
 	}

@@ -215,6 +215,30 @@ CREATE INDEX IF NOT EXISTS idx_project_members_user ON project_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_project_members_tenant ON project_members(tenant_id);
 
 -- ============================================
+-- 12. TA_PLANS (Traffic Arrangement Plans)
+-- ============================================
+CREATE TABLE IF NOT EXISTS ta_plans (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    road_number TEXT,
+    speed_limit INTEGER,
+    traffic_volume_adt INTEGER,
+    work_type TEXT,                       -- 'fixed', 'moving', 'intermittent'
+    sketch_id TEXT,                        -- Reference to TDOK 2024:0043 sketch
+    risk_assessment_json TEXT,            -- Generated risk assessment data
+    validation_status TEXT,                -- 'valid', 'invalid', 'warning'
+    status TEXT DEFAULT 'draft',          -- 'draft', 'pending_approval', 'approved', 'submitted'
+    created_by TEXT REFERENCES users(id),
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ta_plans_tenant ON ta_plans(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ta_plans_project ON ta_plans(project_id);
+
+-- ============================================
 -- SAMPLE DATA (Development Only - Remove in Production)
 -- ============================================
 -- Insert demo tenant

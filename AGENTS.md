@@ -33,9 +33,45 @@ Server entry: `server/index.ts`. Frontend entry: `src/main.tsx`.
 ## Chat system
 - Slash commands: `/help`, `/models`, `/model <id>`, `/plan`, `/build`, `/clear`, `/agent`, `/system <name>`, `/reload`
 - LLM provider: ollama (default) or openrouter (`WOP_LLM_PROVIDER=openrouter`)
-- Two runtime modes: Bun orchestrator tools (default) or basic chat completion
-- Workspace agents: `agents/*.md`, `.claude/agents/*.md`, `.cursor/agents/*.md` with YAML frontmatter — see `.wo/` for canonical agent definitions
-- Chat transcripts persist as JSONL under workspace `agent/sessions/`
+- Runtime engine: `@wayofmono/wo-agent` SDK (replaces legacy Pi runtime)
+- Chat transcripts persist as JSONL under workspace `agent/sessions/`, isolated per UI surface (e.g., `wo-chat-docs-*.jsonl`).
+
+## Agent Architecture (WOW-016)
+
+Way of Work uses a **multi-agent dispatch system** anchored by an **Orchestrator**. 
+
+### 1. Agent Definitions
+Agents are defined as Markdown files with YAML frontmatter in `.wo/agents/`.
+Example frontmatter:
+```yaml
+---
+name: projektledare
+description: Swedish construction project manager
+skills: ata, safety, swedish-building-laws, project-pricing
+---
+```
+
+### 2. The Orchestrator & Dispatch
+The **Orchestrator** (`.wo/agents/orchestrator.md`) is the primary entry point for the Simple UI and inbound communication channels (Telegram, WhatsApp).
+- The Orchestrator uses the `dispatch-agent` skill.
+- It **never** answers complex queries directly.
+- It analyzes user intent and routes the request to a specialized sub-agent (e.g., `fakturering`, `ata`, `forskare`).
+
+### 3. Skills
+Skills are defined in `.wo/skills/<skill-name>/SKILL.md`. They provide specific instructions and capabilities to agents.
+- **Example:** The `client-communication` skill allows the `fakturering` agent to format and send offers via WhatsApp.
+
+### 4. Human-in-the-Loop (WOW-010)
+**Agents must NEVER write directly to production databases** (like projects, tasks, or price lists).
+- Agents are instructed to use the `POST /api/pending-changes` endpoint.
+- They submit a proposal (`proposed_data`, `summary`, `target_table`).
+- An administrator must review and approve these changes in the UI before they are applied.
+
+### 5. Surface Agents
+In specific UI views, the chat automatically connects to a designated expert:
+- Kanban View → `kanban` agent (Board management)
+- Docs View → `docs` agent (Document generation)
+- Claw View → `claw` agent (General assistant)
 
 ## TypeScript
 Project references: `tsconfig.app.json` (src/ + shared/) and `tsconfig.node.json` (vite.config.ts). Several files excluded from compilation (see `exclude` in tsconfig.app.json). `tsc -b` does full project build.

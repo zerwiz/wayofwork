@@ -244,6 +244,32 @@ db.run(`
   )
 `);
 
+db.run(`
+  CREATE TABLE IF NOT EXISTS ta_plans (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    project_id TEXT,
+    title TEXT NOT NULL,
+    road_number TEXT,
+    speed_limit INTEGER,
+    traffic_volume_adt INTEGER,
+    work_type TEXT,
+    sketch_id TEXT,
+    risk_assessment_json TEXT,
+    validation_status TEXT,
+    status TEXT DEFAULT 'draft',
+    created_by TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+    FOREIGN KEY (project_id) REFERENCES projects(id),
+    FOREIGN KEY (created_by) REFERENCES users(id)
+  )
+`);
+
+db.run("CREATE INDEX IF NOT EXISTS idx_ta_plans_tenant ON ta_plans(tenant_id)");
+db.run("CREATE INDEX IF NOT EXISTS idx_ta_plans_project ON ta_plans(project_id)");
+
 // Migration: add user_id column if missing (existing databases)
 try {
   db.run("ALTER TABLE calendar_events ADD COLUMN user_id TEXT");

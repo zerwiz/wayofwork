@@ -9,6 +9,13 @@ Direct links to official regulations and laws from Trafikverket and other author
 - **[TDOK 2012:88 (Råd)](https://bransch.trafikverket.se/for-dig-i-branschen/Arbetsmiljo-och-sakerhet/Arbete-pa-vag/Regelverk/)**: Advice and guidance for Work on Road (Version 5.0, Sept 2024).
 - **[TDOK 2024:0043 (Skisser)](https://bransch.trafikverket.se/for-dig-i-branschen/Arbetsmiljo-och-sakerhet/Arbete-pa-vag/Regelverk/)**: Official Principal Sketches for traffic arrangement (TA-planer).
 
+## TA-Plan Planning & Applications
+
+- **[Trafikanordningsplaner (TA-planer) - Branschsida](https://bransch.trafikverket.se/for-dig-i-branschen/Arbeta-med-vagunderhall/Arbete-pa-vag/Trafikanordningsplaner-TA-planer/)**: Guidance specifically for creating and understanding TA-plans.
+- **[Ledningsärenden (E-tjänst)](https://bransch.trafikverket.se/tjanster/system-och-verktyg/forvaltning-och-underhall/ledningsarenden/)**: Application portal for utility work (where TA-plans are often submitted).
+- **[Arrangemang på väg](https://www.trafikverket.se/resa-och-trafik/vag/anordna-arrangemang-pa-allman-statlig-vag/)**: Guidance for events requiring traffic planning.
+- **[Ansök om tillstånd (Samlingssida)](https://bransch.trafikverket.se/tjanster/ansok-om-tillstand/)**: Central hub for all types of permits and permissions on state roads.
+
 ## Competence & Roles
 
 - **[TDOK 2018:0371 (Roles & Competence)](https://bransch.trafikverket.se/for-dig-i-branschen/Arbetsmiljo-och-sakerhet/Arbete-pa-vag/Kompetenskrav-i-upphandlad-verksamhet/)**: Official requirements for roles including TMA drivers (Step 2.1).

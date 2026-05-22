@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, History, Save, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useGithubConnection } from "../hooks/useGithubConnection";
 
@@ -196,6 +196,207 @@ function GithubConnectModal({
 					</button>
 				</div>
 			</div>
+		</div>
+	);
+}
+
+function VersionHistoryModal({
+	open,
+	onDismiss,
+	history,
+}: {
+	open: boolean;
+	onDismiss: () => void;
+	history: any[];
+}) {
+	if (!open) return null;
+
+	return (
+		<div
+			className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/60 p-4"
+			role="presentation"
+			onMouseDown={(e) => {
+				if (e.target === e.currentTarget) onDismiss();
+			}}
+		>
+			<div
+				className="flex h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-[#454545] bg-[#252526] text-[#cccccc] shadow-2xl"
+				role="dialog"
+				aria-labelledby="version-history-title"
+				aria-modal="true"
+				onMouseDown={(e) => e.stopPropagation()}
+			>
+				<div className="flex items-center justify-between border-b border-[#3c3c3c] px-4 py-3">
+					<h2 id="version-history-title" className="text-[15px] font-semibold text-white">
+						Version History
+					</h2>
+					<button
+						type="button"
+						onClick={onDismiss}
+						className="rounded-md p-1 hover:bg-[#3c3c3c] text-[#858585] hover:text-white"
+					>
+						<X size={18} />
+					</button>
+				</div>
+				<div className="flex-1 overflow-y-auto p-4 text-left">
+					{history.length === 0 ? (
+						<p className="text-center py-8 text-[#858585]">No saved versions found.</p>
+					) : (
+						<div className="space-y-4">
+							{history.map((h) => (
+								<div key={h.hash} className="relative pl-6 border-l border-[#3c3c3c] pb-2 last:pb-0">
+									<div className="absolute left-[-5px] top-1.5 h-2.5 w-2.5 rounded-full bg-[#ea580c]" />
+									<div className="flex items-center gap-2 text-[11px] text-[#858585]">
+										<span className="font-mono">{h.date}</span>
+										<span>•</span>
+										<span>{h.author}</span>
+									</div>
+									<p className="mt-1 text-[13px] text-[#d4d4d4] font-medium">{h.message}</p>
+									<span className="text-[10px] font-mono text-[#555555]">{h.hash.slice(0, 7)}</span>
+								</div>
+							))}
+						</div>
+					)}
+				</div>
+				<div className="border-t border-[#3c3c3c] px-4 py-3 flex justify-end">
+					<button
+						type="button"
+						onClick={onDismiss}
+						className="rounded bg-[#ea580c] px-4 py-1.5 text-[12px] font-semibold text-white hover:bg-[#d94e06]"
+					>
+						Close
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+export function ConstructionGithubCard({
+	appearanceDark,
+}: {
+	appearanceDark: boolean;
+}) {
+	const { status } = useGithubConnection();
+	const [saveBusy, setSaveBusy] = useState(false);
+	const [historyOpen, setHistoryOpen] = useState(false);
+	const [history, setHistory] = useState<any[]>([]);
+	const [message, setMessage] = useState("");
+	const [showPrompt, setShowPrompt] = useState(false);
+
+	const onSaveVersion = async () => {
+		if (!message.trim()) {
+			setShowPrompt(true);
+			return;
+		}
+		setSaveBusy(true);
+		try {
+			const res = await fetch("/api/github/save-version", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ message }),
+			});
+			if (!res.ok) {
+				const text = await res.text();
+				throw new Error(text || "Failed to save version");
+			}
+			setMessage("");
+			setShowPrompt(false);
+			alert("Version saved successfully!");
+		} catch (e) {
+			alert(errorMessageFromUnknown(e));
+		} finally {
+			setSaveBusy(false);
+		}
+	};
+
+	const onViewHistory = async () => {
+		try {
+			const res = await fetch("/api/github/version-history");
+			if (!res.ok) throw new Error("Failed to fetch history");
+			const data = await res.json();
+			setHistory(data);
+			setHistoryOpen(true);
+		} catch (e) {
+			alert(errorMessageFromUnknown(e));
+		}
+	};
+
+	if (!status?.connected) return null;
+
+	return (
+		<div className="rounded-2xl border border-[#3c3c3c] bg-[#252526] p-6 shadow-sm mb-4">
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-left">
+				<div className="min-w-0 flex-1">
+					<h3 className="text-lg font-bold text-white flex items-center gap-2">
+						<Save className="text-[#ea580c]" size={20} />
+						Save Project Version
+					</h3>
+					<p className="mt-1 text-sm text-[#858585]">
+						Securely save all current plans, documents, and data to GitHub as a permanent version.
+					</p>
+				</div>
+				<div className="flex shrink-0 gap-2">
+					<button
+						type="button"
+						onClick={onViewHistory}
+						className="inline-flex items-center gap-1.5 rounded-lg border border-[#3c3c3c] bg-[#1e1e1e] px-4 py-2 text-[13px] font-semibold text-[#cccccc] hover:bg-[#2d2d2d]"
+					>
+						<History size={16} />
+						History
+					</button>
+					<button
+						type="button"
+						disabled={saveBusy}
+						onClick={() => setShowPrompt(true)}
+						className="inline-flex items-center gap-1.5 rounded-lg bg-[#ea580c] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#d94e06] disabled:opacity-50"
+					>
+						<Save size={16} />
+						{saveBusy ? "Saving..." : "Save Version"}
+					</button>
+				</div>
+			</div>
+
+			{showPrompt && (
+				<div className="mt-4 border-t border-[#3c3c3c] pt-4 text-left">
+					<label className="block text-[11px] font-bold uppercase text-[#858585] mb-2">
+						What changed in this version?
+					</label>
+					<div className="flex gap-2">
+						<input
+							type="text"
+							autoFocus
+							value={message}
+							onChange={(e) => setMessage(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" && message.trim()) onSaveVersion();
+								if (e.key === "Escape") setShowPrompt(false);
+							}}
+							placeholder="e.g. Added new floor plans for block B"
+							className="flex-1 rounded border border-[#3c3c3c] bg-[#1e1e1e] px-3 py-2 text-sm text-[#cccccc] focus:border-[#ea580c] outline-none"
+						/>
+						<button
+							onClick={onSaveVersion}
+							disabled={saveBusy || !message.trim()}
+							className="rounded bg-[#238636] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2ea043] disabled:opacity-50"
+						>
+							Confirm Save
+						</button>
+						<button
+							onClick={() => setShowPrompt(false)}
+							className="rounded border border-[#3c3c3c] px-3 py-2 text-sm text-[#858585] hover:text-white"
+						>
+							Cancel
+						</button>
+					</div>
+				</div>
+			)}
+
+			<VersionHistoryModal 
+				open={historyOpen} 
+				onDismiss={() => setHistoryOpen(false)} 
+				history={history} 
+			/>
 		</div>
 	);
 }

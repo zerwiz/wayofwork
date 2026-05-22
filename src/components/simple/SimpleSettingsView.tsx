@@ -1,6 +1,6 @@
 import type { SimpleColorMode } from "../../hooks/useSimplePreferences";
 import type { ServerConfig } from "../../hooks/useServerConfig";
-import { GithubManageSettingsCard } from "../GithubManageSettingsCard";
+import { GithubManageSettingsCard, ConstructionGithubCard } from "../GithubManageSettingsCard";
 import { TerminalSettingsSection } from "../technical/TerminalSettingsSection";
 
 export type ClawWorkspaceSettingsActions = {
@@ -100,6 +100,7 @@ export function SimpleSettingsView({
 
 				<div className="space-y-4">
 					<GithubManageSettingsCard appearanceDark={appearanceDark} />
+					<ConstructionGithubCard appearanceDark={appearanceDark} />
 
 					<div className={`rounded-2xl border p-6 shadow-sm ${card}`}>
 						<h3 className={`mb-2 font-bold ${heading}`}>Appearance</h3>

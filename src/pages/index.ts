@@ -10,4 +10,5 @@ export { WorkPage } from "./WorkPage";
 export { SimplePage } from "./SimplePage";
 export { ClawPage } from "./ClawPage";
 export { AtaPage } from "./AtaPage";
+export { TAPlannerPage } from "./TAPlannerPage";
 export { default as KanbanPage } from "./Kanban";

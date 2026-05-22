@@ -45,6 +45,24 @@
   - Configured unique JSONL session stores with surface namespaces (e.g., `wo-chat-docs-*`).
   - Enabled automatic agent selection based on current surface (e.g., switching to `docs` agent when in the Docs view).
   - Fixed "double-bubble" UI bug by conditionally hiding empty assistant rows during streaming.
+- **WOW-013 (GitHub for Construction)**:
+  - Simplified version control for non-technical users with "Save Version" and "Version History" features.
+  - Implemented automated stage-commit-push sequence in a single action.
+  - Created a construction-focused Version History view to track project changes.
+  - Added backend support for git commit, push, and log operations.
+  - Enabled automated daily backups with versioned branches (e.g., `backup/YYYY-MM-DD`) at 02:00 AM.
+- **WOW-015 (Communication Architecture)**:
+  - Implemented a unified inbound channel router (`server/channel-router.ts`) to handle all external messages (Telegram, WhatsApp, Email).
+  - Centralized user resolution and AI dispatch logic, improving maintainability across all communication platforms.
+  - Integrated the unified router into the Telegram bot handler.
+- **WOW-017 (TA-Planner)**:
+  - Implemented Phase 1: Added `ta_plans` table to `server/schema.sql` and `server/db.ts`.
+  - Defined schema for road-work planning, including road numbers, speed limits, work types, and risk assessment data.
+  - Implemented Phase 2: Created `server/routes/ta-planner.ts` with CRUD endpoints for TA plans.
+  - Added a proxy for Trafikverket road data to support Swedish road-work regulations (TDOK 2024:0043).
+  - Implemented Phase 3: Created `TAPlannerPage` and `TAPlanningWizard` for a structured, step-by-step UI.
+  - Implemented Phase 4: Added `ta-validation.ts` engine to enforce core TDOK 2024:0043 safety rules (e.g., TMA requirements for high-speed roads).
+  - Implemented Phase 5: Created a selectable `SketchLibrary` featuring standard TDOK 2024:0043 traffic arrangement sketches.
 - **Process Management & Logging**:
   - Enhanced `start.sh` with persistent logging: all output is now mirrored to `server.log` using `tee`.
   - Rebuilt `stop.sh` for "Total Shutdown": aggressively terminates Bun, Vite, Concurrently, Electron, and Ngrok processes to ensure clean restarts and prevent `EADDRINUSE` errors.
@@ -52,6 +70,8 @@
   - Rebranded application title and icons in `index.html`.
   - Updated `SimpleNavRail.tsx` logo to "WAY OF WORK".
   - Refactored Electron shell (`electron-main.mjs`, `preload.cjs`) to use `WayOfWork` terminology.
+- **Documentation**:
+  - Updated `AGENTS.md` to comprehensively document the new multi-agent dispatch architecture, skill mappings, and Human-in-the-Loop (WOW-010) requirements.
 - **Unified Help Center**:
   - Rebuilt `HowToUseModal.tsx` with comprehensive multi-section guides (Welcome, Getting Started, Agents, Teams, Models, Layout, Workspace, For Developers, Honcho, ngrok, Capabilities).
   - Updated all internal paths to use `.wo/` and rebranded Wo Agent terminology.

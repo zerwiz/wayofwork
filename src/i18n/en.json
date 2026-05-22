@@ -1,0 +1,46 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success!"
+  },
+  "nav": {
+    "admin": "Admin",
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "calendar": "Calendar",
+    "settings": "Settings",
+    "profile": "Profile"
+  },
+  "chat": {
+    "placeholder": "Type a message...",
+    "new_chat": "New chat",
+    "clear_chat": "Clear chat",
+    "stop_generating": "Stop",
+    "thinking": "Thinking...",
+    "orchestrator": "Orchestrator"
+  },
+  "activity_bar": {
+    "explorer": "Explorer",
+    "search": "Search",
+    "scm": "Source Control",
+    "extensions": "Run and Extensions",
+    "planning": "Planning Mode",
+    "settings": "Settings"
+  },
+  "simple_nav": {
+    "chat": "Chat",
+    "team": "My Team",
+    "models": "AI Brains",
+    "projects": "Projects",
+    "documents": "Documents",
+    "taplanner": "TA-Planner",
+    "help": "Help",
+    "settings": "Settings"
+  }
+}

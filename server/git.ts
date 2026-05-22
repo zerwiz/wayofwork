@@ -293,6 +293,53 @@ export async function gitPush(absPath: string, token?: string | null): Promise<G
 	return { ok: true };
 }
 
+/**
+ * Create a new branch and push it to the remote.
+ */
+export async function gitCreateBranch(absPath: string, branchName: string): Promise<GitStageResult> {
+	const topProc = Bun.spawn(["git", "-C", dirname(absPath), "rev-parse", "--show-toplevel"], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const topOut = await new Response(topProc.stdout).text();
+	if ((await topProc.exited) !== 0) return { ok: false, error: "Not a git repository" };
+	const repoTop = syncRealpath(topOut.trim());
+
+	// Create local branch
+	const branchProc = Bun.spawn(["git", "-C", repoTop, "checkout", "-b", branchName], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	if ((await branchProc.exited) !== 0) {
+		// If checkout -b fails, try just checkout (if it exists)
+		const checkoutProc = Bun.spawn(["git", "-C", repoTop, "checkout", branchName], {
+			stdout: "pipe",
+			stderr: "pipe",
+		});
+		if ((await checkoutProc.exited) !== 0) {
+			return { ok: false, error: `Failed to create/checkout branch ${branchName}` };
+		}
+	}
+
+	// Push to remote
+	const pushProc = Bun.spawn(["git", "-C", repoTop, "push", "-u", "origin", branchName], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const pushErr = await new Response(pushProc.stderr).text();
+	const pushCode = await pushProc.exited;
+
+	// Switch back to main/master (or original branch)
+	// For simplicity, we just stay on the new branch or the user can switch back manually.
+	// But for automated backup, we should probably switch back.
+	void Bun.spawn(["git", "-C", repoTop, "checkout", "-"]).exited;
+
+	if (pushCode !== 0) {
+		return { ok: false, error: pushErr.trim() || `git push origin ${branchName} failed` };
+	}
+	return { ok: true };
+}
+
 export interface GitLogEntry {
 	hash: string;
 	author: string;

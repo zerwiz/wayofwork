@@ -156,6 +156,7 @@ import { registerAdminRoutes } from "./routes/admin";
 import { registerClientRoutes } from "./routes/client";
 import { registerProjectRoutes } from "./routes/projects";
 import { registerCalendarRoutes } from "./routes/calendar";
+import { registerTAPlannerRoutes } from "./routes/ta-planner";
 
 // Integrated terminal: in production (`NODE_ENV=production`) keep opt-in via WOP_ALLOW_TERMINAL only.
 // In non-production, default on when unset so local `npm run dev` gets a real shell; disable with WOP_ALLOW_TERMINAL=0|false|no|off.
@@ -959,6 +960,7 @@ registerAdminRoutes(apiRouter);
 registerClientRoutes(apiRouter);
 registerProjectRoutes(apiRouter);
 registerCalendarRoutes(apiRouter);
+registerTAPlannerRoutes(apiRouter);
 
 async function handleApi(url: URL, req: Request): Promise<Response> {
 	/** Collapse duplicate slashes; strip trailing slash (except root). */

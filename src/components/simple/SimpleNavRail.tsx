@@ -1,6 +1,7 @@
-import { Brain, Cpu, Folder, HelpCircle, MessageCircle, Settings, Users, FileText } from "lucide-react";
+import { Brain, Cpu, Folder, HelpCircle, MessageCircle, Settings, Users, FileText, Map as RoadIcon } from "lucide-react";
+import { useTranslation } from "../../contexts/LanguageContext";
 
-export type SimpleTabId = "chat" | "team" | "models" | "projects" | "documenthandler" | "settings";
+export type SimpleTabId = "chat" | "team" | "models" | "projects" | "documenthandler" | "taplanner" | "settings";
 
 /**
  * Simple shell primary nav. Stub / depth by target (see each view file header):
@@ -22,6 +23,8 @@ export function SimpleNavRail({
 	onHelp?: () => void;
 	appearanceDark: boolean;
 }) {
+	const { t } = useTranslation();
+
 	const NavItem = ({
 		icon: Icon,
 		label,
@@ -74,18 +77,19 @@ export function SimpleNavRail({
 				<span className={`hidden text-xs font-extrabold tracking-tight md:inline ${logoText}`}>WAY OF WORK</span>
 			</div>
 
-			<NavItem icon={MessageCircle} label="Chat" id="chat" />
-			<NavItem icon={Users} label="My Team" id="team" />
-			<NavItem icon={Brain} label="AI Brains" id="models" />
-			<NavItem icon={Folder} label="Projects" id="projects" />
-			<NavItem icon={FileText} label="Documents" id="documenthandler" />
+			<NavItem icon={MessageCircle} label={t("simple_nav.chat")} id="chat" />
+			<NavItem icon={Users} label={t("simple_nav.team")} id="team" />
+			<NavItem icon={Brain} label={t("simple_nav.models")} id="models" />
+			<NavItem icon={Folder} label={t("simple_nav.projects")} id="projects" />
+			<NavItem icon={FileText} label={t("simple_nav.documents")} id="documenthandler" />
+			<NavItem icon={RoadIcon} label={t("simple_nav.taplanner")} id="taplanner" />
 
 		<div className="mt-auto flex flex-col items-center gap-2">
 			{onHelp ? (
 				<button
 					type="button"
 					onClick={onHelp}
-					title="Help & how to use"
+					title={t("simple_nav.help")}
 					className={`flex w-16 flex-col items-center justify-center rounded-2xl py-3 transition-colors ${
 						appearanceDark
 							? "text-[#858585] hover:bg-[#3c3c3c] hover:text-[#cccccc]"
@@ -93,10 +97,10 @@ export function SimpleNavRail({
 					}`}
 				>
 					<HelpCircle size={24} className={appearanceDark ? "text-[#858585]" : "text-[#858585]"} />
-					<span className="mt-1.5 text-[11px] font-semibold tracking-tight">Help</span>
+					<span className="mt-1.5 text-[11px] font-semibold tracking-tight">{t("simple_nav.help")}</span>
 				</button>
 			) : null}
-			<NavItem icon={Settings} label="Settings" id="settings" />
+			<NavItem icon={Settings} label={t("simple_nav.settings")} id="settings" />
 		</div>
 	</nav>
 	);

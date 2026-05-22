@@ -870,7 +870,8 @@ export function ChatPanel({
 									<div className="whitespace-pre-wrap">{msg.content}</div>
 								</div>
 							</div>
-						))}
+							);
+						})}
 						{streamingNeedsPlaceholder ? (
 							<div className="flex flex-col gap-1">
 								<span

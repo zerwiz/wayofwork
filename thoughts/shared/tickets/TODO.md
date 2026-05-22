@@ -23,7 +23,8 @@
 - **WOW-009**: Offers & Invoices backend API (543 lines) + agents/skills created.
 - **WOW-014**: Created — bilingual SV/EN support ticket.
 - **WOW-015**: Created — communication architecture ticket (Telegram, WhatsApp, Email).
-- **WOW-016**: Created — CRITICAL access control, user isolation, daily workflow.
+- [x] **WOW-016**: Created — CRITICAL access control, user isolation, daily workflow.
+
 - **Agent-Skill mapping**: Documented in WOW-016. Missing skills identified for claw, docs, kanban.
 - **Workspace structure**: `workspace/agent/sessions/`, `workspace/plans/` created. `.wo/README.md` added.
 - **`.gitignore`**: Fixed to track repo-root `.wo/` but ignore workspace symlink + secrets. Removed `.wo/` blanket ignore.
@@ -98,25 +99,26 @@
 - [x] Fix double-bubble at thinking (assistant_turn_start / assistant_delta merge)
 
 ### WOW-013 — Orchestrator & GitHub for Construction
-- [ ] Phase 1: GitHub simplification (Save Version / Version History buttons)
-- [ ] Phase 2: Automated daily backup (`backup/YYYY-MM-DD` branches, 30-day prune)
+- [x] Phase 1: GitHub simplification (Save Version / Version History buttons)
+- [x] Phase 2: Automated daily backup (`backup/YYYY-MM-DD` branches, 30-day prune)
 - [ ] Phase 3: Agent skill `workspace-storage` for doc save/restore/history
 - [ ] Phase 4: Orchestrator rework (Simple mode agent + channel handler + `dispatch_agent`)
 - [ ] Phase 5: Surface-specific agents (Claw→claw, Docs→docs, Kanban→kanban, Simple→Orchestrator)
 
 ### WOW-014 — Bilingual Support (SV/EN)
-- [ ] Phase 1: i18n infrastructure (locales JSON, useTranslation hook, user language setting)
-- [ ] Phase 2: UI translation (Admin Console labels, chat UI, forms, empty states)
+- [x] Phase 1: i18n infrastructure (locales JSON, useTranslation hook, user language setting)
+- [/] Phase 2: UI translation (In progress: ActivityBar, SimpleNavRail localized)
 - [ ] Phase 3: Agent language awareness (greeting, responses follow user language)
 - [ ] Phase 4: Swedish legal content handling (always in Swedish regardless of UI language)
 
 ### WOW-015 — Communication Architecture
-- [ ] Phase 1: Unified inbound router (`server/channel-router.ts`)
+- [x] Phase 1: Unified inbound router (`server/channel-router.ts`)
 - [ ] Phase 2: Telegram webhook (replace polling, multi-bot, media handling)
 - [ ] Phase 3: WhatsApp inbound (webhook, wire up whatsapp-time-bot)
 - [ ] Phase 4: Email (SMTP + inbound forwarding)
-- [ ] Phase 5: Outbound notification tools (telegram_send, whatsapp_send, email_send)
-- [ ] Phase 6: Complete message audit trail
+- [x] Phase 5: Outbound notification tools (telegram_send, whatsapp_send)
+- [x] Phase 6: Complete message audit trail
+
 
 ### WOW-016 — [CRITICAL] Access Control, User Isolation & Daily Workflow
 - [x] Phase 1: Project membership system (`project_members` table)
@@ -129,26 +131,34 @@
 - [x] Phase 8: Daily planning workflow (morning dispatch → evening reports)
 - [x] Phase 9: User information tracking
 
+### WOW-017 — TA-Planner System Implementation
+- [x] Database Schema: `ta_plans` table added
+- [x] Backend API: `server/routes/ta-planner.ts` (CRUD + Trafikverket proxy)
+- [x] Frontend UI: `src/pages/TAPlannerPage.tsx` (Planning Wizard)
+- [x] Validation Engine: `src/utils/ta-validation.ts`
+- [x] Sketch Library: TDOK 2024:0043 integration
+
 ### Other
 - [ ] **kanbanService.ts**: Complete TODO stubs (`deleteBoard`, `createColumn`, `deleteColumn`)
 - [ ] **Multi-Tenancy Audit**: Verify Tenant A → Tenant B isolation
 - [ ] **Agent Integration Test**: Verify Wo Agent works with real DB endpoints
-- [ ] **Fix agent skill assignments**: claw (add skills), docs (add swedish-building-laws), kanban (add workers), fakturering (remove overloaded), projektledare (refactor)
-- [ ] **Create orchestrator agent**: `.wo/agents/orchestrator.md` with `dispatch-agent` skill
-- [ ] **Create dispatch-agent skill**: `.wo/skills/dispatch-agent/SKILL.md`
+- [x] **Fix agent skill assignments**: claw (add skills), docs (add swedish-building-laws), kanban (add workers), fakturering (remove overloaded), projektledare (refactor)
+- [x] **Create orchestrator agent**: `.wo/agents/orchestrator.md` with `dispatch-agent` skill
+- [x] **Create dispatch-agent skill**: `.wo/skills/dispatch-agent/SKILL.md`
 
 ## Priority Order
 
 1. **WOW-016** — Access Control, User Isolation & Daily Workflow (CRITICAL, blocks all user-facing features)
-2. **WOW-010** — Human-in-the-Loop (critical, blocks AI writes)
-3. **WOW-012** — Isolated Chat per Surface (UX critical, blocks WOW-013)
-4. **WOW-013** — Orchestrator & GitHub for Construction (needs WOW-012 for surface agents)
-5. **WOW-015** — Communication Architecture (core infra, needs WOW-013 for dispatch)
-6. **WOW-014** — Bilingual Support (prepare for Sweden launch)
-7. **WOW-004** — Production Readiness (launch blocker)
-8. **WOW-007** — Per-User Channels (core infra, relates to WOW-015)
-9. **WOW-009** — Offers & Invoices (frontend UI)
-10. **WOW-011** — Time Verification (blocked on WOW-010)
-11. **WOW-006** — Server refactoring (maintainability)
-12. **WOW-008** — Pricing Engine (agent wiring)
-13. **WOW-002/003/001** — Polish & infrastructure
+2. **WOW-017** — TA-Planner System Implementation (High)
+3. **WOW-010** — Human-in-the-Loop (critical, blocks AI writes)
+4. **WOW-012** — Isolated Chat per Surface (UX critical, blocks WOW-013)
+5. **WOW-013** — Orchestrator & GitHub for Construction (needs WOW-012 for surface agents)
+6. **WOW-015** — Communication Architecture (core infra, needs WOW-013 for dispatch)
+7. **WOW-014** — Bilingual Support (prepare for Sweden launch)
+8. **WOW-004** — Production Readiness (launch blocker)
+9. **WOW-007** — Per-User Channels (core infra, relates to WOW-015)
+10. **WOW-009** — Offers & Invoices (frontend UI)
+11. **WOW-011** — Time Verification (blocked on WOW-010)
+12. **WOW-006** — Server refactoring (maintainability)
+13. **WOW-008** — Pricing Engine (agent wiring)
+14. **WOW-002/003/001** — Polish & infrastructure
