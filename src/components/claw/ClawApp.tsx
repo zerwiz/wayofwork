@@ -502,6 +502,8 @@ export function ClawApp({
         ? "hidden md:block"
         : "hidden md:block !bg-[#ececec] hover:!bg-[#007acc]/35 active:!bg-[#007acc]/55";
 
+  const [showFilePanel, setShowFilePanel] = useState(false);
+
   const bg = isDark
     ? "bg-[#1e1e1e] text-[#cccccc] selection:bg-[#264f78]"
     : "bg-[#f3f3f3] text-[#333333] selection:bg-[#add6ff]/60";
@@ -553,6 +555,14 @@ export function ClawApp({
               connected={connected}
               appearanceDark={isDark}
               activeTab={activeTab}
+              onNew={activeTab === "chat" ? onNewSession : undefined}
+              onToggleWorkspace={activeTab === "chat" ? () => setShowFilePanel(!showFilePanel) : undefined}
+              workspaceActive={showFilePanel}
+              streaming={streaming}
+              chatTabs={chatTabs}
+              activeChatTabId={activeChatTabId}
+              onSelectChatTab={onSelectChatTab}
+              onCloseChatTab={onCloseChatTab}
             />
           )}
           {activeTab === "mission" ? (
@@ -609,6 +619,8 @@ export function ClawApp({
               onChatModeChange={onChatModeChange}
               contextFillPct={contextFillPct}
               contextTitle={contextTitle}
+              showFilePanel={showFilePanel}
+              onToggleClawFiles={() => setShowFilePanel(!showFilePanel)}
               filePanelNodes={clawHostFileTree.nodes}
               filePanelTreeLoading={clawHostFileTree.loading}
               onRefreshFilePanelTree={() => void clawHostFileTree.refresh()}

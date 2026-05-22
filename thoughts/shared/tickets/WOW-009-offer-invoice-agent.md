@@ -1,4 +1,4 @@
-# WOW-009 [Offer & Invoice Agent] Faktureringsagent med dokumentgenerering och kommunikation
+# WOW-009 [Offer & Invoice Agent] Offer and invoice agent with document generation and communication
 
 ## Problem Statement
 

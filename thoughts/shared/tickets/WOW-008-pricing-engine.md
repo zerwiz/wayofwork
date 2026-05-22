@@ -1,4 +1,4 @@
-# WOW-008 [Company Pricing Engine] Företagsprissättning, kalkylverktyg och tidsberäkning
+# WOW-008 [Company Pricing Engine] Company pricing, cost calculation and time estimation
 
 ## Problem Statement
 

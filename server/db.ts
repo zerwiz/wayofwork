@@ -328,10 +328,8 @@ for (const u of toRemove) {
   db.run("DELETE FROM users WHERE username = ?", [u]);
 }
 
-// Seed template price lists for default tenant
-const existingPriceLists = db.query("SELECT COUNT(*) as count FROM price_lists WHERE tenant_id = ?").get(defaultTenantId) as any;
-if (existingPriceLists.count === 0) {
-  const templateLists = [
+// Seed template price lists for default tenant if they don't already exist by name
+const templateLists = [
     {
       name: "Maskiner 2026",
       items: [
@@ -441,15 +439,23 @@ if (existingPriceLists.count === 0) {
     },
   ];
 
+  let seededCount = 0;
+  const existingNames = new Set(
+    (db.query("SELECT name FROM price_lists WHERE tenant_id = ?").all(defaultTenantId) as any[])
+      .map((r: any) => r.name)
+  );
   for (const list of templateLists) {
+    if (existingNames.has(list.name)) continue;
     const id = crypto.randomUUID();
     db.run(
       "INSERT INTO price_lists (id, tenant_id, name, items_json, active) VALUES (?, ?, ?, ?, 1)",
       [id, defaultTenantId, list.name, JSON.stringify(list.items)]
     );
+    seededCount++;
   }
-  console.log(`Created ${templateLists.length} template price lists for default tenant`);
-}
+  if (seededCount > 0) {
+    console.log(`Created ${seededCount} template price lists for default tenant`);
+  }
 
 db.run(`
   CREATE TABLE IF NOT EXISTS user_channel_links (
