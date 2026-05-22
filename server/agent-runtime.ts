@@ -1,8 +1,8 @@
 /**
  * **Wo agent runtime** — routes all chat turns through `@wayofmono/wo-agent` SDK.
  *
- * The legacy Pi (`@earendil-works/pi-coding-agent`) CLI is no longer bundled.
- * No runtime code imports pi. All runtime chat goes through Wo.
+ * The legacy runtime is no longer bundled.
+ * No runtime code imports it. All runtime chat goes through Wo.
  *
  * Engine modes (`WOP_CHAT_ENGINE`):
  * - **`sdk`** — use `@wayofmono/wo-agent` SDK directly (default).
@@ -38,38 +38,41 @@ export function isSdkAvailable(): boolean {
 	return true;
 }
 
-/** Deprecated — kept for backward compat with claw-schedule-executor. */
-export function shouldUsePiJsonChat(): boolean {
+/** Returns true if the authoritative CLI runtime should be used for tool execution. */
+export function authoritativeRuntimeEnabled(): boolean {
 	return false;
 }
 
+/** @deprecated Use authoritativeRuntimeEnabled */
+export const shouldUsePiJsonChat = authoritativeRuntimeEnabled;
+
 /** Deprecated — kept for backward compat. */
-export function getPiStackForSurface(_surface: string | null): string {
+export function getWoStackForSurface(_surface: string | null): string {
 	return "";
 }
 
 /** Deprecated — kept for backward compat. */
-export function resolvePiBinaryPath(): string | null {
+export function resolveWoBinaryPath(): string | null {
 	return null;
 }
 
 /** Deprecated — kept for backward compat. */
-export function resolvePiLoaderPath(): string | null {
+export function resolveWoLoaderPath(): string | null {
 	return null;
 }
 
 /** Deprecated — kept for backward compat with server/index.ts orchestrator patching. */
-export function patchPiJsonChatRuntimeOverride(_value: boolean | null): void {
-	// no-op: Pi CLI is no longer used
+export function patchWoJsonChatRuntimeOverride(_value: boolean | null): void {
+	// no-op: CLI is no longer used
 }
 
-/** Deprecated — kept for backward compat. Pi agent is never blocked (it's not used). */
-export function piAgentRuntimeBlockedReason(): string | null {
+/** Deprecated — kept for backward compat. */
+export function woAgentRuntimeBlockedReason(): string | null {
 	return null;
 }
 
-export type RunPiChatTurnOpts = {
-	piStack?: string;
+export type RunWoChatTurnOpts = {
+	woStack?: string;
 	cwd: string;
 	messages: ChatMessage[];
 	onDelta: (s: string) => void;
@@ -80,8 +83,8 @@ export type RunPiChatTurnOpts = {
 	runtime?: ChatRuntimeModel;
 };
 
-export async function runPiChatTurn(
-	opts: RunPiChatTurnOpts,
+export async function runWoChatTurn(
+	opts: RunWoChatTurnOpts,
 ): Promise<{ result: StreamChatResult; lastStreamUsage: StreamTokenUsage | null }> {
 	if (!shouldUseSdkChat()) {
 		return {
@@ -101,3 +104,6 @@ export async function runPiChatTurn(
 		runtime: opts.runtime,
 	});
 }
+
+/** @deprecated Use runWoChatTurn */
+export const runPiChatTurn = runWoChatTurn;

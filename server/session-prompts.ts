@@ -105,7 +105,7 @@ const ORCHESTRATOR_WEB_SHELL_SYSTEM_HEADLESS_PI = `You are the **Orchestrator** 
 
 **Brevity:** Keep responses short and professional. No emoji unless used by the user.`;
 
-const PI_HEADLESS_NAMED_AGENT_NOTE = `**Headless Pi (\`pi --mode json\`):** This turn runs **inside Pi** in the workspace. Your frontmatter **\`tools:\`** and **\`.pi/settings.json\`** extensions apply **in Pi** — built-ins and extension tools (**\`dispatch_agent\`**, …) are live here. Ignore any prose that assumed “web shell = persona text only.” See **\`docs/TOOLS.md\`**.`;
+const AUTHORITATIVE_RUNTIME_NAMED_AGENT_NOTE = `**Authoritative Runtime:** This turn runs with full tool access in the workspace. Your frontmatter **\`tools:\`** and workspace settings extensions apply — built-ins and extension tools (**\`dispatch_agent\`**, …) are live here. Ignore any prose that assumed “web shell = persona text only.” See **\`docs/TOOLS.md\`**.`;
 
 export interface LeadSystemInput {
 	mode: ChatSessionMode;
@@ -117,14 +117,14 @@ export interface LeadSystemInput {
 	/** Comma-separated skills from agent frontmatter (e.g. "kanban,ata,workers"). */
 	agentSkills?: string | null;
 	/**
-	 * Body from \`planner.md\` (Pi scan order), when Plan mode applies and the active agent is not already \`planner\`.
+	 * Body from \`planner.md\` (workspace scan order), when Plan mode applies and the active agent is not already \`planner\`.
 	 * Pass \`null\` to use {@link PLAN_SESSION_SYSTEM_FALLBACK}.
 	 */
 	plannerAgentBody: string | null;
-	/** Workspace orchestrator may use Pi-shaped server tools (read/grep/…) — suppressed when Pi JSON owns the turn. */
-	orchestratorPiToolsEnabled?: boolean;
-	/** **Headless Pi** (\`pi --mode json\`) executes tools for this session (all personas). */
-	piJsonChatRuntime?: boolean;
+	/** Workspace orchestrator may use standard server tools (read/grep/…) — suppressed when authoritative runtime owns the turn. */
+	orchestratorToolsEnabled?: boolean;
+	/** **Authoritative Runtime** executes tools for this session (all personas). */
+	authoritativeRuntime?: boolean;
 	/** Optional local workspace index summary (Settings → Indexing & Docs). */
 	workspaceIndexBoost?: string | null;
 }
@@ -135,23 +135,23 @@ export async function composeLeadSystem(input: LeadSystemInput): Promise<string 
 	if (env) parts.push(env);
 	const agent = input.agentBody?.trim();
 	const skills = input.agentSkills?.trim();
-	const piRt = input.piJsonChatRuntime === true;
+	const authRt = input.authoritativeRuntime === true;
 	if (!agent) {
-		if (piRt) {
+		if (authRt) {
 			parts.push(ORCHESTRATOR_WEB_SHELL_SYSTEM_HEADLESS_PI);
 		} else {
 			let web = ORCHESTRATOR_WEB_SHELL_SYSTEM;
-			if (input.orchestratorPiToolsEnabled) {
+			if (input.orchestratorToolsEnabled) {
 				web += `${ORCHESTRATOR_TOOLS_ENABLED_NOTE}\n\n---\n\n${orchestratorGitGithubSessionNote()}`;
 			}
 			parts.push(web);
 		}
-	} else if (piRt) {
-		parts.push(`${agent}\n\n---\n\n${PI_HEADLESS_NAMED_AGENT_NOTE}`);
+	} else if (authRt) {
+		parts.push(`${agent}\n\n---\n\n${AUTHORITATIVE_RUNTIME_NAMED_AGENT_NOTE}`);
 	} else {
 		parts.push(
 			agent +
-				(input.orchestratorPiToolsEnabled
+				(input.orchestratorToolsEnabled
 					? `${AGENT_WITH_SERVER_TOOLS_NOTE}\n\n---\n\n${orchestratorGitGithubSessionNote()}`
 					: WEB_SHELL_AGENT_NOTE),
 		);
@@ -161,7 +161,7 @@ export async function composeLeadSystem(input: LeadSystemInput): Promise<string 
 			/* \`planner.md\` is already the active agent body — do not stack a second copy. */
 		} else {
 			const planCore = input.plannerAgentBody?.trim() || PLAN_SESSION_SYSTEM_FALLBACK;
-			const planTail = piRt ? WEB_SHELL_PLAN_MODE_NOTE_PI : WEB_SHELL_PLAN_MODE_NOTE;
+			const planTail = authRt ? WEB_SHELL_PLAN_MODE_NOTE_PI : WEB_SHELL_PLAN_MODE_NOTE;
 			parts.push(planCore + planTail);
 		}
 	}

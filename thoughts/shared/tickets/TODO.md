@@ -32,7 +32,7 @@ When working on tickets below, you **MUST** activate the relevant custom skill t
 - **WOW-009**: Offers & Invoices backend API (543 lines) + agents/skills created.
 - **WOW-014**: Created — bilingual SV/EN support ticket.
 - **WOW-015**: Created — communication architecture ticket (Telegram, WhatsApp, Email).
-- [x] **WOW-016**: Created — CRITICAL access control, user isolation, daily workflow.
+- **[x] **WOW-016**: Created — CRITICAL access control, user isolation, daily workflow.
 
 - **Agent-Skill mapping**: Documented in WOW-016. Missing skills identified for claw, docs, kanban.
 - **Workspace structure**: `workspace/agent/sessions/`, `workspace/plans/` created. `.wo/README.md` added.
@@ -89,7 +89,7 @@ When working on tickets below, you **MUST** activate the relevant custom skill t
 ### WOW-010 — Human-in-the-Loop (CRITICAL — blocks WOW-011)
 - [x] `pending_changes` table exists, API endpoints implemented (POST create, GET list/detail, POST approve/reject)
 - [x] Backend logic for applying approved changes to `price_lists`, `offers`, `tasks`, and `projects`
-- [ ] Admin Console "Godkännandekö" tab with diff-view
+- [ ] **⏳ Admin Console "Godkännandekö" tab with diff-view** ← HIGH PRIORITY
 - [x] AI can only create pending_changes (not write directly) — enforced in agent prompts
 - [x] All agents: price lists, planning, schedules use approval queue
 
@@ -102,7 +102,7 @@ When working on tickets below, you **MUST** activate the relevant custom skill t
 - [x] symlink + docs agent (done)
 - [x] WebSocket state isolation per surface
 - [x] JSONL per surface: `wo-chat-<surface>-<sessionKey>.jsonl`
-- [x] Auto-select agent: Claw→claw, Docs→docs, Kanban→kanban, Simple→null
+- [x] Auto-select agent: Claw→claw, Docs→docs, Kanban→kanban, Simple→Orchestrator
 - [x] Generic auto-select in `SimpleChatView` (implemented in server websocket.open)
 - [x] Agent cleanup on surface navigation (handled by session isolation)
 - [x] Fix double-bubble at thinking (assistant_turn_start / assistant_delta merge)
@@ -116,7 +116,7 @@ When working on tickets below, you **MUST** activate the relevant custom skill t
 
 ### WOW-014 — Bilingual Support (SV/EN)
 - [x] Phase 1: i18n infrastructure (locales JSON, useTranslation hook, user language setting)
-- [/] Phase 2: UI translation (In progress: ActivityBar, SimpleNavRail localized)
+- [ ] Phase 2: UI translation (In progress: ActivityBar, SimpleNavRail localized)
 - [ ] Phase 3: Agent language awareness (greeting, responses follow user language)
 - [ ] Phase 4: Swedish legal content handling (always in Swedish regardless of UI language)
 
@@ -127,7 +127,6 @@ When working on tickets below, you **MUST** activate the relevant custom skill t
 - [ ] Phase 4: Email (SMTP + inbound forwarding)
 - [x] Phase 5: Outbound notification tools (telegram_send, whatsapp_send)
 - [x] Phase 6: Complete message audit trail
-
 
 ### WOW-016 — [CRITICAL] Access Control, User Isolation & Daily Workflow
 - [x] Phase 1: Project membership system (`project_members` table)
@@ -153,6 +152,30 @@ When working on tickets below, you **MUST** activate the relevant custom skill t
 - [ ] Enhance Orchestrator with multi-agent handoff logic
 - [ ] Update Orchestrator dispatch mapping
 
+### WOW-019 — Notification System (🟢 NEW - 2026-05-22)
+- [ ] Create notification component (`src/components/NotificationToast.tsx`)
+- [ ] Create admin API endpoints (`server/endpoints/notifications.ts`)
+- [ ] Wire WOW-010 approval to notifications
+- [ ] Add badge to Navigation (`src/components/Navigation.tsx`)
+- [ ] localStorage client-side storage
+- [ ] Toast notifications on creation
+- [ ] Inbox view in Settings
+- [ ] Filter by type/severity
+- [ ] Mark as read functionality
+- [ ] Admin API endpoint
+- [ ] Integration with pending-changes
+
+### WOW-020 — Bug Report & Feature Request System (🟢 NEW - 2026-05-22)
+- [ ] Create bug report form component (modal)
+- [ ] Create SUPER ADMIN dashboard (read-only from public reports)
+- [ ] Implement status tracking workflow (pending → in-review → fixed → closed)
+- [ ] Database schema (`bug_reports` table)
+- [ ] API endpoints for submissions and admin actions
+- [ ] System info capture (browser, OS, etc.)
+- [ ] Screenshot/video attachment support
+- [ ] Duplicate tracking
+- [ ] SUPER ADMIN-only access control
+
 ### Other
 - [ ] **kanbanService.ts**: Complete TODO stubs (`deleteBoard`, `createColumn`, `deleteColumn`)
 - [ ] **Multi-Tenancy Audit**: Verify Tenant A → Tenant B isolation
@@ -164,17 +187,37 @@ When working on tickets below, you **MUST** activate the relevant custom skill t
 ## Priority Order
 
 1. **WOW-016** — Access Control, User Isolation & Daily Workflow (CRITICAL, blocks all user-facing features)
-2. **WOW-017** — TA-Planner System Implementation (High)
-3. **WOW-010** — Human-in-the-Loop (critical, blocks AI writes)
-4. **WOW-018** — Agent Ecosystem Expansion (Medium, enhances multi-agent capability)
-5. **WOW-012** — Isolated Chat per Surface (UX critical, blocks WOW-013)
-5. **WOW-013** — Orchestrator & GitHub for Construction (needs WOW-012 for surface agents)
-6. **WOW-015** — Communication Architecture (core infra, needs WOW-013 for dispatch)
-7. **WOW-014** — Bilingual Support (prepare for Sweden launch)
-8. **WOW-004** — Production Readiness (launch blocker)
-9. **WOW-007** — Per-User Channels (core infra, relates to WOW-015)
-10. **WOW-009** — Offers & Invoices (frontend UI)
-11. **WOW-011** — Time Verification (blocked on WOW-010)
-12. **WOW-006** — Server refactoring (maintainability)
-13. **WOW-008** — Pricing Engine (agent wiring)
-14. **WOW-002/003/001** — Polish & infrastructure
+2. **WOW-004** — Production Readiness (launch blocker)
+3. **WOW-010 (UI)** — Admin Console "Godkännandekö" tab (CRITICAL for agent compliance)
+4. **WOW-017** — TA-Planner System Implementation (High)
+5. **WOW-015** — Communication Architecture (core infra)
+6. **WOW-007** — Per-User Channels (core infra)
+7. **WOW-009** — Offers & Invoices (frontend UI)
+8. **WOW-011** — Time Verification (blocked on WOW-010 UI)
+9. **WOW-018** — Agent Ecosystem Expansion (Medium, enhances multi-agent capability)
+10. **WOW-014** — Bilingual Support (prepare for Sweden launch)
+11. **WOW-020** — Bug Report System (NEW - user feedback)
+12. **WOW-019** — Notification System (HIGH - essential for WOW-010)
+13. **WOW-006** — Server refactoring (maintainability)
+14. **WOW-013** — Orchestrator & GitHub for Construction (needs WOW-012)
+15. **WOW-001/002/003/008** — Polish & infrastructure
+
+## ✅ Implementation Notes for New Tickets
+
+### WOW-019 (Notification System)
+- Store in localStorage (client-side) + optional WebSocket push
+- Toast notifications on approve/reject changes
+- Badge count in Navigation (unread messages)
+- Integration with WOW-010 approval queue
+
+### WOW-020 (Bug Report System)
+- Public-facing form (any user can submit)
+- SUPER ADMINS-only dashboard for review
+- Status tracking with workflow states
+- No end-user notifications on submission (internal only)
+- System info auto-captured (browser, OS, etc.)
+
+---
+
+**Generated**: 2026-05-22  
+**Last edited**: 2026-05-22 (added WOW-019, WOW-020)

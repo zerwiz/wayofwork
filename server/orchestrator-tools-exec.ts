@@ -165,7 +165,7 @@ export function patchOrchestratorGateRuntime(patch: OrchestratorGateRuntimePatch
 	return { orchestratorTools: orchestratorToolsEnabled(), orchestratorBash: orchestratorBashEnabled() };
 }
 
-/** When not `0`/`false`/`no`/`off`, orchestrator turns may use Pi-shaped workspace tools (default: on). */
+/** When not `0`/`false`/`no`/`off`, orchestrator turns may use standard workspace tools (default: on). */
 export function orchestratorToolsEnabled(): boolean {
 	if (orchestratorToolsRuntimeOverride !== undefined) return orchestratorToolsRuntimeOverride;
 	const v = process.env.WOP_ORCHESTRATOR_TOOLS?.trim().toLowerCase();
@@ -699,18 +699,18 @@ export async function executeOrchestratorTool(
 	}
 }
 
-/** OpenAI /v1 `tools` array for orchestrator turns (Pi-shaped names; subset of Pi built-ins). */
+/** OpenAI /v1 `tools` array for orchestrator turns (standard names; subset of authoritative built-ins). */
 export const ORCHESTRATOR_TOOLS_OPENAI = [
 	{
 		type: "function" as const,
 		function: {
 			name: "read",
 			description:
-				"Read a UTF-8 text file under the Way of Work workspace (Pi `read`-style). Path is relative to workspace root.",
+				"Read a UTF-8 text file under the Way of Work workspace. Path is relative to workspace root.",
 			parameters: {
 				type: "object",
 				properties: {
-					path: { type: "string", description: "Relative file path, e.g. .pi/agents/teams.yaml" },
+					path: { type: "string", description: "Relative file path, e.g. .wo/agents/teams.yaml" },
 					offset: { type: "integer", description: "1-based starting line (optional)" },
 					limit: { type: "integer", description: "Max lines to return (optional, default 200, max 500)" },
 				},
@@ -722,7 +722,7 @@ export const ORCHESTRATOR_TOOLS_OPENAI = [
 		type: "function" as const,
 		function: {
 			name: "list_dir",
-			description: "List files and subdirectories one level deep (Pi `ls`-style). Path relative to workspace.",
+			description: "List files and subdirectories one level deep. Path relative to workspace.",
 			parameters: {
 				type: "object",
 				properties: {
@@ -736,7 +736,7 @@ export const ORCHESTRATOR_TOOLS_OPENAI = [
 		function: {
 			name: "grep",
 			description:
-				"Search with ripgrep (`rg`) under a workspace path (Pi `grep`-style). Requires `rg` on the server PATH.",
+				"Search with ripgrep (`rg`) under a workspace path. Requires `rg` on the server PATH.",
 			parameters: {
 				type: "object",
 				properties: {
@@ -753,7 +753,7 @@ export const ORCHESTRATOR_TOOLS_OPENAI = [
 		function: {
 			name: "write",
 			description:
-				"Create or overwrite a UTF-8 text file under the workspace (Pi `write`-style). Creates parent directories. Path is relative to workspace root.",
+				"Create or overwrite a UTF-8 text file under the workspace. Creates parent directories. Path is relative to workspace root.",
 			parameters: {
 				type: "object",
 				properties: {
@@ -765,11 +765,10 @@ export const ORCHESTRATOR_TOOLS_OPENAI = [
 		},
 	},
 	{
-		type: "function" as const,
 		function: {
 			name: "team_list",
 			description:
-				"Pi **agent-team** parity: list teams from `.pi/agents/teams.yaml` (primary workspace) and all scanned agent definition names. Call before add/remove/replace to pick valid team and agent ids.",
+				"Team management parity: list teams from `.wo/agents/teams.yaml` (primary workspace) and all scanned agent definition names. Call before add/remove/replace to pick valid team and agent ids.",
 			parameters: { type: "object", properties: {} },
 		},
 	},
@@ -785,9 +784,8 @@ export const ORCHESTRATOR_TOOLS_OPENAI = [
 					team: {
 						type: "string",
 						description:
-							"YAML team key (e.g. full, ralph). Omit to use the alphabetically first team (Pi default-team style).",
-					},
-					agentName: { type: "string", description: "Agent frontmatter `name` (e.g. scout, planner)" },
+							"YAML team key (e.g. full, ralph). Omit to use the alphabetically first team (standard default-team style).",
+					},					agentName: { type: "string", description: "Agent frontmatter `name` (e.g. scout, planner)" },
 				},
 				required: ["agentName"],
 			},

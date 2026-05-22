@@ -102,12 +102,12 @@ import {
 	type OrchestratorGateRuntimePatch,
 } from "./orchestrator-tools-exec";
 import {
-	patchPiJsonChatRuntimeOverride,
-	piAgentRuntimeBlockedReason,
-	getPiStackForSurface,
-	resolvePiBinaryPath,
-	runPiChatTurn,
-	shouldUsePiJsonChat,
+	patchWoJsonChatRuntimeOverride,
+	woAgentRuntimeBlockedReason,
+	getWoStackForSurface,
+	resolveWoBinaryPath,
+	runWoChatTurn,
+	authoritativeRuntimeEnabled,
 	wopChatEngineFromEnv,
 } from "./agent-runtime";
 import { evalChatSlashCommand, type ChatSlashMutation } from "./chat-slash-commands";
@@ -245,7 +245,7 @@ async function applyLeadFromCache(
 	if (data.chatMode === "plan" && agentNameLower !== "planner") {
 		plannerBody = readPlannerAgentBodySync(getPrimaryWorkspacePath(data.tenantId));
 	}
-	const piJson = shouldUsePiJsonChat();
+	const piJson = authoritativeRuntimeEnabled();
 	await applyLeadSystem(data.messages, {
 		mode: data.chatMode,
 		envSystemPrompt: process.env.WOP_SYSTEM_PROMPT,
@@ -253,8 +253,8 @@ async function applyLeadFromCache(
 		agentSkills: data.cachedAgentSkills,
 		agentNameLower,
 		plannerAgentBody: plannerBody,
-		orchestratorPiToolsEnabled: orchestratorToolsEnabled() && !piJson,
-		piJsonChatRuntime: piJson,
+		orchestratorToolsEnabled: orchestratorToolsEnabled() && !piJson,
+		authoritativeRuntime: piJson,
 		workspaceIndexBoost: getWorkspaceIndexChatBoostSync(),
 	});
 }
@@ -681,10 +681,10 @@ async function runChatTurn(
 
 		ws.send(JSON.stringify({ type: "assistant_turn_start" }));
 
-		const piBlocked = piAgentRuntimeBlockedReason();
-		if (piBlocked) {
-			ws.send(JSON.stringify({ type: "error", message: piBlocked }));
-			sendLog("ERROR", "chat", piBlocked);
+		const woBlocked = woAgentRuntimeBlockedReason();
+		if (woBlocked) {
+			ws.send(JSON.stringify({ type: "error", message: woBlocked }));
+			sendLog("ERROR", "chat", woBlocked);
 			data.messages.length = lenBeforeUserMsg;
 			if (data.wopSessionKey) {
 				try {
@@ -708,7 +708,7 @@ async function runChatTurn(
 
 		const ac = new AbortController();
 		data.chatAbort = ac;
-		const usePiChat = shouldUsePiJsonChat();
+		const usePiChat = authoritativeRuntimeEnabled();
 		const useOrchestratorTools = !usePiChat && orchestratorToolsEnabled();
 		sendLog(
 			"INFO",
@@ -735,11 +735,11 @@ async function runChatTurn(
 			let result: StreamChatResult;
 			if (usePiChat) {
 				const surface = data.wopSessionKey?.split(".")[0] || null;
-				const piStack = getPiStackForSurface(surface);
-				const o = await runPiChatTurn({
+				const woStack = getWoStackForSurface(surface);
+				const o = await runWoChatTurn({
+					woStack,
 					cwd: getPrimaryWorkspacePath(data.tenantId),
 					messages: data.messages,
-					piStack,
 					onDelta: (delta) => {
 						full += delta;
 						ws.send(JSON.stringify({ type: "assistant_delta", content: delta }));
@@ -934,8 +934,8 @@ function applySessionRuntimePostBody(body: Record<string, unknown>): Response {
 	if ("piDrivesChat" in body) {
 		any = true;
 		const v = body.piDrivesChat;
-		if (v === null) patchPiJsonChatRuntimeOverride(null);
-		else if (typeof v === "boolean") patchPiJsonChatRuntimeOverride(v);
+		if (v === null) patchWoJsonChatRuntimeOverride(null);
+		else if (typeof v === "boolean") patchWoJsonChatRuntimeOverride(v);
 		else return json({ error: "piDrivesChat must be boolean or null" }, 400);
 	}
 	if (!any) {
@@ -949,7 +949,7 @@ function applySessionRuntimePostBody(body: Record<string, unknown>): Response {
 		ok: true,
 		orchestratorTools: orchestratorToolsEnabled(),
 		orchestratorBash: orchestratorBashEnabled(),
-		piDrivesChat: shouldUsePiJsonChat(),
+		piDrivesChat: authoritativeRuntimeEnabled(),
 	});
 }
 
@@ -2268,9 +2268,9 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 			engineMode === "bundled"
 				? (process.env.WOP_CHAT_ENGINE || "").trim().toLowerCase() || provider
 				: engineMode;
-		const piEngineLive = shouldUsePiJsonChat();
+		const piEngineLive = authoritativeRuntimeEnabled();
 		const piBackendRequested = engineMode === "pi" || engineMode === "auto";
-		const piBinaryResolved = resolvePiBinaryPath() != null;
+		const woBinaryResolved = resolveWoBinaryPath() != null;
 		const workspaceDotPiPresent = existsSync(join(getPrimaryWorkspacePath(), ".pi"));
 		const wantClawTree = url.searchParams.get("clawTree") === "1";
 		let clawHostTree: Awaited<ReturnType<typeof buildClawHostTree>> | undefined;
@@ -3437,7 +3437,7 @@ const server = Bun.serve<ServerWsData>({
 });
 
 const _bootEngineMode = wopChatEngineFromEnv();
-const _bootPiDrives = shouldUsePiJsonChat();
+const _bootPiDrives = authoritativeRuntimeEnabled();
 console.log(
 	`Way of Work server http://127.0.0.1:${server.port} workspace=${getWorkspaceRoot()} chatEngine=${_bootEngineMode} piDrivesChat=${_bootPiDrives} manifest=/api/manifest`,
 );
