@@ -1092,7 +1092,12 @@ export default function Kanban() {
     }
 
     return (
-      <div className="h-full flex flex-col bg-[#1e1e1e] text-white overflow-hidden">
+      <div className="h-full flex bg-[#1e1e1e] text-white overflow-hidden">
+        <KanbanChatPanel
+          open={kanbanChatOpen}
+          onToggle={() => setKanbanChatOpen(!kanbanChatOpen)}
+        />
+        <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* Header */}
         <div className="bg-[#252526] border-b border-[#333333] pl-4 pr-2 lg:pl-6 py-4 flex-shrink-0 glass-enhanced">
           <div className="flex items-center justify-between mb-4">
@@ -1152,6 +1157,20 @@ export default function Kanban() {
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Create Board</span>
+              </button>
+
+              {/* Chat Agent Button */}
+              <button
+                onClick={() => setKanbanChatOpen(!kanbanChatOpen)}
+                className={`p-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                  kanbanChatOpen
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-[#333333] text-white hover:bg-[#444444]'
+                }`}
+                title="Chat with Kanban Agent"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span className="hidden sm:inline">Chat</span>
               </button>
             </div>
           </div>
@@ -1616,6 +1635,7 @@ export default function Kanban() {
             </div>
           </div>
         )}
+        </div>
       </div>
     );
   }

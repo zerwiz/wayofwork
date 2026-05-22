@@ -12,3 +12,6 @@ electron/build/icon.icns
 
 # Environment (secrets, tokens)
 .env
+
+# Wo agent project-local config
+.wo/

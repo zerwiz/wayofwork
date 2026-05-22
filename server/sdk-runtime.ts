@@ -13,6 +13,7 @@
 import { createAgentSession } from "@wayofmono/wo-agent";
 import type { ChatRuntimeModel, StreamChatResult } from "./chat";
 import type { StreamTokenUsage } from "./chat-usage";
+import { createWebFetchTool } from "./web-tools";
 
 /**
  * Options mirroring `RunPiChatTurnOpts` so callers can switch between
@@ -55,41 +56,29 @@ export async function runSdkChatTurn(
 
   try {
     const provider = (process.env.WOP_LLM_PROVIDER || "ollama").toLowerCase();
-    let model;
-    
-    if (provider === "openrouter") {
-      const modelId = opts.runtime?.openrouterModel || process.env.OPENROUTER_MODEL || "anthropic/claude-3.5-sonnet";
-      model = {
-        id: modelId,
-        name: modelId,
-        api: "openai-completions",
-        provider: "openrouter",
-        baseUrl: "https://openrouter.ai/api/v1",
-        reasoning: false,
-        input: ["text", "image"] as ("text" | "image")[],
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 200000,
-        maxTokens: 4096,
-      };
-    } else {
-      const modelId = opts.runtime?.ollamaModel || process.env.OLLAMA_MODEL || "llama3.2";
-      model = {
-        id: modelId,
-        name: modelId,
-        api: "openai-completions",
-        provider: "ollama",
-        baseUrl: (opts.runtime?.ollamaHost || process.env.OLLAMA_HOST || "http://127.0.0.1:11434").replace(/\/$/, ""),
-        reasoning: false,
-        input: ["text", "image"] as ("text" | "image")[],
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 4096,
-        maxTokens: 2048,
-      };
+    const modelId = process.env.LLM_MODEL || (provider === "ollama" ? "qwen3.5:9b" : provider === "openrouter" ? "anthropic/claude-3.5-sonnet" : "gpt-4o");
+    let baseUrl = process.env.LLM_HOST || "";
+    if (provider === "ollama" && baseUrl) {
+      baseUrl = baseUrl.replace(/\/+$/, "") + "/v1";
     }
+
+    const model = {
+      id: modelId,
+      name: modelId,
+      api: "openai-completions" as const,
+      provider,
+      baseUrl: baseUrl || "",
+      reasoning: false,
+      input: ["text", "image"] as ("text" | "image")[],
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      contextWindow: provider === "ollama" ? 4096 : 200000,
+      maxTokens: provider === "ollama" ? 2048 : 4096,
+    };
 
     const { session } = await createAgentSession({
       cwd: opts.cwd,
       model,
+      customTools: [createWebFetchTool()],
     });
 
     let fullText = "";

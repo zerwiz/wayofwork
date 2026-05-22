@@ -6,6 +6,7 @@
  */
 import { runSdkChatTurn } from "./sdk-runtime";
 import { getPrimaryWorkspacePath } from "./workspace-state";
+import { getAgentBodyByName } from "./agents";
 import type { ChatMessage } from "./chat";
 
 export interface BotBridgeOpts {
@@ -33,12 +34,10 @@ export async function processBotMessage(
 ): Promise<BotBridgeResult> {
 	const cwd = getPrimaryWorkspacePath(opts.tenantId);
 
+	const agentBody = await getAgentBodyByName("claw", opts.tenantId);
 	const systemPrompt = [
-		`You are **Claw**, an AI assistant running in Way of Work.`,
+		agentBody ?? `You are **Claw**, an AI assistant running in Way of Work.`,
 		`You are chatting with **${opts.userName}** via **${opts.channel}**.`,
-		`You can help with project management, task tracking, time logging,`,
-		`answering questions about the workspace, and general assistance.`,
-		`Be concise and helpful. Use tools when needed.`,
 		`**Tenant:** ${opts.tenantId}`,
 		`**User:** ${opts.userId} (${opts.userName})`,
 	].join("\n");

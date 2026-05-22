@@ -1,5 +1,6 @@
 import { json } from "../utils";
-import { db } from "../db";
+import { db, applyActiveProvider } from "../db";
+import type { LlmConfig, LlmProvider } from "../db";
 import type { Router } from "../router";
 
 function adminGuard(auth: { role?: string } | null): boolean {
@@ -73,6 +74,8 @@ export function registerAdminRoutes(router: Router) {
 				whatsappBots: (db.query("SELECT COUNT(*) as count FROM bot_whatsapp_accounts WHERE tenant_id = ?").get(auth!.tenantId) as any).count,
 				telegramBots: (db.query("SELECT COUNT(*) as count FROM bot_telegram_accounts WHERE tenant_id = ?").get(auth!.tenantId) as any).count,
 				channelLinks: (db.query("SELECT COUNT(*) as count FROM user_channel_links WHERE tenant_id = ?").get(auth!.tenantId) as any).count,
+				priceLists: (db.query("SELECT COUNT(*) as count FROM price_lists WHERE tenant_id = ? AND active = 1").get(auth!.tenantId) as any).count,
+				pendingChanges: (db.query("SELECT COUNT(*) as count FROM pending_changes WHERE tenant_id = ? AND status = 'pending'").get(auth!.tenantId) as any).count,
 			};
 			return json(stats);
 		} catch (e) {
@@ -336,5 +339,79 @@ export function registerAdminRoutes(router: Router) {
 		} catch (e) {
 			return json({ error: "Failed to create user (username might already exist)" }, 400);
 		}
+	});
+
+	// ── LLM Provider Config ──
+
+	function getLlmConfig(): LlmConfig {
+		const row = db.query("SELECT value FROM server_config WHERE key = 'llm_providers'").get() as { value?: string } | undefined;
+		if (row?.value) {
+			const raw = JSON.parse(row.value);
+			// migrate old format
+			if (raw.activeProvider === undefined && raw.providers === undefined) {
+				const providers: LlmProvider[] = [];
+				if (raw.ollamaModel || raw.ollamaHost) {
+					providers.push({ name: "ollama", label: "Ollama (local)", model: raw.ollamaModel || "qwen3.5:9b", host: raw.ollamaHost || "http://127.0.0.1:11434", apiKey: "" });
+				}
+				if (raw.openrouterModel || raw.openrouterApiKey) {
+					providers.push({ name: "openrouter", label: "OpenRouter", model: raw.openrouterModel || "anthropic/claude-3.5-sonnet", host: "https://openrouter.ai/api/v1", apiKey: raw.openrouterApiKey ? "••••••" : "" });
+				}
+				if (providers.length === 0) {
+					providers.push({ name: "ollama", label: "Ollama (local)", model: "qwen3.5:9b", host: "http://127.0.0.1:11434", apiKey: "" });
+				}
+				const migrated: LlmConfig = { activeProvider: raw.provider || "ollama", providers };
+				db.query("UPDATE server_config SET value = ? WHERE key = 'llm_providers'").run(JSON.stringify(migrated));
+				return migrated;
+			}
+			return raw as LlmConfig;
+		}
+		return {
+			activeProvider: "ollama",
+			providers: [
+				{ name: "ollama", label: "Ollama (local)", model: "qwen3.5:9b", host: "http://127.0.0.1:11434", apiKey: "" },
+				{ name: "openrouter", label: "OpenRouter", model: "anthropic/claude-3.5-sonnet", host: "https://openrouter.ai/api/v1", apiKey: "" },
+			],
+		};
+	}
+
+	router.get("/api/admin/llm-providers", async (_req, _params, auth) => {
+		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
+		return json(getLlmConfig());
+	});
+
+	router.put("/api/admin/llm-providers", async (req, _params, auth) => {
+		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
+		let body: LlmConfig;
+		try {
+			body = await req.json() as any;
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+
+		if (!body.activeProvider || !Array.isArray(body.providers) || body.providers.length === 0) {
+			return json({ error: "activeProvider and providers[] required" }, 400);
+		}
+
+		// Mask API keys — keep existing ones if masked sent back
+		const existing = db.query("SELECT value FROM server_config WHERE key = 'llm_providers'").get() as { value?: string } | undefined;
+		const existingCfg: LlmConfig | null = existing?.value ? JSON.parse(existing.value) : null;
+
+		for (const p of body.providers) {
+			if (p.apiKey === "••••••" && existingCfg) {
+				const existing = existingCfg.providers.find((ep: LlmProvider) => ep.name === p.name);
+				if (existing?.apiKey) p.apiKey = existing.apiKey;
+			}
+		}
+
+		// Persist
+		db.query(`
+			INSERT INTO server_config (key, value, updated_at) VALUES ('llm_providers', ?, datetime('now'))
+			ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')
+		`).run(JSON.stringify(body));
+
+		// Apply active provider to runtime
+		applyActiveProvider(body);
+
+		return json({ ok: true });
 	});
 }

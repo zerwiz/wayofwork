@@ -205,6 +205,25 @@ db.run(`
   )
 `);
 
+CREATE TABLE IF NOT EXISTS pending_changes (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  change_type TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',
+  target_table TEXT NOT NULL,
+  target_id TEXT,
+  proposed_data TEXT NOT NULL,
+  current_data TEXT,
+  summary TEXT NOT NULL,
+  suggested_by TEXT,
+  suggested_by_user TEXT,
+  assigned_to TEXT,
+  approved_by TEXT,
+  approved_at TEXT,
+  rejected_reason TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 // Migration: add user_id column if missing (existing databases)
 try {
   db.run("ALTER TABLE calendar_events ADD COLUMN user_id TEXT");
@@ -307,6 +326,129 @@ for (const u of toRemove) {
   db.run("DELETE FROM users WHERE username = ?", [u]);
 }
 
+// Seed template price lists for default tenant
+const existingPriceLists = db.query("SELECT COUNT(*) as count FROM price_lists WHERE tenant_id = ?").get(defaultTenantId) as any;
+if (existingPriceLists.count === 0) {
+  const templateLists = [
+    {
+      name: "Maskiner 2026",
+      items: [
+        { name: "Minigrävare <3 ton", unit: "tim", unit_price: 550, category: "Maskin" },
+        { name: "Mellangrävare 3-10 ton", unit: "tim", unit_price: 700, category: "Maskin" },
+        { name: "Storgrävare >11 ton", unit: "tim", unit_price: 950, category: "Maskin" },
+        { name: "Hjulgrävare 15-16 ton", unit: "tim", unit_price: 750, category: "Maskin" },
+        { name: "Bandgrävare 20+ ton", unit: "tim", unit_price: 1200, category: "Maskin" },
+        { name: "Bulldozer", unit: "tim", unit_price: 1000, category: "Maskin" },
+        { name: "Dumper", unit: "tim", unit_price: 800, category: "Maskin" },
+        { name: "Hjullastare", unit: "tim", unit_price: 750, category: "Maskin" },
+        { name: "Vält (packare)", unit: "tim", unit_price: 500, category: "Maskin" },
+        { name: "Lastbil med kran", unit: "tim", unit_price: 700, category: "Maskin" },
+        { name: "Betongpump", unit: "tim", unit_price: 1000, category: "Maskin" },
+        { name: "Vibratorstav", unit: "tim", unit_price: 150, category: "Maskin" },
+      ],
+    },
+    {
+      name: "Personal 2026",
+      items: [
+        { name: "Snickare", unit: "tim", unit_price: 650, category: "Personal" },
+        { name: "Betongarbetare", unit: "tim", unit_price: 550, category: "Personal" },
+        { name: "Anläggningsarbetare", unit: "tim", unit_price: 550, category: "Personal" },
+        { name: "Murare", unit: "tim", unit_price: 700, category: "Personal" },
+        { name: "Plattsättare", unit: "tim", unit_price: 650, category: "Personal" },
+        { name: "Målare", unit: "tim", unit_price: 550, category: "Personal" },
+        { name: "Elektriker", unit: "tim", unit_price: 750, category: "Personal" },
+        { name: "Rörmokare/VVS", unit: "tim", unit_price: 750, category: "Personal" },
+        { name: "Golvläggare", unit: "tim", unit_price: 600, category: "Personal" },
+        { name: "Maskinförare", unit: "tim", unit_price: 600, category: "Personal" },
+        { name: "Ställningsbyggare", unit: "tim", unit_price: 550, category: "Personal" },
+        { name: "Takläggare", unit: "tim", unit_price: 600, category: "Personal" },
+        { name: "Plåtslagare", unit: "tim", unit_price: 650, category: "Personal" },
+        { name: "Kranförare", unit: "tim", unit_price: 700, category: "Personal" },
+        { name: "Arbetsledare", unit: "tim", unit_price: 800, category: "Personal" },
+      ],
+    },
+    {
+      name: "Material - Betong & Stål 2026",
+      items: [
+        { name: "Betong C25/30", unit: "m³", unit_price: 1400, category: "Betong" },
+        { name: "Betong C30/37", unit: "m³", unit_price: 1600, category: "Betong" },
+        { name: "Betong C35/45", unit: "m³", unit_price: 1900, category: "Betong" },
+        { name: "Betongpump tillägg", unit: "m³", unit_price: 300, category: "Betong" },
+        { name: "Armeringsnät 5200", unit: "m²", unit_price: 300, category: "Armering" },
+        { name: "Armeringsnät 6150", unit: "m²", unit_price: 650, category: "Armering" },
+        { name: "Armeringsstål B500B", unit: "ton", unit_price: 18000, category: "Armering" },
+        { name: "Cement", unit: "ton", unit_price: 4000, category: "Betong" },
+        { name: "Formvirke", unit: "m²", unit_price: 450, category: "Form" },
+        { name: "Formplywood", unit: "m²", unit_price: 300, category: "Form" },
+      ],
+    },
+    {
+      name: "Material - Mark & Grund 2026",
+      items: [
+        { name: "Makadam 8-16 mm", unit: "ton", unit_price: 180, category: "Mark" },
+        { name: "Makadam 16-32 mm", unit: "ton", unit_price: 160, category: "Mark" },
+        { name: "Sand (fyllning)", unit: "ton", unit_price: 90, category: "Mark" },
+        { name: "Matjord", unit: "ton", unit_price: 200, category: "Mark" },
+        { name: "Geotextil", unit: "m²", unit_price: 10, category: "Mark" },
+        { name: "Fiberduk", unit: "m²", unit_price: 15, category: "Mark" },
+        { name: "Asfalt AG 11", unit: "ton", unit_price: 1200, category: "Mark" },
+        { name: "Dräneringsrör", unit: "m", unit_price: 120, category: "Mark" },
+        { name: "Kantstöd betong", unit: "st", unit_price: 150, category: "Mark" },
+        { name: "Marksten 70 mm", unit: "m²", unit_price: 350, category: "Mark" },
+        { name: "Plattor 400x400", unit: "m²", unit_price: 300, category: "Mark" },
+      ],
+    },
+    {
+      name: "Material - Husbyggnad 2026",
+      items: [
+        { name: "Regelvirke 45x95", unit: "m", unit_price: 25, category: "Virke" },
+        { name: "Regelvirke 45x145", unit: "m", unit_price: 35, category: "Virke" },
+        { name: "Gipsskiva 13 mm normal", unit: "m²", unit_price: 100, category: "Gips" },
+        { name: "Gipsskiva 13 mm våtrum", unit: "m²", unit_price: 150, category: "Gips" },
+        { name: "Gipsskiva brand", unit: "m²", unit_price: 130, category: "Gips" },
+        { name: "Mineralullsskiva 100 mm", unit: "m²", unit_price: 180, category: "Isolering" },
+        { name: "Cellplast S100", unit: "m²", unit_price: 250, category: "Isolering" },
+        { name: "Takpanna betong", unit: "m²", unit_price: 400, category: "Tak" },
+        { name: "Underlagspapp", unit: "rulle", unit_price: 800, category: "Tak" },
+        { name: "Fönster 1000x1200 3-glas", unit: "st", unit_price: 8000, category: "Fönster" },
+        { name: "Innerdörr släta", unit: "st", unit_price: 3500, category: "Dörr" },
+        { name: "Ytterdörr säkerhet", unit: "st", unit_price: 12000, category: "Dörr" },
+        { name: "Limträbalk 115x315", unit: "m", unit_price: 600, category: "Virke" },
+        { name: "Råspont", unit: "m²", unit_price: 250, category: "Virke" },
+      ],
+    },
+    {
+      name: "Material - Ytskikt & Inredning 2026",
+      items: [
+        { name: "Parkett 3-stav ek", unit: "m²", unit_price: 500, category: "Golv" },
+        { name: "Laminatgolv", unit: "m²", unit_price: 250, category: "Golv" },
+        { name: "Klinker 30x30", unit: "m²", unit_price: 400, category: "Kakel" },
+        { name: "Kakel 20x20", unit: "m²", unit_price: 350, category: "Kakel" },
+        { name: "Målarfärg inomhus", unit: "l", unit_price: 250, category: "Bygg" },
+        { name: "Målarfärg utomhus", unit: "l", unit_price: 300, category: "Bygg" },
+        { name: "Spackel", unit: "säck", unit_price: 150, category: "Bygg" },
+        { name: "Fogmassa silikon", unit: "st", unit_price: 80, category: "Bygg" },
+        { name: "Köksskåp (per löpmeter)", unit: "m", unit_price: 6000, category: "Inredning" },
+        { name: "Bänkskiva laminat", unit: "m", unit_price: 1500, category: "Inredning" },
+        { name: "Badkar 1700 mm", unit: "st", unit_price: 5000, category: "Badrum" },
+        { name: "WC-stol", unit: "st", unit_price: 3000, category: "Badrum" },
+        { name: "Handfat", unit: "st", unit_price: 1500, category: "Badrum" },
+        { name: "Blandare kök", unit: "st", unit_price: 2000, category: "VS" },
+        { name: "Blandare badrum", unit: "st", unit_price: 1500, category: "VS" },
+      ],
+    },
+  ];
+
+  for (const list of templateLists) {
+    const id = crypto.randomUUID();
+    db.run(
+      "INSERT INTO price_lists (id, tenant_id, name, items_json, active) VALUES (?, ?, ?, ?, 1)",
+      [id, defaultTenantId, list.name, JSON.stringify(list.items)]
+    );
+  }
+  console.log(`Created ${templateLists.length} template price lists for default tenant`);
+}
+
 db.run(`
   CREATE TABLE IF NOT EXISTS user_channel_links (
     id TEXT PRIMARY KEY,
@@ -367,5 +509,164 @@ db.run(`
     created_at TEXT DEFAULT (datetime('now'))
   )
 `);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS offers (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    project_id TEXT,
+    client_id TEXT,
+    offer_number TEXT NOT NULL,
+    title TEXT NOT NULL,
+    status TEXT DEFAULT 'draft',
+    items_json TEXT DEFAULT '[]',
+    total_amount REAL DEFAULT 0,
+    valid_until TEXT,
+    notes TEXT,
+    created_by TEXT,
+    sent_at TEXT,
+    accepted_at TEXT,
+    rejected_reason TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS invoices (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    offer_id TEXT,
+    project_id TEXT,
+    client_id TEXT,
+    invoice_number TEXT NOT NULL,
+    title TEXT NOT NULL,
+    status TEXT DEFAULT 'draft',
+    items_json TEXT DEFAULT '[]',
+    total_amount REAL DEFAULT 0,
+    vat_amount REAL DEFAULT 0,
+    grand_total REAL DEFAULT 0,
+    due_date TEXT,
+    notes TEXT,
+    ocr_number TEXT,
+    created_by TEXT,
+    sent_at TEXT,
+    paid_at TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS document_counters (
+    tenant_id TEXT NOT NULL,
+    prefix TEXT NOT NULL,
+    year TEXT NOT NULL,
+    counter INTEGER DEFAULT 1,
+    PRIMARY KEY (tenant_id, prefix, year)
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS server_config (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT DEFAULT (datetime('now'))
+  )
+`);
+
+export interface LlmProvider {
+  name: string;
+  label: string;
+  model: string;
+  host: string;
+  apiKey: string;
+}
+
+export interface LlmConfig {
+  activeProvider: string;
+  providers: LlmProvider[];
+}
+
+export function applyActiveProvider(cfg: LlmConfig) {
+  const active = cfg.providers.find(p => p.name === cfg.activeProvider) || cfg.providers[0];
+  if (!active) return;
+  process.env.WOP_LLM_PROVIDER = active.name;
+  if (active.host) process.env[`LLM_HOST`] = active.host;
+  if (active.model) process.env[`LLM_MODEL`] = active.model;
+
+  // Set the SDK-recognized API key env var for this provider
+  const apiKeyEnvVars: Record<string, string> = {
+    openai: "OPENAI_API_KEY",
+    "azure-openai": "AZURE_OPENAI_API_KEY",
+    deepseek: "DEEPSEEK_API_KEY",
+    google: "GEMINI_API_KEY",
+    "google-vertex": "GOOGLE_CLOUD_API_KEY",
+    groq: "GROQ_API_KEY",
+    cerebras: "CEREBRAS_API_KEY",
+    xai: "XAI_API_KEY",
+    openrouter: "OPENROUTER_API_KEY",
+    "vercel-ai-gateway": "AI_GATEWAY_API_KEY",
+    zai: "ZAI_API_KEY",
+    mistral: "MISTRAL_API_KEY",
+    minimax: "MINIMAX_API_KEY",
+    "minimax-cn": "MINIMAX_CN_API_KEY",
+    moonshotai: "MOONSHOT_API_KEY",
+    "moonshotai-cn": "MOONSHOT_API_KEY",
+    huggingface: "HF_TOKEN",
+    fireworks: "FIREWORKS_API_KEY",
+    together: "TOGETHER_API_KEY",
+    opencode: "OPENCODE_API_KEY",
+    "opencode-go": "OPENCODE_API_KEY",
+    "kimi-coding": "KIMI_API_KEY",
+    "cloudflare-workers-ai": "CLOUDFLARE_API_KEY",
+    "cloudflare-ai-gateway": "CLOUDFLARE_API_KEY",
+    xiaomi: "XIAOMI_API_KEY",
+    "xiaomi-token-plan-cn": "XIAOMI_TOKEN_PLAN_CN_API_KEY",
+    "xiaomi-token-plan-ams": "XIAOMI_TOKEN_PLAN_AMS_API_KEY",
+    "xiaomi-token-plan-sgp": "XIAOMI_TOKEN_PLAN_SGP_API_KEY",
+  };
+  // anthropic uses special precedence
+  if (active.name === "anthropic") {
+    if (active.apiKey) process.env.ANTHROPIC_API_KEY = active.apiKey;
+  } else if (active.name === "github-copilot") {
+    // uses COPILOT_GITHUB_TOKEN, GH_TOKEN, or GITHUB_TOKEN
+  } else if (active.name === "ollama") {
+    // ollama doesnt need an API key
+  } else if (active.name === "amazon-bedrock") {
+    // uses AWS credentials, not an API key
+  } else {
+    const envVar = apiKeyEnvVars[active.name];
+    if (envVar && active.apiKey) process.env[envVar] = active.apiKey;
+  }
+}
+
+// Migrate old flat config to new providers array format
+try {
+  const llmRow = db.query("SELECT value FROM server_config WHERE key = 'llm_providers'").get() as { value?: string } | undefined;
+  if (llmRow?.value) {
+    const raw = JSON.parse(llmRow.value);
+    if (raw.activeProvider === undefined && raw.providers === undefined) {
+      // old flat format: { provider, ollamaModel, ollamaHost, openrouterModel, openrouterApiKey }
+      const providers: LlmProvider[] = [];
+      if (raw.ollamaModel || raw.ollamaHost) {
+        providers.push({ name: "ollama", label: "Ollama (local)", model: raw.ollamaModel || "qwen3.5:9b", host: raw.ollamaHost || "http://127.0.0.1:11434", apiKey: "" });
+      }
+      if (raw.openrouterModel || raw.openrouterApiKey) {
+        providers.push({ name: "openrouter", label: "OpenRouter", model: raw.openrouterModel || "anthropic/claude-3.5-sonnet", host: "https://openrouter.ai/api/v1", apiKey: raw.openrouterApiKey || "" });
+      }
+      if (providers.length === 0) {
+        providers.push({ name: "ollama", label: "Ollama (local)", model: "qwen3.5:9b", host: "http://127.0.0.1:11434", apiKey: "" });
+      }
+      const migrated = JSON.stringify({ activeProvider: raw.provider || "ollama", providers });
+      db.query("UPDATE server_config SET value = ? WHERE key = 'llm_providers'").run(migrated);
+      raw.activeProvider = raw.provider || "ollama";
+      raw.providers = providers;
+    }
+    applyActiveProvider(raw);
+  }
+} catch { /* non-fatal */ }
 
 export { db };

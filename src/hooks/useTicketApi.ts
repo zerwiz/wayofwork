@@ -1,7 +1,7 @@
 const API = "";
 
 async function api(path: string, options?: RequestInit) {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("wop_token");
   const res = await fetch(`${API}${path}`, {
     ...options,
     headers: {

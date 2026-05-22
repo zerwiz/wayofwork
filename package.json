@@ -52,6 +52,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@mozilla/readability": "^0.6.0",
     "@wayofmono/wo-agent": "^1.0.2",
     "@wayofmono/wo-agent-core": "^1.0.2",
     "@xterm/addon-fit": "^0.10.0",
@@ -62,12 +63,15 @@
     "dompurify": "^3.2.4",
     "highlight.js": "^11.11.1",
     "jose": "^6.2.3",
+    "linkedom": "^0.18.12",
     "lucide-react": "^0.468.0",
     "marked": "^15.0.7",
     "mermaid": "^11.14.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.15.0"
+    "react-router-dom": "^7.15.0",
+    "turndown": "^7.2.4",
+    "typebox": "^1.1.38"
   },
   "optionalDependencies": {
     "ngrok": "^4.3.3"

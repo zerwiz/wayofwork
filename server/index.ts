@@ -123,6 +123,8 @@ import {
 import { db } from "./db";
 import { createToken, verifyToken } from "./auth";
 import { handleTicketApi } from "./tickets-api";
+import { handleOfferInvoiceApi } from "./offers-api";
+import { handlePendingChangesApi } from "./pending-changes-api";
 import {
 	configureNgrokAuthtokenDev,
 	getNgrokTunnelDevJson,
@@ -998,6 +1000,14 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	// Ticket system (ÄTA) API
 	const ticketRes = await handleTicketApi(p, req.method, auth, req);
 	if (ticketRes) return ticketRes;
+
+	// Offer/Invoice system API
+	const offerRes = await handleOfferInvoiceApi(p, req.method, auth, req);
+	if (offerRes) return offerRes;
+
+	// Pending changes (human-in-the-loop) API
+	const pendingRes = await handlePendingChangesApi(p, req.method, auth, req);
+	if (pendingRes) return pendingRes;
 
 	if (p === "/api/claw/tree" && req.method === "GET") {
 		try {
