@@ -1,5 +1,10 @@
 # AGENTS.md — Way of Work (Way of Work)
 
+> ⚠️ **CRITICAL: PRODUCTION READY SYSTEM** ⚠️
+> This is a production system. **EVERYTHING MUST WORK AND ALIGN.**
+> Before adding anything or generating code, you MUST research how the system currently works.
+> Adhere strictly to the established patterns, multi-tenant isolation, human-in-the-loop constraints, and UI/backend alignments detailed below and in the `.gemini/skills/` directory. No changes should be made without verifying compatibility with the existing architecture.
+
 ## Quick start
 ```bash
 cp .env.example .env   # edit OLLAMA_HOST, OLLAMA_MODEL etc.
@@ -72,6 +77,21 @@ In specific UI views, the chat automatically connects to a designated expert:
 - Kanban View → `kanban` agent (Board management)
 - Docs View → `docs` agent (Document generation)
 - Claw View → `claw` agent (General assistant)
+
+## Developer AI Assistants (Gemini & Pi)
+
+To ensure this codebase remains stable and adheres to the strict architectural guidelines (WOW-010, WOW-012, WOW-015, WOW-016), custom **AI developer skills** have been provided in `.gemini/skills/` and `.pi/skills/`.
+
+If you are an AI assistant (Gemini CLI, Pi, Claude Code, etc.) reading this, you **MUST** utilize the following skills when working on the respective domains:
+
+- **`wow_core_architecture`**: System foundations, Bun, `bun:sqlite` (no ORMs).
+- **`wow_backend_dev`**: API routing, multi-tenant SQL queries, and error handling.
+- **`wow_frontend_dev`**: React 19, Tailwind CSS, i18n (`useTranslation`), and UI modularity.
+- **`wow_access_control`**: Economics Shield, worker isolation, and `auditLog` requirements.
+- **`wow_human_in_the_loop`**: CRITICAL rules for agent data mutation (`pending_changes`).
+- **`wow_agent_dev`**: Creating internal `.wo/agents/` and skills.
+- **`wow_communications`**: Inbound/outbound channel routing (Telegram/WhatsApp).
+- **`wow_ui_surfaces`**: WebSocket isolation and double-bubble UI prevention.
 
 ## TypeScript
 Project references: `tsconfig.app.json` (src/ + shared/) and `tsconfig.node.json` (vite.config.ts). Several files excluded from compilation (see `exclude` in tsconfig.app.json). `tsc -b` does full project build.

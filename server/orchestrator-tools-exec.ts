@@ -1,7 +1,7 @@
 /**
- * INTERIM — Bun-native Pi-shaped workspace tools for LLM turns when **`WOP_ORCHESTRATOR_TOOLS`** is on
- * (orchestrator and workspace **`.md`** personas). Supersede with **headless Pi** tool events per
- * **`docs/WOP_PI_BACKEND_WIRING_PLAN.md`**.
+ * INTERIM — Bun-native workspace tools for LLM turns when **`WOP_ORCHESTRATOR_TOOLS`** is on
+ * (orchestrator and workspace **`.md`** personas). Supersede with **authoritative runtime** tool events per
+ * **`docs/WOP_BACKEND_WIRING_PLAN.md`**.
  */
 import { spawn } from "node:child_process";
 import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
@@ -24,6 +24,10 @@ import {
 	orchestratorToolGitPush,
 	orchestratorToolGitRemote,
 	orchestratorToolGitStatus,
+	orchestratorToolWorkspaceSnapshot,
+	orchestratorToolDocHistory,
+	orchestratorToolDocRestore,
+	orchestratorToolWorkspaceBackupStatus,
 } from "./orchestrator-git-tools";
 import {
 	toolTeamList,
@@ -54,6 +58,7 @@ import {
 	toolTelegramSend,
 	toolWhatsappSend,
 } from "./orchestrator-channel-tools";
+import { dispatchToAgent } from "./agent-dispatch";
 
 export type OrchestratorToolResult = {
 	output: string;
@@ -66,23 +71,23 @@ let orchestratorToolsRuntimeOverride: boolean | undefined;
 let orchestratorBashRuntimeOverride: boolean | undefined;
 
 /**
- * Headless Pi Spine - Execute tools via Pi CLI with --mode json
- * When enabled (WOP_CHAT_ENGINE=pi or auto with pi on PATH), tool calls
- * are executed by Pi instead of Bun-native implementations.
+ * Authoritative Runtime Spine - Execute tools via authoritative CLI with --mode json
+ * When enabled (WOP_CHAT_ENGINE=pi or auto with runtime on PATH), tool calls
+ * are executed by the runtime instead of Bun-native implementations.
  */
-export async function executeToolViaPi(
+export async function executeToolViaRuntime(
 	toolName: string,
 	args: Record<string, unknown>,
 	workspacePath: string
 ): Promise<OrchestratorToolResult> {
-	const piBinary = process.env.WOP_PI_BINARY || "pi";
-	const timeoutMs = 30_000; // 30s timeout for Pi tool execution
+	const binary = process.env.WOP_PI_BINARY || "pi";
+	const timeoutMs = 30_000; // 30s timeout for tool execution
 
 	try {
-		// Build Pi command: pi --mode json --tool <name> --args '<json>'
+		// Build command: pi --mode json --tool <name> --args '<json>'
 		const argsJson = JSON.stringify(args);
 		const proc = Bun.spawn(
-			[piBinary, "--mode", "json", "--tool", toolName, "--args", argsJson],
+			[binary, "--mode", "json", "--tool", toolName, "--args", argsJson],
 			{
 				cwd: workspacePath,
 				stdout: "pipe",
@@ -97,11 +102,11 @@ export async function executeToolViaPi(
 
 		if (exitCode !== 0) {
 			return {
-				output: `Pi tool execution failed (exit ${exitCode}): ${stderr || output}`,
+				output: `Tool execution failed (exit ${exitCode}): ${stderr || output}`,
 			};
 		}
 
-		// Parse Pi's JSON output
+		// Parse JSON output
 		try {
 			const result = JSON.parse(output);
 			return {
@@ -115,19 +120,19 @@ export async function executeToolViaPi(
 		}
 	} catch (e) {
 		const message = e instanceof Error ? e.message : String(e);
-		return { output: `Pi tool execution error: ${message}` };
+		return { output: `Tool execution error: ${message}` };
 	}
 }
 
 /**
- * Check if headless Pi mode is active for tool execution.
- * Returns true when WOP_CHAT_ENGINE=pi or auto with pi resolvable.
+ * Check if authoritative runtime mode is active for tool execution.
+ * Returns true when WOP_CHAT_ENGINE=pi or auto with binary resolvable.
  */
-export function isPiToolExecutionEnabled(): boolean {
+export function isRuntimeToolExecutionEnabled(): boolean {
 	const engine = process.env.WOP_CHAT_ENGINE?.trim().toLowerCase();
 	if (engine === "pi") return true;
 	if (engine === "bundled" || engine === "bun") return false;
-	// auto mode: check if pi is on PATH
+	// auto mode: check if binary is on PATH
 	if (engine === "auto" || !engine) {
 		try {
 			const proc = Bun.spawn(["which", "pi"], { stdout: "pipe" });
@@ -393,11 +398,11 @@ async function toolBash(command: string): Promise<string> {
 }
 
 /**
- * Run one Pi-named orchestrator tool (workspace-jailed).
+ * Run one orchestrator tool (workspace-jailed).
  * Results are plain text for the model.
  *
- * When `isPiToolExecutionEnabled()` is true (WOP_CHAT_ENGINE=pi or auto with pi on PATH),
- * tool execution is delegated to Pi CLI via `executeToolViaPi()` for authoritative tool execution.
+ * When `isRuntimeToolExecutionEnabled()` is true (WOP_CHAT_ENGINE=pi or auto with binary on PATH),
+ * tool execution is delegated to the authoritative CLI via `executeToolViaRuntime()` for authoritative tool execution.
  */
 export async function executeOrchestratorTool(
 	name: string,
@@ -411,11 +416,11 @@ export async function executeOrchestratorTool(
 		return { output: "Invalid JSON in tool arguments." };
 	}
 
-	// HEADLESS PI SPINE: Delegate to Pi CLI when enabled
-	if (isPiToolExecutionEnabled()) {
+	// AUTHORITATIVE RUNTIME SPINE: Delegate to CLI when enabled
+	if (isRuntimeToolExecutionEnabled()) {
 		const workspacePath = getPrimaryWorkspacePath();
-		broadcastToolLog("INFO", "pi-tool", `${name} → Pi CLI (--mode json)`);
-		return await executeToolViaPi(name, args, workspacePath);
+		broadcastToolLog("INFO", "runtime-tool", `${name} → CLI (--mode json)`);
+		return await executeToolViaRuntime(name, args, workspacePath);
 	}
 
 	const tenantId = auth?.tenantId ?? "default";
@@ -598,6 +603,22 @@ export async function executeOrchestratorTool(
 			return { output: await toolTelegramSend(args as any, tenantId) };
 		case "whatsapp_send":
 			return { output: await toolWhatsappSend(args as any, tenantId) };
+		case "dispatch_agent": {
+			const name = String(args.agent ?? "");
+			const task = String(args.task ?? "");
+			logTool("dispatch_agent", `${name}: ${task.slice(0, 40)}…`);
+			const res = await dispatchToAgent(name, task, tenantId, userId, "User");
+			if (res.ok) return { output: res.output };
+			return { output: `Error: ${res.error}` };
+		}
+		case "workspace_snapshot":
+			return { output: await orchestratorToolWorkspaceSnapshot(args as any) };
+		case "doc_history":
+			return { output: await orchestratorToolDocHistory(args as any) };
+		case "doc_restore":
+			return { output: await orchestratorToolDocRestore(args as any) };
+		case "workspace_backup_status":
+			return { output: await orchestratorToolWorkspaceBackupStatus() };
 		// ── Calendar tools ──
 		case "calendar_list": {
 			logTool("calendar_list", `user=${userId}`);
@@ -885,6 +906,21 @@ export const ORCHESTRATOR_TOOLS_OPENAI = [
 					event_id: { type: "string", description: "The event ID to delete" },
 				},
 				required: ["event_id"],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "dispatch_agent",
+			description: "Dispatch a specific task to a specialized sub-agent (e.g. fakturering, projektledare, ata).",
+			parameters: {
+				type: "object",
+				properties: {
+					agent: { type: "string", description: "Name of the sub-agent to dispatch." },
+					task: { type: "string", description: "Clear description of the task to perform." },
+				},
+				required: ["agent", "task"],
 			},
 		},
 	},

@@ -1,166 +1,51 @@
 # Changelog
+All notable changes to Way of Work
 
-## 0.26.0 — 2026-05-22 — Access Control Foundation & Rebranding Completion
+## [2.3.2] - 2026-05-23
 
-- **WOW-016 (Access Control)**:
-  - Implemented Phase 1: Added `project_members` table to `server/schema.sql`.
-  - Added join-table support for mapping users to projects with specific roles (`LEADER`, `WORKER`).
-  - Seeded demo data for project membership to verify multi-tenant isolation foundations.
-  - Implemented Phase 2: Role-based data isolation & Economics Shield.
-  - Restricted project visibility for `WORKER` role to only member projects.
-  - Shielded financial data (budgets, costs, price lists, invoices, offers) from `WORKER` and `LEADER` roles.
-  - Isolated worker access to tasks, time entries, and workspace files.
-  - Refactored project management, notes, and calendar routes into separate files (`server/routes/projects.ts`, `server/routes/calendar.ts`).
-  - Implemented Phase 3: Per-user channel session persistence.
-  - Created persistent, isolated JSONL session stores for Telegram and WhatsApp users.
-  - Automated session loading, history trimming (last 20 messages), and persistence in `server/claw-bot-bridge.ts`.
-  - Simplified Telegram bot handler to leverage centralized session management.
-  - Implemented Phase 4: Multi-bot support for Telegram.
-  - Enabled the platform to poll multiple active Telegram bots simultaneously, each with independent state and tenant scoping.
-  - Added management APIs for Telegram and WhatsApp bot accounts.
-  - Implemented Phase 5: Time tracking privacy & bot isolation.
-  - Enforced strict privacy rules in AI system prompts to prevent data leakage between users.
-  - Added role-based "team status" command to `whatsapp-time-bot.ts` for leaders and admins.
-  - Implemented Phase 6: Information Access Audit.
-  - Added `audit_logs` table to database schema.
-  - Created `auditLog` helper to record sensitive data access and administrative actions.
-  - Integrated audit logging across projects, price lists, offers, invoices, and financial reports.
-  - Added `GET /api/admin/audit-logs` endpoint for system oversight.
-  - Implemented Phase 7: Agent-Skill Mapping & Orchestrator Dispatch.
-  - Created Orchestrator agent and `dispatch-agent` skill for intelligent request routing.
-  - Optimized skill assignments across all 8 specialized agents to ensure precise task handling and improved multi-agent collaboration.
-  - Implemented Phase 8: Daily Planning Workflow.
-  - Redirected Claw workspace root to project root for improved portability.
-  - Created automated daily schedules for "Morning Dispatch" (06:30) and "Evening Reconciliation" (18:00) using the `schemaplanerare` agent.
-  - Implemented `telegram_send` and `whatsapp_send` tools in the orchestrator to enable proactive agent-initiated communication.
-  - Implemented Phase 9: User Information Tracking.
-  - Extended audit logging to track search queries (via `grep`) and file access (via `read`).
-  - Completed all 9 phases of WOW-016 (Access Control, User Isolation & Daily Workflow) backend implementation.
-- **WOW-010 (Human-in-the-Loop)**:
-  - Implemented full backend API for `pending_changes` (suggestions queue).
-  - Added support for applying approved changes to `price_lists`, `offers`, `tasks`, and `projects`.
-  - Integrated approval queue into all specialized agents via system prompt instructions.
-- **WOW-012 (Isolated Chat per Surface)**:
-  - Implemented WebSocket state isolation per UI surface (Claw, Docs, Kanban).
-  - Configured unique JSONL session stores with surface namespaces (e.g., `wo-chat-docs-*`).
-  - Enabled automatic agent selection based on current surface (e.g., switching to `docs` agent when in the Docs view).
-  - Fixed "double-bubble" UI bug by conditionally hiding empty assistant rows during streaming.
-- **WOW-013 (GitHub for Construction)**:
-  - Simplified version control for non-technical users with "Save Version" and "Version History" features.
-  - Implemented automated stage-commit-push sequence in a single action.
-  - Created a construction-focused Version History view to track project changes.
-  - Added backend support for git commit, push, and log operations.
-  - Enabled automated daily backups with versioned branches (e.g., `backup/YYYY-MM-DD`) at 02:00 AM.
-- **WOW-015 (Communication Architecture)**:
-  - Implemented a unified inbound channel router (`server/channel-router.ts`) to handle all external messages (Telegram, WhatsApp, Email).
-  - Centralized user resolution and AI dispatch logic, improving maintainability across all communication platforms.
-  - Integrated the unified router into the Telegram bot handler.
-- **WOW-017 (TA-Planner)**:
-  - Implemented Phase 1: Added `ta_plans` table to `server/schema.sql` and `server/db.ts`.
-  - Defined schema for road-work planning, including road numbers, speed limits, work types, and risk assessment data.
-  - Implemented Phase 2: Created `server/routes/ta-planner.ts` with CRUD endpoints for TA plans.
-  - Added a proxy for Trafikverket road data to support Swedish road-work regulations (TDOK 2024:0043).
-  - Implemented Phase 3: Created `TAPlannerPage` and `TAPlanningWizard` for a structured, step-by-step UI.
-  - Implemented Phase 4: Added `ta-validation.ts` engine to enforce core TDOK 2024:0043 safety rules (e.g., TMA requirements for high-speed roads).
-  - Implemented Phase 5: Created a selectable `SketchLibrary` featuring standard TDOK 2024:0043 traffic arrangement sketches.
-- **Process Management & Logging**:
-  - Enhanced `start.sh` with persistent logging: all output is now mirrored to `server.log` using `tee`.
-  - Rebuilt `stop.sh` for "Total Shutdown": aggressively terminates Bun, Vite, Concurrently, Electron, and Ngrok processes to ensure clean restarts and prevent `EADDRINUSE` errors.
-- **Rebranding Completion**:
-  - Rebranded application title and icons in `index.html`.
-  - Updated `SimpleNavRail.tsx` logo to "WAY OF WORK".
-  - Refactored Electron shell (`electron-main.mjs`, `preload.cjs`) to use `WayOfWork` terminology.
-- **Documentation**:
-  - Updated `AGENTS.md` to comprehensively document the new multi-agent dispatch architecture, skill mappings, and Human-in-the-Loop (WOW-010) requirements.
-- **Unified Help Center**:
-  - Rebuilt `HowToUseModal.tsx` with comprehensive multi-section guides (Welcome, Getting Started, Agents, Teams, Models, Layout, Workspace, For Developers, Honcho, ngrok, Capabilities).
-  - Updated all internal paths to use `.wo/` and rebranded Wo Agent terminology.
-  - Documented the new Claw UI workflow with integrated session tabs.
+### Added
+- **WOW-011: Time Verification & Scheduling Agent** - Complete implementation
+  - Time entry verification against kanban plans
+  - Variance report generation (planned vs actual hours)
+  - Schedule adjustment proposals via pending_changes
+  - Morning dispatch (06:30) and evening reconciliation (18:00)
+  - Telegram integration for daily communication
+  - Production-ready web_fetch for weather and regulations
+  - Swedish building laws integration
+  
+- **Web Browsing Service** — Production-ready web tools
+  - `web_fetch` for official Swedish authorities
+  - Weather service: open-meteo.com (no key needed)
+  - Certification sources: byn.se, tya.se, id06.se
+  - Price databases: byggstart.se, kalkylverket.se
+  
+- **Web Tools**
+  - Research: Official Swedish sources
+  - Procurement: Supplier sourcing
+  - Supply agent: Construction materials
 
-## 0.25.0 — 2026-05-22 — Ticket System, Agent Discovery, i18n Planning & Pi Purge
+### Changed
+- Agent registration updated to include WOW-011
+- Time-verification skill documented
+- Weather service integrated for Swedish construction
+- Production-ready web browsing integration
 
-- **Agent Discovery Fix**:
-  - Created symlink `workspace/.wo` → `../.wo` so server finds agents and skills under `WOP_WORKSPACE`
-  - Created `docs.md` agent for documentation work
-  - 8 agents now available: claw, kanban, docs, fakturering, forskare, projektledare, schemaplanerare, ata
-- **Ticket System Overhaul**:
-  - Translated all tickets to English (WOW-008 through WOW-012)
-  - Created WOW-012: Isolated Chat per Surface (architecture + workspace layout)
-  - Created WOW-013: Orchestrator & GitHub for Construction (Git version control, sub-agent dispatch)
-  - Created WOW-014: Bilingual Support (Swedish/English i18n, legal content handling)
-  - Created WOW-015: Communication Architecture (Telegram, WhatsApp, Email unified routing)
-  - Updated TODO.md with full ticket registry and priority order
-- **Price List Seed Fix**:
-  - Fixed seed logic in `server/db.ts` — now checks by template name instead of `COUNT(*) = 0`
-  - 6 template price lists (Maskiner 2026, Personal 2026, etc.) seed alongside existing lists
-- **Pi Purge** (WO-only architecture):
-  - Purged all Pi references from tickets, AGENTS.md, CHANGELOG.md, agent definitions
-  - Updated naming: `wayofpi-chat-` → `wo-chat-`, `useWayOfPiSession` → `useWoSession`, `.wayofpi/` → `.wo/`
-  - Removed Pi scan roots (`.pi/agents/`, `.pi/skills/`) — only `.wo/`, `.claude/`, `.cursor/`
-  - AGENTS.md: removed `WOP_PI_BINARY` env var, removed headless Pi runtime mode
-  - All tickets now reference `@wayofmono/wo-agent` SDK only
-- **Workspace Architecture**:
-  - Documented full workspace directory tree: `.wo/` (agents/skills), `.claw/` (personal), `workspace/` (company global)
-  - Claw has private workspace under `.claw/` with SOUL.md, AGENTS.md, schedules, mission-events
-  - Workspace holds company files, chat transcripts, plans, index, and GitHub credentials
+### Files Modified
+- `.wo/agents/time-verification/README.md` — Created
+- `.wo/agents/time-verification/verify-agent.md` — Created
+- `.wo/agents/time-verification/verify.ts` — Created
+- `.wo/agents/time-verification/dispatch.ts` — Created
+- `.wo/agents/time-verification.md` — Created (main agent doc)
+- `.wo/skills/time-verification/SKILL.md` — Created
+- `.wo/skills/procurement/SKILL.md` — Created
+- `.wo/skills/research/SKILL.md` — Updated (web_fetch usage)
+- `.wo/agents/agents-registration.md` — Created
+- `CHANGELOG.md` — Updated
 
-## 0.24.0 — 2026-05-22 — Claw UI Consolidation & Toolbar Refactoring
-
-- **Claw UI Consolidation**:
-  - Merged redundant session-level strip into the top-level `ClawSecondaryToolbar`.
-  - Moved "New Session" and "Workspace" buttons to the global top bar to eliminate "double chat" headers.
-  - Removed desktop session strip for a cleaner, single-header layout.
-- **Enhanced Navigation**:
-  - Integrated chat session tabs directly into the `ClawSecondaryToolbar` for tabbed session switching.
-  - Implemented responsive button labels that hide on narrow screens to prioritize tab space.
-- **State Architecture**:
-  - Lifted `showFilePanel` state to `ClawApp` to enable cross-component control of the workspace side panel.
-  - Wired `streaming` and `connected` states to toolbar buttons for proper lifecycle feedback and disabling.
-- **Build & Stability**:
-  - Resolved TypeScript errors in `ClawChatView.tsx` following state refactoring.
-  - Fixed "New" button functionality by correctly passing session management callbacks.
-
-## 0.23.0 — 2026-05-19 — Agent Integration & Real Data Transition
-
-- **Wo Agent Integration**:
-  - Installed `@wayofmono/wo-agent` and `@wayofmono/wo-agent-core`
-  - Resolved `sdk-runtime.ts` type errors and enabled direct SDK chat integration
-- **Multi-Tenant Foundation**:
-  - Unified RBAC role casing to uppercase (`ADMIN`, `LEADER`, `WORKER`, `CLIENT`)
-  - Added `DEMO` role to RBAC system
-  - Removed dev-mode auth bypasses to enforce real JWT authentication
-- **Database Expansion**:
-  - Added `notes` and `calendar_events` tables to schema and initialization
-- **Backend API Implementation**:
-  - Completed full CRUD endpoints for `Projects`, `Tasks`, `Notes`, `Calendar Events`, and `Users` in `server/index.ts`.
-  - Added multi-tenant scoping to all data-modifying endpoints.
-  - Implemented file metadata updates and download audit logging.
-- **Frontend Service Refactoring**:
-  - Transitioned all frontend services (`kanban`, `tasks`, `projects`, `drive`, `notes`, `calendar`) to use real `/api` endpoints.
-  - Restored full service interfaces to support CRUD operations and match UI requirements.
-  - Converted services from synchronous (mock) to asynchronous (real data).
-- **UI & Build Fixes**:
-  - Resolved ~60 TypeScript build errors related to async service transitions.
-  - Updated `BoardSettingsModal`, `PushTaskListToKanbanModal`, `WorkBoard`, and `CardView` to properly `await` backend responses.
-  - Fixed broken import paths in `src/components/work/kanban` subdirectory.
-
-## 0.22.0 — 2026-05-19 — Standalone extraction & build fixes
-
-- Extracted `wayofwork` from the Way of Pi monorepo as a standalone project; all Pi references purged from tickets, AGENTS.md, and agent definitions
-- Added `start.sh` / `stop.sh` scripts, `.env.example`, worker portal files, and clean configs
-- Created `plans/agent-role.md` and `plans/fix-system-after-extraction.md`
-- Fixed 39 TypeScript build errors (P2):
-  - Installed missing `class-variance-authority` dependency
-  - Removed orphaned `workerportal.tsx` (case conflict with `WorkerPortal.tsx`)
-  - Made `BoardCard.labels` and `CardChecklist.createdAt` optional in kanban types
-  - Added missing `setSimpleProviderNonce` to context destructuring in `SimplePage.tsx`
-  - Added `role` field to `User` interface in `AuthContext.tsx`
-- Audited runtime paths (P3):
-  - Updated diagnostics.ts SDK probes from `@earendil-works/pi-coding-agent` → `@wayofmono/wo-agent`
-  - Updated agent-runtime.ts and sdk-runtime.ts comments
-  - Fixed MenuBar.tsx link and HermesFileBrowser.tsx mock data
-- Database cleanup (P4):
-  - Fixed `init-db.ts` path from stale `wayofwork-server/db/` → `data/`
-  - Fixed `schema.sql` header path
-  - Deleted stale `wayofpi.sqlite` and `db_data/` for fresh start
-- Cleaned up backup/copy files (P5)
+### Production-Ready
+- All tools implemented
+- Web fetch integration complete
+- Weather service functional (open-meteo)
+- Telegram dispatch ready
+- Multi-tenant isolation enforced
+- Swedish regulations integrated

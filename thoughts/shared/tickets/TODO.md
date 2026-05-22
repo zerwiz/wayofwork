@@ -2,6 +2,15 @@
 
 **PRODUCTION READY NO MOCK DATA**
 
+## 🤖 AI Assistant Instructions (Gemini/Pi)
+When working on tickets below, you **MUST** activate the relevant custom skill to ensure compliance with the production architecture:
+- Backend/DB tickets: `/skill wow_backend_dev` and `/skill wow_access_control`
+- Frontend/UI tickets: `/skill wow_frontend_dev` and `/skill wow_ui_surfaces`
+- Agent/Workflow tickets: `/skill wow_agent_dev` and `/skill wow_human_in_the_loop`
+- Channel/Messaging tickets: `/skill wow_communications`
+
+**CRITICAL RULE:** Whenever you complete a ticket or a significant phase of a ticket, you **MUST ALWAYS** update `CHANGELOG.md` with a summary of the changes made before finishing your turn.
+
 ## ✅ Done
 - **TypeScript build**: All errors fixed — green build.
 - **Rebranding**: "Way of Pi" → "Way of Work" across source files, tickets, agent definitions.
@@ -138,6 +147,12 @@
 - [x] Validation Engine: `src/utils/ta-validation.ts`
 - [x] Sketch Library: TDOK 2024:0043 integration
 
+### WOW-018 — Agent Ecosystem Expansion
+- [ ] Create specialized agents: `skyddsombud`, `maskinchef`, `kalkylator`
+- [ ] Create cross-cutting skills: `incident-reporting`, `logistics`, `cost-estimation`
+- [ ] Enhance Orchestrator with multi-agent handoff logic
+- [ ] Update Orchestrator dispatch mapping
+
 ### Other
 - [ ] **kanbanService.ts**: Complete TODO stubs (`deleteBoard`, `createColumn`, `deleteColumn`)
 - [ ] **Multi-Tenancy Audit**: Verify Tenant A → Tenant B isolation
@@ -151,7 +166,8 @@
 1. **WOW-016** — Access Control, User Isolation & Daily Workflow (CRITICAL, blocks all user-facing features)
 2. **WOW-017** — TA-Planner System Implementation (High)
 3. **WOW-010** — Human-in-the-Loop (critical, blocks AI writes)
-4. **WOW-012** — Isolated Chat per Surface (UX critical, blocks WOW-013)
+4. **WOW-018** — Agent Ecosystem Expansion (Medium, enhances multi-agent capability)
+5. **WOW-012** — Isolated Chat per Surface (UX critical, blocks WOW-013)
 5. **WOW-013** — Orchestrator & GitHub for Construction (needs WOW-012 for surface agents)
 6. **WOW-015** — Communication Architecture (core infra, needs WOW-013 for dispatch)
 7. **WOW-014** — Bilingual Support (prepare for Sweden launch)

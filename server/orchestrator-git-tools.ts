@@ -309,6 +309,73 @@ export async function orchestratorToolGitCommit(args: {
 	return `git_commit: ok\n${combined}`;
 }
 
+export async function orchestratorToolWorkspaceSnapshot(args: { path?: string; description?: string }): Promise<string> {
+	const cwd = getPrimaryWorkspacePath();
+	const desc = args.description?.trim() || "Saved workspace version";
+	
+	// Stage
+	const addArgs = ["add", "--"];
+	if (args.path) {
+		const rel = String(args.path).trim().replace(/^[/\\]+/, "");
+		const abs = resolveUnderWorkspace(rel);
+		if (!abs) return `workspace_snapshot: invalid path ${args.path}`;
+		addArgs.push(abs);
+	} else {
+		addArgs.push(".");
+	}
+	
+	const { code: addCode, combined: addOut } = await runGitLocal(cwd, addArgs, `git add for snapshot`);
+	if (addCode !== 0) return `workspace_snapshot: add failed: ${addOut}`;
+
+	// Commit
+	const { code: commitCode, combined: commitOut } = await runGitLocal(cwd, ["commit", "-m", desc], `git commit for snapshot`);
+	if (commitCode !== 0) {
+		if (/nothing to commit/i.test(commitOut) || /no changes added to commit/i.test(commitOut)) {
+			return "workspace_snapshot: No changes to save.";
+		}
+		return `workspace_snapshot: commit failed: ${commitOut}`;
+	}
+
+	// Push (best effort)
+	const token = await readGithubTokenForGit();
+	const argv = buildGitSpawnArgs(cwd, token, ["push"]);
+	await runGitArgv(argv, `git push for snapshot`); // Ignore push errors, commit is saved locally
+
+	return `workspace_snapshot: Saved successfully.`;
+}
+
+export async function orchestratorToolDocHistory(args: { path: string }): Promise<string> {
+	const cwd = getPrimaryWorkspacePath();
+	const rel = String(args.path).trim().replace(/^[/\\]+/, "");
+	const abs = resolveUnderWorkspace(rel);
+	if (!abs) return `doc_history: invalid path ${args.path}`;
+
+	const { code, combined } = await runGitLocal(cwd, ["log", "--oneline", "--follow", "--", abs], `git log for doc`);
+	if (code !== 0) return `doc_history: failed: ${combined}`;
+	return `doc_history:\n${combined || "No history found."}`;
+}
+
+export async function orchestratorToolDocRestore(args: { path: string; version: string }): Promise<string> {
+	const cwd = getPrimaryWorkspacePath();
+	const rel = String(args.path).trim().replace(/^[/\\]+/, "");
+	const abs = resolveUnderWorkspace(rel);
+	if (!abs) return `doc_restore: invalid path ${args.path}`;
+	
+	const version = assertSafeGitRef(args.version);
+	if (!version) return "doc_restore: invalid version string.";
+
+	const { code, combined } = await runGitLocal(cwd, ["checkout", version, "--", abs], `git checkout doc restore`);
+	if (code !== 0) return `doc_restore: failed to restore: ${combined}`;
+	return `doc_restore: Successfully restored ${args.path} to version ${version}.`;
+}
+
+export async function orchestratorToolWorkspaceBackupStatus(): Promise<string> {
+	const cwd = getPrimaryWorkspacePath();
+	const { code, combined } = await runGitLocal(cwd, ["branch", "-r", "--list", "*backup/*"], `git branch backups`);
+	if (code !== 0) return `workspace_backup_status: failed to read backups: ${combined}`;
+	return `workspace_backup_status:\n${combined || "No backups found."}`;
+}
+
 export const ORCHESTRATOR_GIT_TOOLS_OPENAI = [
 	{
 		type: "function" as const,
@@ -459,6 +526,58 @@ export const ORCHESTRATOR_GIT_TOOLS_OPENAI = [
 				},
 				required: ["message"],
 			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "workspace_snapshot",
+			description: "Commit the current state of the workspace or a specific file to the version history.",
+			parameters: {
+				type: "object",
+				properties: {
+					path: { type: "string", description: "Optional path to a specific file to snapshot." },
+					description: { type: "string", description: "Optional human-readable note." },
+				},
+				required: [],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "doc_history",
+			description: "View the version history of a specific document.",
+			parameters: {
+				type: "object",
+				properties: {
+					path: { type: "string", description: "Workspace-relative file path." },
+				},
+				required: ["path"],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "doc_restore",
+			description: "Restore a file from a previous version hash found via doc_history.",
+			parameters: {
+				type: "object",
+				properties: {
+					path: { type: "string", description: "Workspace-relative file path." },
+					version: { type: "string", description: "Commit hash." },
+				},
+				required: ["path", "version"],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "workspace_backup_status",
+			description: "Check the status of automated daily backups.",
+			parameters: { type: "object", properties: {}, required: [] },
 		},
 	},
 ] as const;
