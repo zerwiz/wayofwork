@@ -1,5 +1,5 @@
 /**
- * INTERIM — Bun orchestrator Git helpers (github.com HTTPS PAT from `.wayofpi/github-credentials.json`).
+ * INTERIM — Bun orchestrator Git helpers (github.com HTTPS PAT from `.github-credentials.json`).
  * Prefer headless Pi for long-term parity; see **`docs/WOP_PI_BACKEND_WIRING_PLAN.md`**.
  */
 import { broadcastToolLog } from "./tool-log-broadcast";

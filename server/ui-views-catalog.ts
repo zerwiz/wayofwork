@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-export const UI_VIEWS_CATALOG_REL = ".wayofpi/ui-views.json";
+export const UI_VIEWS_CATALOG_REL = ".ui-views.json";
 export const UI_VIEWS_SCHEMA_DOC_REL = "docs/WOP_SIMPLE_UI_VIEWS.md";
 
 export type UiViewCatalogKind = "simpleTab" | "openFile" | "technicalActivity";

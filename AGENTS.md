@@ -33,21 +33,21 @@ Server entry: `server/index.ts`. Frontend entry: `src/main.tsx`.
 ## Chat system
 - Slash commands: `/help`, `/models`, `/model <id>`, `/plan`, `/build`, `/clear`, `/agent`, `/system <name>`, `/reload`
 - LLM provider: ollama (default) or openrouter (`WOP_LLM_PROVIDER=openrouter`)
-- Three runtime modes: headless Pi (`pi --mode json`), Bun orchestrator tools, or basic chat completion
-- Workspace agents: `agents/*.md`, `.pi/agents/*.md`, `.claude/agents/*.md`, `.cursor/agents/*.md` with YAML frontmatter
+- Two runtime modes: Bun orchestrator tools (default) or basic chat completion
+- Workspace agents: `agents/*.md`, `.claude/agents/*.md`, `.cursor/agents/*.md` with YAML frontmatter — see `.wo/` for canonical agent definitions
 - Chat transcripts persist as JSONL under workspace `agent/sessions/`
 
 ## TypeScript
 Project references: `tsconfig.app.json` (src/ + shared/) and `tsconfig.node.json` (vite.config.ts). Several files excluded from compilation (see `exclude` in tsconfig.app.json). `tsc -b` does full project build.
 
 ## Database
-Auto-creates `data/wayofpi.sqlite`. Tables: tenants, users, projects, tasks, time_entries, tickets, time_blocks, time_sessions, price_lists. Multi-tenant isolation.
+Auto-creates `data/wayofwork.sqlite`. Tables: tenants, users, projects, tasks, time_entries, tickets, time_blocks, time_sessions, price_lists. Multi-tenant isolation.
 
 ## No lint, no tests, no CI
 No ESLint/Prettier config found. No test framework or test files. No CI workflows. No pre-commit hooks.
 
 ## Environment key vars (`.env`)
-`WOP_SERVER_PORT`, `WOP_LLM_PROVIDER`, `OLLAMA_HOST`, `OLLAMA_MODEL`, `WOP_WORKSPACE`, `WOP_ALLOW_TERMINAL`, `WOP_ALLOW_SERVER_RESTART`, `WOP_PI_BINARY`, `WOP_ORCHESTRATOR_TOOLS`, `WOP_NGROK_BINARY`
+`WOP_SERVER_PORT`, `WOP_LLM_PROVIDER`, `OLLAMA_HOST`, `OLLAMA_MODEL`, `WOP_WORKSPACE`, `WOP_ALLOW_TERMINAL`, `WOP_ALLOW_SERVER_RESTART`, `WOP_ORCHESTRATOR_TOOLS`, `WOP_NGROK_BINARY`
 
 ## Justfile aliases
 ```bash

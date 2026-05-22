@@ -14,7 +14,7 @@ A clearly documented architecture and implementation plan for adding robust mult
 - **Database Schema:** `server/schema.sql` and `server/db.ts` already include a `tenants` table and `tenant_id` foreign keys on most tables (`users`, `projects`, `tasks`, `time_entries`, `workspace_files`, `whatsapp_sessions`, `audit_logs`).
 - **Authentication:** `server/auth.ts` uses JWTs that already include `userId` and `tenantId`. `server/index.ts` extracts these via `verifyToken`.
 - **API Isolation:** Some endpoints in `server/index.ts` (e.g., `/api/client/projects`, `/api/client/drawings`) are already filtering results using `auth.tenantId`.
-- **AI Models:** `server/llm-models.ts` and `server/pi-ollama-env.ts` provide foundations for Ollama (local) and OpenRouter (remote) model selection.
+- **AI Models:** `server/llm-models.ts` provides foundations for Ollama (local) and OpenRouter (remote) model selection via the Wo SDK.
 - **Initial Setup:** `server/db.ts` automatically creates a `default` tenant and an `admin` user if none exist.
 - **RBAC Roles (6-Tier System):**
     - `SUPER_ADMIN`: System-wide access, can see across all tenants, manage global settings.

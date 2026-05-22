@@ -1,45 +1,45 @@
-# WOW-010 [Human-in-the-Loop] Godkännandekö för AI-förslag — människan måste verifiera innan data blir aktiv
+# WOW-010 [Human-in-the-Loop] Approval queue for AI suggestions — human must verify before data becomes active
 
 ## Problem Statement
 
-AI-agenter kan föreslå prisuppdateringar, planändringar, schemaläggning och meddelanden, men de kan göra fel. Systemet har idag ingen spärr — om en agent anropar `PUT /api/price-lists` går ändringen live direkt. Kunden måste ha kontroll och ta ansvar för sitt eget system.
+AI agents can suggest price updates, plan changes, schedules and messages, but they can make mistakes. The system currently has no guard — if an agent calls `PUT /api/price-lists` the change goes live immediately. The customer must have control and responsibility over their own system.
 
-Alla dataändringar från AI måste gå genom en **godkännandekö** där en admin (människa) klickar "Godkänn" eller "Avvisa" innan ändringen blir aktiv.
+All data changes from AI must go through an **approval queue** where an admin (human) clicks "Approve" or "Reject" before the change becomes active.
 
 ## Desired Outcome
 
-Ett generiskt `pending_changes`-system där AI endast skapar **förslag/utkast**. En admin i Admin Console ser kön, granskar diffen och godkänner eller avvisar. Först vid godkännande skrivs datan till live-tabellerna. Samma mekanism återanvänds för prislistor, planering, scheman, meddelanden — allt.
+A generic `pending_changes` system where AI only creates **suggestions/drafts**. An admin in the Admin Console sees the queue, reviews the diff, and approves or rejects. Only upon approval is the data written to live tables. The same mechanism is reused for price lists, planning, schedules, messages — everything.
 
 ## Context & Background
 
 ### Current State
-- `PUT /api/price-lists/:id` skriver direkt till DB — AI kan omedelbart ändra levande priser
-- Inget `pending_changes`-koncept finns
-- Agenter (`forskare`, `projektledare`) instrueras att "fråga användaren först" men har ingen teknisk spärr
-- ÄTA-systemet har en liknande workflow (draft → review → approve) men det är per-ärende, inte generiskt
+- `PUT /api/price-lists/:id` writes directly to DB — AI can immediately change live prices
+- No `pending_changes` concept exists
+- Agents (`forskare`, `projektledare`) are instructed to "ask the user first" but have no technical guard
+- The ÄTA system has a similar workflow (draft → review → approve) but it's per-case, not generic
 
 ### Why This Matters
-- AI kan hallucinera priser eller missförstå kontext
-- Kunden måste juridiskt kunna stå för sina prislistor och anbud
-- Revision: vem ändrade vad och när godkändes det?
-- Samma mekanism behövs för planering, tid, meddelanden, scheman
+- AI can hallucinate prices or misunderstand context
+- The customer must legally stand behind their price lists and offers
+- Audit trail: who changed what and when was it approved?
+- The same mechanism is needed for planning, time, messages, schedules
 
 ## Requirements
 
 ### Functional Requirements
-- [ ] `pending_changes` DB-tabell: tenant_id, change_type, status (pending/approved/rejected), proposed_data (JSON), current_data (JSON), summary, suggested_by, approved_by, approved_at
-- [ ] `POST /api/pending-changes` — AI skapar ett förslag (status: pending)
-- [ ] `GET /api/admin/pending-changes` — Admin ser alla pending-förslag
-- [ ] `POST /api/admin/pending-changes/:id/approve` — Admin godkänner → datan skrivs till live-tabell
-- [ ] `POST /api/admin/pending-changes/:id/reject` — Admin avvisar med orsak
-- [ ] Admin Console-flik "Godkännandekö" med diff-visning (före/efter)
-- [ ] Price list-API ändras: AI kan bara skapa pending_changes, inte direktuppdatera
-- [ ] Planering, scheman, batch-meddelanden använder samma mekanism
+- [ ] `pending_changes` DB table: tenant_id, change_type, status (pending/approved/rejected), proposed_data (JSON), current_data (JSON), summary, suggested_by, approved_by, approved_at
+- [ ] `POST /api/pending-changes` — AI creates a suggestion (status: pending)
+- [ ] `GET /api/admin/pending-changes` — Admin sees all pending suggestions
+- [ ] `POST /api/admin/pending-changes/:id/approve` — Admin approves → data written to live table
+- [ ] `POST /api/admin/pending-changes/:id/reject` — Admin rejects with reason
+- [ ] Admin Console tab "Approval Queue" with diff view (before/after)
+- [ ] Price list API changed: AI can only create pending_changes, not update directly
+- [ ] Planning, schedules, batch messages use the same mechanism
 
 ### Out of Scope
-- Automatiskt godkännande baserat på regler — framtida
-- Rollbaserade godkännanderegler (vem får godkänna vad) — framtida
-- Eskalering vid försenat godkännande — framtida
+- Automatic approval based on rules — future
+- Role-based approval rules (who can approve what) — future
+- Escalation on delayed approval — future
 
 ## Acceptance Criteria
 
@@ -47,12 +47,12 @@ Ett generiskt `pending_changes`-system där AI endast skapar **förslag/utkast**
 - [ ] Build completes: `bun run build`
 
 ### Manual Verification
-- [ ] AI föreslår prisändring → syns i admin-kön som "pending"
-- [ ] Admin ser diff: "Grävmaskin: 700 → 750 kr/h"
-- [ ] Admin klickar Godkänn → prislistan uppdateras
-- [ ] Admin klickar Avvisa → ingen ändring, status blir "rejected"
-- [ ] Alla agenter (`forskare`, `projektledare`, `fakturering`) instrueras att endast skapa förslag
-- [ ] Befintlig `PUT /api/price-lists/:id` kräver admin-roll (ej agent)
+- [ ] AI suggests price change → visible in admin queue as "pending"
+- [ ] Admin sees diff: "Excavator: 700 → 750 SEK/h"
+- [ ] Admin clicks Approve → price list updated
+- [ ] Admin clicks Reject → no change, status becomes "rejected"
+- [ ] All agents (`forskare`, `projektledare`, `fakturering`) instructed to only create suggestions
+- [ ] Existing `PUT /api/price-lists/:id` requires admin role (not agent)
 
 ## Technical Notes
 
@@ -60,16 +60,16 @@ Ett generiskt `pending_changes`-system där AI endast skapar **förslag/utkast**
 
 ```
 AI Agent → POST /api/pending-changes → pending_changes (status=pending)
-                                              ↓
-                                    Admin Console ← GET /api/admin/pending-changes
-                                              ↓
-                                    Admin klickar "Godkänn"
-                                              ↓
-                                    POST /api/admin/pending-changes/:id/approve
-                                              ↓
-                                    proposed_data skrivs till live-tabell
-                                              ↓
-                                    pending_changes.status = 'approved'
+                                               ↓
+                                     Admin Console ← GET /api/admin/pending-changes
+                                               ↓
+                                     Admin clicks "Approve"
+                                               ↓
+                                     POST /api/admin/pending-changes/:id/approve
+                                               ↓
+                                     proposed_data written to live table
+                                               ↓
+                                     pending_changes.status = 'approved'
 ```
 
 ### Database
@@ -120,10 +120,10 @@ All agents updated to never call `PUT /api/price-lists` directly. Instead:
 
 ### UI Component: ApprovalQueue
 
-New tab in AdminDashboard: "Godkännandekö" showing:
+New tab in AdminDashboard: "Approval Queue" showing:
 - Table of pending changes: summary, type, suggested_by, created_at
 - Expandable row showing diff (proposed vs current)
-- Godkänn / Avvisa buttons
+- Approve / Reject buttons
 - Badge count on tab
 
 ### Affected Components

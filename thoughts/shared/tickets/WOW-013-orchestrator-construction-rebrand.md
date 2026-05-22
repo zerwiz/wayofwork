@@ -1,347 +1,248 @@
-# Orchestrator Rebrand: Construction Work Portal
-
-## Current state
-
-### Skills: parsed but dead
-
-`server/agents.ts` parses a `skills:` field from agent `.md` frontmatter:
-
-```yaml
----
-name: inspector
-description: Site inspector agent
-skills: "safety,quality,photos"
----
-```
-
-The parsed value lands in `AgentMeta.skills` (`agents.ts:13,61`) but is **never read again**. When
-the agent body is composed into the LLM system prompt (`session-prompts.ts:134-158`), only
-`agent.body` (content after frontmatter) is used.
-
-**Result:** the `skills` string is silently discarded. No skill files are loaded, no skill
-instructions are injected, and no tool filtering occurs.
-
-### Tool surface is 100 % software engineering
-
-The orchestrator exposes two tool registries:
-
-| Registry | Tools |
-|---|---|
-| `ORCHESTRATOR_TOOLS_OPENAI` | read, list_dir, grep, write, bash, team_list, team_member_add/remove/replace |
-| `ORCHESTRATOR_GIT_TOOLS_OPENAI` | git_status, git_remote, git_fetch, git_pull, git_push, git_branches, git_checkout, git_merge, git_add, git_commit |
-
-Every git tool describes GitHub workflows (branches, PRs, merge, push). The system prompt
-(`session-prompts.ts`) talks about "repo", "commit", "PR", "feature branch".
-
-### No skill-loading pipeline exists
-
-There is no infrastructure to:
-- Resolve a skill name (e.g. `"safety"`) to a skill definition file
-- Inject skill instructions into the agent system prompt
-- Selectively enable/disable tools per-agent based on skills
-
----
-
-## Target: Construction Work Portal
-
-### Core domains
-
-| Domain | What it means for AI tools |
-|---|---|
-| **Documents** | Blueprints (PDF), specs, RFIs, submittals, CORs, change orders |
-| **Photos & media** | Site photos, drone images, inspection videos |
-| **Tasks & inspections** | Punch lists, safety inspections, daily logs |
-| **Team coordination** | Contractors, subs, foremen, office staff |
-| **Scheduling** | Milestones, deliveries, weather delays |
-| **Quality & safety** | Incident reports, safety meetings, QC checklists |
-
-### What to keep from current tools
-
-| Tool | Keep? | Reason |
-|---|---|---|
-| read / list_dir / grep / write | **Yes** | File/document access is universal |
-| bash | **Maybe** | Only if WOP_ALLOW_TERMINAL is on — useful for |
-| team_list / team_member_* | **Yes** | Rename to "crew" vocabulary |
-| git_status / git_fetch / git_pull / … | **Repurpose** | GitHub tracks document versions, not code |
-| git_push / git_checkout / git_merge / git_add / git_commit | **Rename** | Document check-in/check-out / versioning |
-
----
-
-## Skills to build
-
-### 1. Kanban board skills — full CRUD for boards, columns, and cards
-
-The kanban system maps to the existing project/task API layer:
-
-| Kanban concept | Backend entity | API |
-|---|---|---|
-| Board | Project | `GET/POST /api/projects`, `PUT/DELETE /api/projects/:id` |
-| Card | Task (`portal/tasks`) | `GET/POST /api/portal/tasks`, `PUT/DELETE /api/portal/tasks/:id` |
-| Column | Task status | `todo`, `in_progress`, `complete` (or custom) |
-| Time log | Time entry | `POST /api/portal/time`, `GET /api/portal/time` |
-| Card assignment | `assigned_to` on task | via `PUT /api/portal/tasks/:id` |
-| Checklists, comments | On `BoardCard` type | frontend-only for now, but API-ready |
-
-**Skill file: `skills/kanban-time.md`**
-
-Should teach the AI to perform **full CRUD** on everything:
-
-**Boards:**
-- `list_boards` — List all boards (projects) with columns and card counts
-- `create_board` — Create a new board with name, description, and optional template
-- `update_board` — Rename board, change description, toggle starred
-- `delete_board` — Delete a board and all its cards
-- `board_templates` — List available board templates by category (construction, ata, general)
-
-**Columns:**
-- `list_columns` — List columns (statuses) for a board
-- `create_column` — Add a new column (custom status) to a board
-- `rename_column` — Rename a column
-- `delete_column` — Remove a column (cards move to default)
-
-**Cards:**
-- `list_cards` — List cards in a board, optionally filtered by column/assignee/priority
-- `create_card` — Create a card with title, description, column, priority, assignee, due date
-- `get_card` — Get full card details (checklists, comments, attachments, time logs)
-- `update_card` — Edit title, description, priority, assignee, due date
-- `move_card` — Move card to another column (change status)
-- `delete_card` — Delete a card
-
-**Time tracking:**
-- `log_time` — Log hours worked on a card (date, hours, description)
-- `card_time_logs` — View all time logged against a card
-- `board_time_report` — Generate time report for a board (by worker, by column, date range)
-
-**Comments & checklists:**
-- `add_comment` — Add a comment to a card
-- `add_checklist_item` — Add a checklist item to a card
-- `toggle_checklist_item` — Mark checklist item done/undone
-
-**Example AI conversations:**
-> User: "Create a new board for next week's foundation work"
-> Agent: [calls `create_board` with name "Vecka 21 — Grundläggning"]
-
-> User: "Move the foundation pour card to In Progress and assign it to Erik"
-> Agent: [calls `move_card` to "in_progress" column, then `update_card` to set assignee]
-
-> User: "What's everyone working on this week?"
-> Agent: [calls `list_cards` for each board, groups by assignee]
-
-> User: "Log 6 hours for the rebar inspection card, yesterday"
-> Agent: [calls `log_time` with hours=6, date=yesterday, card=rebar-inspection-id]
-
-> User: "Show me all cards in Kvalitet column that are overdue"
-> Agent: [calls `list_cards` filtered by column="kvalitet", then filters overdue client-side]
-
-### 2. Swedish ÄTA skills
-
-Swedish **ÄTA** = *Ändrings-, Tilläggs- och Avgående arbeten* (Changes, Additions, and Deductions) — the formal change order system in Swedish construction contracts.
-
-The system already has:
-- `AtaPage.tsx` — full UI with Swedish labels (Ändring, Tillägg, Avgående)
-- `tickets-api.ts` — draft → review → approve → reject → invoiced workflow
-- `boardTemplates.ts` — "ÄTA Workflow" and "ÄTA Change Order Log" kanban templates
-- `Navigation.tsx` — ÄTA nav item with role-based visibility
-
-**Skill file: `skills/ata.md`**
-
-Should teach the AI to:
-- Create ÄTA tickets (ändring/tillägg/avgående) via `POST /api/tickets`
-- Guide users through the ÄTA status workflow (draft → pending_review → pending_approval → approved → rejected → invoiced)
-- Track cost estimates and actuals per ÄTA
-- Link ÄTA tickets to projects
-- Generate ÄTA reports
-
-**Example AI conversation:**
-> User: "Create a new ÄTA for the extra foundation work"
-> Agent: "Vilken typ? Ändring, Tillägg, eller Avgående?"
-> User: "Tillägg"
-> Agent: [calls `ticket_create` with category "tillägg"]
-
-### 3. Worker management skills
-
-Managing construction workers, crews, subcontractors, and their assignments.
-
-The system already has:
-- User roles: `worker`, `leader`, `admin`, `super_admin`
-- Time tracking with per-worker hour logging
-- Task assignment with `assigned_to` field
-- Team/crew management via `teams-yaml-mutate.ts`
-
-**Skill file: `skills/workers.md`**
-
-Should teach the AI to:
-- List workers on site and their current assignments
-- Assign workers to tasks (wrap task update APIs)
-- Track worker hours and overtime
-- Manage crew rosters (add/remove workers from crews)
-- Handle worker check-in/check-out for daily logs
-
----
-
-## Proposed changes
-
-### Phase 1 — Wire skills into agent runtime
-
-**What:** When an agent with `skills: "safety,quality"` is activated, load
-`workspace/skills/safety.md` and `workspace/skills/quality.md` and append their instructions to
-the system prompt.
-
-**Files to touch:**
-- `server/agents.ts` — add `resolveSkillBodies(skills: string): Promise<string[]>` that scans
-  `skills/`, `.pi/skills/`, `.claude/skills/`, `.cursor/skills/` (same dir pattern as agents)
-  for matching `.md` files and returns their bodies (after frontmatter).
-- `server/session-prompts.ts` — in `composeLeadSystem()`, when `agentBody` is set, also append
-  resolved skill bodies. This makes skills operational immediately.
-
-**Skill file format** (same Pi-style frontmatter as agents):
-```markdown
----
-name: safety
-description: OSHA / site safety procedures
----
-
-## Safety inspection checklist
-- Hard hats required in all active work zones
-- Daily tailgate meetings before first shift
-- Fall protection above 6 ft
-```
-
-### Phase 2 — Rebrand orchestrator for construction
-
-**What:** Replace code-centric git tools with document-versioning equivalents. Rewrite system
-prompts to speak construction vocabulary.
-
-**Files to touch:**
-- `server/orchestrator-git-tools.ts` → **rename or rewrite** as `server/orchestrator-doc-tools.ts`
-  - `git_status` → `doc_status` (which documents are tracked, current version)
-  - `git_fetch` → `doc_sync` (pull latest documents from GitHub)
-  - `git_pull` → `doc_checkout` (check out latest version of a document)
-  - `git_push` → `doc_checkin` (check in a new version of a document)
-  - `git_branches` → `doc_versions` (version history of a document)
-  - `git_checkout` → `doc_revert` or `doc_switch_version`
-  - `git_add` → `doc_stage`
-  - `git_commit` → `doc_commit`
-  - Keep `git_remote` as-is (shows configured remotes)
-  - Drop `git_merge` (not relevant for construction docs)
-- `server/orchestrator-tools-exec.ts` — update the `switch` dispatch, tool descriptions, and
-  `ORCHESTRATOR_TOOLS_OPENAI` / `orchestratorToolsForLlm()` to register new names.
-- `server/session-prompts.ts` — rewrite `ORCHESTRATOR_WEB_SHELL_SYSTEM` and friend prompts to
-  use construction vocabulary ("site", "crew", "blueprint", "inspection", "daily log").
-
-**Example new tool:**
-```typescript
-{
-  name: "doc_checkin",
-  description:
-    "Check in a new version of a construction document (blueprint, spec, RFI, submittal) " +
-    "to GitHub for version tracking. Pass **path** (workspace-relative), **message** " +
-    "(what changed), and optional **docType** (blueprint|spec|rfi|submittal|photo). " +
-    "GitHub PAT from Settings is used for auth.",
-}
-```
-
-### Phase 3 — Add construction-specific tools
-
-**New tools to add:**
-- `inspection_create` / `inspection_list` — create/list inspection checklist items
-- `photo_log` — log a site photo with caption, location, timestamp
-- `daily_log` — record daily site activity (crew count, weather, work completed)
-- `crew_list` — list team members / subcontractors on site
-- `ticket_create` / `ticket_list` — create/list RFIs, CORs, punch list items (wraps existing
-  `tickets-api.ts` route)
-
-### Phase 4 — Add skill files
-
-Create `workspace/skills/` with markdown files:
-
-| File | Purpose |
-|---|---|
-| `kanban-time.md` | Kanban board for time tracking, daily planning, time entry logging |
-| `ata.md` | Swedish ÄTA (ändrings-/tilläggs-/avgående arbeten) change order workflow |
-| `workers.md` | Worker management, crew rosters, assignments, hour tracking |
-| `safety.md` | Arbetsmiljöverket (AFS) regulations, skyddsrond inspection checklists, Swedish workplace safety |
-| `quality.md` | QC checklists, testing requirements, inspection protocols |
-| `photos.md` | Site photo naming conventions, metadata, drone imagery |
-| `documents.md` | Document control (blueprints, specs, RFIs, submittals) |
-| `scheduling.md` | Milestone tracking, delivery scheduling, delay documentation
-
-Skill files live in `.wo/skills/<name>.md` (primary) or fallback to `skills/`, `.pi/skills/`, etc. Same Pi-style frontmatter as agents:
-
-```markdown
----
-name: kanban-time
-description: Kanban board management and time tracking for construction work
----
-
-## Kanban tools
-- Create and manage boards per project/work package  
-- Full card CRUD with column/priority/assignee/due date  
-- Time logging against cards with leader approval flow  
-- Worker listing for assignment  
-```
-
----
-
-
-
-## How skills load (current trace)
+# WOW-013 [Orchestrator & GitHub for Construction] GitHub version control + orchestrator dispatch for construction users
+
+## Problem Statement
+
+**GitHub complexity:** GitHub is currently presented as a developer tool (branches, PRs, merge commits). Construction workers and project managers do not know or care about Git — they need simple "save my document" and "go back to yesterday's version." GitHub should be invisible infrastructure for version-controlled document storage.
+
+**Orchestrator confusion:** The "Orchestrator" is currently the fallback agent for all chat surfaces (Claw, Docs, Kanban, Simple) showing a generic "Hi! I'm ready to help" message. Each surface should use its own specialized agent. The Orchestrator should be the **Simple mode system agent** — the main Way of Work application agent only for the Simple interface, responsible for coordinating the platform, dispatching to sub-agents, and handling system-level tasks. Other chat interfaces (Claw, Docs, Kanban) should use their own specific agents and never fall back to Orchestrator.
+
+**No automatic backups:** Documents, price lists, offers, and workspace files have no automatic version control. If something is deleted or overwritten, there is no way to recover.
+
+## Desired Outcome
+
+1. **GitHub as invisible document storage** — construction users see "Save version" and "View history" buttons, not "git push" and "git checkout"
+2. **Automated daily backup** — workspace changes pushed to GitHub daily with organized branch names (`backup/2026-05-22`)
+3. **Agent skill for document storage** — agents can call a `workspace_snapshot` or `doc_save` skill to commit and push documents
+4. **Orchestrator = Way of Work Simple mode agent + channel handler** — handles system-level tasks for the Simple interface AND all inbound Telegram/WhatsApp traffic into the platform. Channel messages route through Orchestrator which dispatches to appropriate sub-agents.
+5. **Sub-agent dispatch** — Orchestrator can send out specialised agents (fakturering, projektledare, forskare) as sub-agents for specific subtasks
+6. **Surface-specific agents (no Orchestrator fallback)** — Claw uses claw agent, Docs uses docs agent, Kanban uses kanban agent. Orchestrator is only for Simple mode (UI) + channel message handling.
+
+## Context & Background
+
+### Current State
+
+**GitHub integration:**
+- `github-connection.ts` stores a PAT in `workspace/.wo/github-credentials.json` (migrate from legacy `.wayofpi/`)
+- `orchestrator-git-tools.ts` provides raw Git tools: `git_add`, `git_commit`, `git_push`, `git_branches`, `git_checkout`, `git_merge`
+- Tools are exposed as orchestrator function tools — only usable by LLM agents that know Git
+- No UI for non-developer users
+
+**Orchestrator:**
+- Orchestrator is the default "session lead" when no agent is selected
+- Uses a orchestrator system prompt with dispatch tools (no direct git/bash access)
+- Shows generic greeting: "Hi! I'm ready to help with your Way of Work session"
+- No surface awareness — used the same way in Claw, Docs, Kanban, and Simple
+- No sub-agent dispatch mechanism
+
+**Surface agents:**
+- Claw has auto-select logic for `claw.md` agent
+- Kanban has auto-select logic for `kanban.md` agent
+- Docs has NO auto-select logic (missing)
+- Simple uses Orchestrator (no agent)
+- All surfaces share the same WebSocket session (WOW-012)
+
+### Why This Matters
+
+- Construction workers need "save my drawing" not "git commit -m"
+- Project managers need "show me yesterday's version" not "git log"
+- Daily automated backups prevent data loss
+- Each surface needs the right agent personality and tools
+- Orchestrator should orchestrate, not be a generic chat bot
+
+## Requirements
+
+### Functional Requirements
+
+#### Phase 1: GitHub Simplification
+- [ ] Rename "GitHub" to "Version Storage" or "Backup" in UI
+- [ ] Add "Save Version" button in Docs view that runs `git_add` + `git_commit` + `git_push` invisibly
+- [ ] Add "Version History" view showing dates/commits without Git terminology
+- [ ] Add "Restore Version" that checks out a previous commit to a temp branch
+- [ ] Configure default git user name/email from env or settings
+- [ ] GitHub connection UI in Admin Console (token + login, not CLI)
+
+#### Phase 2: Automated Daily Backup
+- [ ] Daily cron/schedule at 23:00 that:
+  - Creates branch `backup/YYYY-MM-DD` from current state
+  - Adds all workspace changes (`git_add --all`)
+  - Commits with message: "Daily backup YYYY-MM-DD"
+  - Pushes to origin
+- [ ] Keep last 30 daily backups (auto-prune older remote branches)
+- [ ] Backup only workspace files (not `.wo/` internal state, `agent/sessions/`)
+- [ ] Admin toggle: enable/disable automatic backups
+- [ ] Backup status indicator in Admin Console
+
+#### Phase 3: Agent Skill for Document Storage
+- [ ] Create `.wo/skills/workspace-storage/SKILL.md`:
+  - `workspace_snapshot` — commit workspace state with description
+  - `doc_history <path>` — show version history for a file
+  - `doc_restore <path> <version>` — restore file from version
+  - `workspace_backup_status` — check last backup time
+- [ ] Wire skill into agents: `fakturering`, `projektledare`, `docs`
+- [ ] Agents can save documents after creating/modifying them
+
+#### Phase 4: Orchestrator Rework
+- [ ] Orchestrator becomes the **Way of Work Simple mode agent + channel handler** — not a generic chat bot
+- [ ] Orchestrator handles all inbound Telegram/WhatsApp traffic (see WOW-015)
+- [ ] Channel messages route through Orchestrator which dispatches to appropriate sub-agents
+- [ ] Orchestrator system prompt describes: coordinating the platform, dispatching sub-agents, channel message handling, system configuration, user management
+- [ ] Orchestrator has a `dispatch_agent <name> <task>` tool that:
+  - Spawns a sub-agent with the given name
+  - Passes the task description as context
+  - Receives the sub-agent's output/result
+  - Returns the result to the user
+- [ ] Sub-agent dispatch is isolated — each dispatch gets a fresh context (not shared history)
+- [ ] Orchestrator can dispatch: `fakturering` (create offer), `projektledare` (cost estimate), `forskare` (research price), `schemaplanerare` (plan schedule)
+
+#### Phase 5: Surface-Specific Agents
+- [ ] **Simple** → Orchestrator (system agent, no specialized tools)
+- [ ] **Claw** → `claw` agent (coding/workspace management)
+- [ ] **Docs** → `docs` agent (document writing + workspace-storage skill)
+- [ ] **Kanban** → `kanban` agent (board management + time tracking)
+- [ ] Each surface auto-selects its agent on navigation (see WOW-012)
+- [ ] Agent cleanup when leaving a surface — orchestrator takes over in Simple
+
+### Out of Scope
+- Git GUI or diff viewer in the browser — future
+- Multi-repo backup (one GitHub repo per tenant) — future
+- S3/alternative storage backends — future
+- Automatic conflict resolution — future
+- End-to-end encryption of backed-up files — future
+
+## Acceptance Criteria
+
+### Automated Verification
+- [ ] Build completes: `bun run build`
+
+### Manual Verification
+- [ ] Admin can connect GitHub via Admin Console with PAT
+- [ ] "Save Version" in Docs creates a git commit + push
+- [ ] "Version History" shows list of previous versions with timestamps
+- [ ] Daily backup runs and creates `backup/YYYY-MM-DD` branch
+- [ ] Old backups (>30 days) are pruned automatically
+- [ ] Agent can call `workspace_snapshot` to save documents
+- [ ] Orchestrator can dispatch `fakturering` as sub-agent to create an offer
+- [ ] Sub-agent result is returned to user through Orchestrator
+- [ ] Claw uses `claw` agent by default
+- [ ] Docs uses `docs` agent by default
+- [ ] Kanban uses `kanban` agent by default
+- [ ] Simple uses Orchestrator by default
+
+## Technical Notes
+
+### Git for Non-Developers
+
+The key insight: construction users should never see or type Git commands. All Git operations are triggered by UI buttons or agent tool calls:
 
 ```
-user picks agent in UI
-  → POST /api/chat sets currentAgentName
-  → composeLeadSystem() called (session-prompts.ts)
-    → agent body (post-frontmatter) is the prompt
-    → skills field: NEVER ACCESSED
-  → LLM sees only the agent body
+User clicks "Save Version"
+  → UI calls POST /api/workspace/snapshot
+  → Server runs: git add -A && git commit -m "Saved by <user> at <timestamp>" && git push
+  → Response: { ok: true, version: "abc1234", timestamp: "2026-05-22T14:30:00" }
 ```
 
-## How skills should load (proposed)
+```
+User clicks "Version History" for file X
+  → UI calls GET /api/workspace/history?path=X
+  → Server runs: git log --oneline --follow -- <path>
+  → Response: { versions: [{ hash, message, date, author }] }
+```
 
 ```
-user picks agent in UI
-  → POST /api/chat sets currentAgentName + agent.skills
-  → composeLeadSystem() called
-    → agent body is the prompt base
-    → for each skill in agent.skills.split(","):
-        resolveSkillBodies() scans skills/ dirs
-        appends skill body as additional system context
-  → LLM sees agent body + skill instructions
+User clicks "Restore" for file X at version abc1234
+  → UI calls POST /api/workspace/restore
+  → Server runs: git checkout abc1234 -- <path>
+  → Response: { ok: true, path, restoredVersion }
 ```
+
+### Daily Backup Schedule
+
+```
+23:00 daily via ClawScheduleExecutor:
+  1. Check if backups enabled (config in DB or workspace settings)
+  2. Run: git add -A (respecting .gitignore)
+  3. Run: git commit -m "Daily backup YYYY-MM-DD" (allow-empty if no changes)
+  4. Run: git push origin backup/YYYY-MM-DD
+  5. Prune: delete remote branches backup/ older than 30 days
+  6. Log: results to workspace .wo/backup-log.json
+```
+
+### Agent Skill: workspace-storage
+
+```
+Skill file: .wo/skills/workspace-storage/SKILL.md
+
+Available tools:
+  workspace_snapshot(path?, description?)
+    - Commit current state or specific file
+    - path: optional, single file to snapshot (default: all workspace)
+    - description: optional human-readable note
+
+  doc_history(path)
+    - Return version history for a file
+    - path: required, workspace-relative file path
+
+  doc_restore(path, version)
+    - Restore file from a previous version
+    - path: required, workspace-relative
+    - version: commit hash or "latest", "previous"
+```
+
+### Orchestrator Sub-Agent Dispatch
+
+The `dispatch_agent` tool allows the Orchestrator to call specialized agents:
+
+```
+User: "Create an offer for project X"
+Orchestrator:
+  → dispatch_agent("fakturering", "Create offer for project #42, client is ByggAb")
+  → fakturering agent runs in isolated context:
+      - Uses its own skills (document-generation, client-communication)
+      - Calls POST /api/offers to create the offer
+      - Returns: { result: "Offer ANB-2026-015 created", offerId: "..." }
+  → Orchestrator receives result
+  → Orchestrator: "Done! Offer ANB-2026-015 created for ByggAb, project X. Total: 45 000 SEK"
+```
+
+Technical approach:
+- `dispatch_agent` creates a temporary sub-session on the server
+- The sub-agent gets only the task description + its own skills as system prompt
+- The sub-agent runs its own tool loop (isolated)
+- The sub-agent's final response is captured and returned
+- The sub-agent session is discarded after completion
+- Implementation: new endpoint `POST /api/agents/dispatch` or via WebSocket message type `dispatch`
+
+### Surface Agent Mapping
+
+Central config (shared between frontend and server):
+```
+simple → null         (Orchestrator — system agent)
+claw   → "claw"       (coding/workspace)
+docs   → "docs"       (documents + workspace-storage)
+kanban → "kanban"     (boards + time)
+work   → null         (Orchestrator)
+admin  → null         (Orchestrator)
+```
+
+### Affected Components
+- `server/github-connection.ts` — extend with backup schedule config
+- `server/workspace-snapshot.ts` — **New file**: workspace snapshot/restore API
+- `server/backup-scheduler.ts` — **New file**: daily backup schedule
+- `server/agent-dispatch.ts` — **New file**: sub-agent dispatch handler
+- `server/orchestrator-git-tools.ts` — add `workspace_snapshot` tool
+- `server/index.ts` — new API routes + WebSocket dispatch message type
+- `server/claw-schedule-executor.ts` — daily backup schedule entry
+- `src/pages/AdminDashboard.tsx` — GitHub connection UI, backup toggle
+- `src/components/docs/DocsApp.tsx` — "Save Version" / "Version History" buttons
+- `.wo/skills/workspace-storage/SKILL.md` — **New skill**
+- `.wo/agents/orchestrator.md` — **New agent**: orchestrator system prompt
+- Various agent `.md` files — update to use workspace-storage skill
 
 ---
 
-## File-by-file plan
+## Meta
 
-### agents.ts
-
-Add:
-```typescript
-const SKILL_SCAN_ROOTS = ["skills", ".pi/skills", ".claude/skills", ".cursor/skills"];
-
-export async function resolveSkillBodies(skillsCsv: string, workspaceRoot: string): Promise<string[]> {
-  // ... scan SKILL_SCAN_ROOTS for each skill name, collect .md bodies
-}
-```
-
-### session-prompts.ts
-
-In `composeLeadSystem()`, after the agent block:
-```typescript
-const skillBodies = agentBody ? await resolveSkillBodies(agent.skills, workspaceRoot) : [];
-if (skillBodies.length) parts.push(skillBodies.join("\n\n---\n\n"));
-```
-
-### orchestrator-git-tools.ts → orchestrator-doc-tools.ts
-
-Rename and rewrite tool descriptions for construction document versioning.
-
-### orchestrator-tools-exec.ts
-
-- Rename git tool dispatch cases to new names
-- Rewrite `ORCHESTRATOR_TOOLS_OPENAI` descriptions
-- Update `orchestratorToolsForLlm()`
-
-### session-prompts.ts
-
-Rewrite `ORCHESTRATOR_WEB_SHELL_SYSTEM` and related prompts for construction vocabulary.
+**Created**: 2026-05-22
+**Priority**: High
+**Estimated Effort**: XL
+**Depends on**: WOW-012 (chat per surface), WOW-010 (human-in-the-loop)

@@ -1,42 +1,42 @@
-# WOW-012 [Isolated Chat per Surface] Varje vy (claw, kanban, docs) har sin egen chatt-instans
+# WOW-012 [Isolated Chat per Surface] Each view (claw, kanban, docs) has its own chat instance
 
 ## Problem Statement
 
-Idag delar alla surfaces (Claw, Kanban, Docs, Simple, Work, Admin) samma chatt-instans. När man växlar mellan olika vyer ser man samma chatthistorik och samma generiska Orchestrator-hälsning, trots att varje vy är tänkt för olika användningsfall och har olika agents kopplade till sig.
+Currently all surfaces (Claw, Kanban, Docs, Simple, Work, Admin) share the same chat instance. When switching between different views, you see the same chat history and the same generic Orchestrator greeting, even though each view is designed for different use cases and has different agents associated with it.
 
-Dessutom hittar servern **inga agents** eftersom `WOP_WORKSPACE` pekar på `workspace/` (tom katalog) medan agents och skills ligger i repo-roten `.wo/agents/` och `.wo/skills/`. Serverns agent-scanner letar under `join(WOP_WORKSPACE, ".wo", "agents")` dvs `workspace/.wo/agents/` — som inte finns. Därför används alltid Orchestrator-fallback oavsett vald vy.
+Additionally, the server finds **no agents** because `WOP_WORKSPACE` points to `workspace/` (empty directory) while agents and skills are in the repo root `.wo/agents/` and `.wo/skills/`. The server's agent scanner looks under `join(WOP_WORKSPACE, ".wo", "agents")` i.e. `workspace/.wo/agents/` — which doesn't exist. Therefore the Orchestrator fallback is always used regardless of selected view.
 
 ## Desired Outcome
 
-Varje surface (Claw, Kanban, Docs, Simple, etc.) ska ha sin egen isolerade chatt-instans med:
-- Egen chatthistorik (separata JSONL-filer på disk)
-- Egen aktiv session/kontext och egna chatt-flikar
-- **Rätt agent autovald per surface** — Claw → `claw.md`, Docs → `docs.md`, Kanban → `kanban.md`, etc.
-- Agents och skills från `.wo/` måste vara tillgängliga för servern
-- Fix av dubbel-bubblan vid thinking
+Each surface (Claw, Kanban, Docs, Simple, etc.) should have its own isolated chat instance with:
+- Own chat history (separate JSONL files on disk)
+- Own active session/context and own chat tabs
+- **Correct agent auto-selected per surface** — Claw → `claw.md`, Docs → `docs.md`, Kanban → `kanban.md`, etc.
+- Agents and skills from `.wo/` must be accessible by the server
+- Fix double-bubble during thinking
 
 ## Context & Background
 
-### Current State — Chatt-arkitektur
+### Current State — Chat Architecture
 
-Chatten använder en WebSocket (`/ws`) med per-anslutning state (`ChatWsData`). Alla surfaces delar samma anslutning i frontend via en global React context (`useRefactor()` → `session` objekt från `useWayOfPiSession()`).
+The chat uses a WebSocket (`/ws`) with per-connection state (`ChatWsData`). All surfaces share the same connection in the frontend via a global React context (`useRefactor()` → `session` object from `useWoSession()`).
 
-**Surfaces som finns** (routes i `src/App.tsx`):
+**Existing surfaces** (routes in `src/App.tsx`):
 
-| Route | Komponent | Yta | Chat-komponent |
+| Route | Component | Surface | Chat component |
 |---|---|---|---|
 | `/simple` | `SimplePage` | Simple | `SimpleChatView` |
 | `/claw` | `ClawPage` | Claw | `ChatPanel` / `ClawChatView` |
 | `/docs` | `DocsPage` | Docs | `SimpleChatView` |
 | `/kanban` | `KanbanPage` | Kanban | `KanbanChatPanel` |
-| `/workboard` | `WorkPage` | Work | (ingen chatt) |
-| `/admin` | `AdminDashboard` | Admin | (ingen chatt) |
+| `/workboard` | `WorkPage` | Work | (no chat) |
+| `/admin` | `AdminDashboard` | Admin | (no chat) |
 
-**Viktigt:** `ReferenceApp.tsx` (separat från `App.tsx`) anropar `useWayOfPiSession(chatSurfaceId, ...)` med surface-ID, men den används inte vid runtime. Den aktiva appen är `App.tsx` som anropar `useWayOfPiSession()` **utan surfaceId**.
+**Important:** `ReferenceApp.tsx` (separate from `App.tsx`) calls `useWoSession(chatSurfaceId, ...)` with surface-ID, but it's not used at runtime. The active app is `App.tsx` which calls `useWoSession()` **without surfaceId**.
 
 ### Current State — Agent Discovery
 
-Serverns agent-scanning (`server/agents.ts:128-144`):
+Server's agent scanning (`server/agents.ts:128-144`):
 ```typescript
 const roots = [
   join(workspaceRoot, ".wo", "agents"),
@@ -46,25 +46,25 @@ const roots = [
 ];
 ```
 
-`workspaceRoot` kommer från `getPrimaryWorkspacePath()` som läser `WOP_WORKSPACE` (`.env`).
+`workspaceRoot` comes from `getPrimaryWorkspacePath()` which reads `WOP_WORKSPACE` (`.env`).
 - `WOP_WORKSPACE=/home/zerwiz/CodeP/wayofwork/workspace`
-- Agents finns i `/home/zerwiz/CodeP/wayofwork/.wo/agents/`
-- === **Servern hittar inga agents** ===
+- Agents are in `/home/zerwiz/CodeP/wayofwork/.wo/agents/`
+- === **Server finds no agents** ===
 
-### Current State — Agentval i frontend
+### Current State — Agent selection in frontend
 
-Agentväljaren i `ChatPanel.tsx` (lines 1162-1188) är en `<select>` med:
-- **Default (tomt):** `""` = Orchestrator (session lead)
-- **Picker:** agents från `useAgents()` som hämtar från localStorage (`wop-agents-api`)
-- **Roster-only:** namn från `teams.yaml` utan matchande `.md`
+The agent picker in `ChatPanel.tsx` (lines 1162-1188) is a `<select>` with:
+- **Default (empty):** `""` = Orchestrator (session lead)
+- **Picker:** agents from `useAgents()` which fetches from localStorage (`wop-agents-api`)
+- **Roster-only:** names from `teams.yaml` without matching `.md`
 
-Frontend kan tekniskt välja agent manuellt, men eftersom servern inte hittar någon `.md`-fil får man alltid "Hi! I'm ready to help..." från Orchestrator oavsett val.
+The frontend can technically select an agent manually, but since the server doesn't find any `.md` file, you always get "Hi! I'm ready to help..." from Orchestrator regardless of selection.
 
-### Current State — Agenterna som finns
+### Current State — Existing agents
 
-**7 agents** i `.wo/agents/` (repo root — alla oåtkomliga för servern):
+**7 agents** in `.wo/agents/` (repo root — all inaccessible to the server):
 
-| Fil | Name | Skills |
+| File | Name | Skills |
 |---|---|---|
 | `claw.md` | claw | — |
 | `kanban.md` | kanban | kanban-time |
@@ -74,26 +74,26 @@ Frontend kan tekniskt välja agent manuellt, men eftersom servern inte hittar n�
 | `schemaplanerare.md` | schemaplanerare | scheduling, kanban-time, workers, client-communication |
 | `ata.md` | ata | ata, research |
 
-**11 skills** i `.wo/skills/`: `ata/`, `client-communication/`, `document-generation/`, `kanban-time/`, `project-pricing/`, `research/`, `safety/`, `scheduling/`, `swedish-building-laws/`, `time-calculation/`, `workers/`
+**11 skills** in `.wo/skills/`: `ata/`, `client-communication/`, `document-generation/`, `kanban-time/`, `project-pricing/`, `research/`, `safety/`, `scheduling/`, `swedish-building-laws/`, `time-calculation/`, `workers/`
 
-**Ingen docs-agent finns än.**
+**No docs agent existed at ticket creation (created 2026-05-22).**
 
-### Chat UI-relaterade filer
+### Chat UI-related files
 
-**Huvudkomponenter:**
-- `src/components/ChatPanel.tsx` — Huvud-chatt (1267 rader, tabs, meddelanden, agentväljare, mode)
-- `src/components/simple/SimpleChatView.tsx` — Enkel chatt (953 rader)
-- `src/components/claw/ClawChatView.tsx` — Claw-specifik chatt
-- `src/components/kanban/KanbanChatPanel.tsx` — Kanban-chatt
-- `src/components/technical/TechnicalChatPanel.tsx` — Teknisk chatt
-- `src/components/docs/PMChatPanel.tsx` — Docs PM-chatt
-- `src/components/documenthandler/Chat.tsx`, `ChatMessages.tsx`, `ChatPanel.tsx`, `ChatExplorer.tsx` — Dokumenthanterar-chatt
-- `src/components/AgentTeamPulseGrid.tsx` — Agent puls
-- `src/components/ContextUsageRing.tsx` — Context-användning
+**Main components:**
+- `src/components/ChatPanel.tsx` — Main chat (1267 lines, tabs, messages, agent picker, mode)
+- `src/components/simple/SimpleChatView.tsx` — Simple chat (953 lines)
+- `src/components/claw/ClawChatView.tsx` — Claw-specific chat
+- `src/components/kanban/KanbanChatPanel.tsx` — Kanban chat
+- `src/components/technical/TechnicalChatPanel.tsx` — Technical chat
+- `src/components/docs/PMChatPanel.tsx` — Docs PM chat
+- `src/components/documenthandler/Chat.tsx`, `ChatMessages.tsx`, `ChatPanel.tsx`, `ChatExplorer.tsx` — Document handler chat
+- `src/components/AgentTeamPulseGrid.tsx` — Agent pulse
+- `src/components/ContextUsageRing.tsx` — Context usage
 
 **Hooks & state:**
-- `src/hooks/useWayOfPiSession.ts` — WebSocket-anslutning, session management, tabs
-- `src/hooks/useAgents.ts` — Agentlista via localStorage
+- `src/hooks/useWoSession.ts` — WebSocket connection, session management, tabs (rename from `useWayOfPiSession.ts`)
+- `src/hooks/useAgents.ts` — Agent list via localStorage
 - `src/types/chat.ts` — ChatRow, LogRow, ChatSessionTab
 
 **Server (chat logic):**
@@ -107,7 +107,7 @@ Frontend kan tekniskt välja agent manuellt, men eftersom servern inte hittar n�
 - `server/chat-usage.ts` — Token counting
 - `server/chat-context-budget.ts` — Context window management
 
-**Hjälpfiler:**
+**Helper files:**
 - `src/utils/workspaceChatAgentPicker.ts` — Agent picker helpers
 - `src/utils/workspaceAgentDisplay.ts` — Agent display names
 - `src/utils/agentPermissionsStorage.ts` — Agent permissions
@@ -117,36 +117,36 @@ Frontend kan tekniskt välja agent manuellt, men eftersom servern inte hittar n�
 - `src/lib/chatAttachment.ts` — Attachment handling
 - `src/lib/parseMessageSegments.ts` — Message parsing
 
-### Bug: Extra chatbubbla vid thinking (olöst)
+### Bug: Extra chat bubble during thinking (unsolved)
 
-När chatten startar och AI:n börjar tänka (thinking/reasoning) skapas **två bubbler samtidigt**:
-1. **Övre bubblan** – visar thinking/texten
-2. **Nedre bubblan** – tom/empty
+When the chat starts and the AI begins thinking (reasoning), **two bubbles appear simultaneously**:
+1. **Top bubble** — shows thinking text
+2. **Bottom bubble** — empty
 
-När AI-svaret sedan kommer efter thinking, slås de ihop till en bubbla. Felet sitter troligen i hur `assistant_turn_start`, `assistant_reasoning_delta` och `assistant_delta` hanteras i `useWayOfPiSession.ts` (processMessage ca rad 223–313) — att en extra tom bubble skapas vid `assistant_turn_start` och ytterligare en vid första `assistant_delta`.
+When the AI response comes after thinking, they merge into one bubble. The bug is likely in how `assistant_turn_start`, `assistant_reasoning_delta` and `assistant_delta` are handled in `useWoSession.ts` (processMessage around lines 223–313) — an extra empty bubble is created at `assistant_turn_start` and another at the first `assistant_delta`.
 
 ### Why This Matters
 
-- Användare ser samma generiska hälsning oavsett vy → tror chatten är trasig
-- Olika surfaces har olika användningsfall (Claw = kod, Docs = dokumentation, Kanban = planering) — att dela historik förvirrar LLM:en
-- Agents och skills är helt oanvändbara pga WOP_WORKSPACE-pekning
-- Dubbel-bubblan är visuellt störande
+- Users see the same generic greeting regardless of view → think the chat is broken
+- Different surfaces have different use cases (Claw = code, Docs = documentation, Kanban = planning) — sharing history confuses the LLM
+- Agents and skills are completely unusable due to WOP_WORKSPACE path issue
+- Double-bubble is visually distracting
 
 ## Requirements
 
 ### Functional Requirements
-- [ ] Varje surface har egen WebSocket-isolation (egen session/state)
-- [ ] Varje surface har egna chatt-flikar som inte syns i andra surfaces
-- [ ] JSONL-filer sparas per surface: `wayofpi-chat-<surface>-<sessionKey>.jsonl`
-- [ ] **Rätt agent autovald per surface** – Claw → claw, Docs → docs (ny), Kanban → kanban, Simple → null (Orchestrator)
-- [ ] Agents från `.wo/agents/` måste vara tillgängliga för servern (fixa WOP_WORKSPACE eller agent scan roots)
-- [ ] Skills från `.wo/skills/` måste fungera
-- [ ] Skapa docs-agent (`docs.md`) för dokumentationsarbete
-- [ ] Dubbel-bubblan vid thinking är fixad – exakt en bubble per assistant-turn
+- [ ] Each surface has its own WebSocket isolation (own session/state)
+- [ ] Each surface has its own chat tabs not visible in other surfaces
+- [ ] JSONL files saved per surface: `wo-chat-<surface>-<sessionKey>.jsonl` (rename from `wayofpi-chat-`)
+- [ ] **Correct agent auto-selected per surface** – Claw → claw, Docs → docs (new), Kanban → kanban, Simple → null (Orchestrator)
+- [ ] Agents from `.wo/agents/` must be accessible to the server (fix WOP_WORKSPACE or agent scan roots)
+- [ ] Skills from `.wo/skills/` must work
+- [ ] Create docs agent (`docs.md`) for documentation work
+- [ ] Double-bubble during thinking fixed – exactly one bubble per assistant-turn
 
 ### Out of Scope
-- Fullständig ombyggnad av WebSocket-arkitekturen
-- Ändring av befintlig JSONL-struktur för historiska sessions
+- Complete rebuild of WebSocket architecture
+- Changing existing JSONL structure for historical sessions
 
 ## Acceptance Criteria
 
@@ -154,50 +154,50 @@ När AI-svaret sedan kommer efter thinking, slås de ihop till en bubbla. Felet 
 - [ ] Build completes: `bun run build`
 
 ### Manual Verification
-- [ ] Öppna Claw-vyn — chatten ska automatiskt använda `claw`-agenten
-- [ ] Öppna Docs-vyn — chatten ska automatiskt använda `docs`-agenten
-- [ ] Öppna Kanban-vyn — chatten ska automatiskt använda `kanban`-agenten
-- [ ] Byt vy mitt i en konversation — chatten i föregående vy ska sparas
-- [ ] Verifiera att agenternas skills laddas (t.ex. `kanban-time` för kanban-agenten)
-- [ ] Verifiera att thinking inte skapar dubbla bubbler
+- [ ] Open Claw view — chat should automatically use `claw` agent
+- [ ] Open Docs view — chat should automatically use `docs` agent
+- [ ] Open Kanban view — chat should automatically use `kanban` agent
+- [ ] Switch view mid-conversation — chat in previous view preserved
+- [ ] Verify agent skills are loaded (e.g. `kanban-time` for kanban agent)
+- [ ] Verify thinking doesn't create double bubbles
 
 ## Technical Notes
 
-### Ändringar som är gjorda (2026-05-22)
-- ✅ `workspace/.wo` → `../.wo` — symlink så agents & skills hittas av servern
-- ✅ `.wo/agents/docs.md` — ny docs-agent skapad
+### Changes already made (2026-05-22)
+- ✅ `workspace/.wo` → `../.wo` — symlink so agents & skills are found by server
+- ✅ `.wo/agents/docs.md` — new docs agent created
 
-### Affected Components (återstående arbete)
+### Affected Components (remaining work)
 - `server/index.ts` – WebSocket state isolation per surface
-- `server/wop-session-jsonl.ts` – surface-prefixed JSONL filnamn
-- `server/session-prompts.ts` – surface-beroende agent auto-select
+- `server/wop-session-jsonl.ts` – surface-prefixed JSONL file names
+- `server/session-prompts.ts` – surface-dependent agent auto-select
 - `server/chat-slash-commands.ts` – `/clear` etc per surface
-- `src/hooks/useWayOfPiSession.ts` – session isolation per surface, fix extra bubble bug
-- `src/components/ChatPanel.tsx` – surface-aware tab rendering och auto agent-select
-- `src/components/simple/SimpleChatView.tsx` – generisk auto-select istället för hårdkodad `clawChrome`
-- `src/App.tsx` – routing för surface-aware session
+- `src/hooks/useWoSession.ts` – session isolation per surface, fix extra bubble bug
+- `src/components/ChatPanel.tsx` – surface-aware tab rendering and auto agent-select
+- `src/components/simple/SimpleChatView.tsx` – generic auto-select instead of hardcoded `clawChrome`
+- `src/App.tsx` – routing for surface-aware session
 
 ### Agent Auto-Select Strategy — Current & Desired State
 
-**Nuvarande implementation — fragmenterad och hårdkodad:**
+**Current implementation — fragmented and hardcoded:**
 
-| Surface | Auto-select | Var | Mekanism |
+| Surface | Auto-select | Where | Mechanism |
 |---|---|---|---|
-| **Claw** | ✅ `claw` | `ReferenceApp.tsx` (linje 2250–2302) + `ClawChatView`/`SimpleChatView` | Navigation effect + `sessionLeadFallbackLabel="Claw"` med hårdkodad `clawChrome`-check |
-| **Kanban** | ✅ `kanban` | `KanbanChatPanel.tsx` (linje 24–29) | `useEffect` med `agentSetRef` guard, anropar `setChatAgent("kanban")` |
-| **Docs** | ❌ Ingen | — | `DocsApp.tsx` skickar **inga** `sessionLeadFallbackLabel`-props, anropar aldrig `setChatAgent` |
-| **Simple** | ✅ Ingen (Orchestrator) | `ReferenceApp.tsx` | Sätts explicit till `null` vid navigering |
+| **Claw** | ✅ `claw` | `ReferenceApp.tsx` (lines 2250–2302) + `ClawChatView`/`SimpleChatView` | Navigation effect + `sessionLeadFallbackLabel="Claw"` with hardcoded `clawChrome` check |
+| **Kanban** | ✅ `kanban` | `KanbanChatPanel.tsx` (lines 24–29) | `useEffect` with `agentSetRef` guard, calls `setChatAgent("kanban")` |
+| **Docs** | ❌ None | — | `DocsApp.tsx` passes **no** `sessionLeadFallbackLabel` props, never calls `setChatAgent` |
+| **Simple** | ✅ None (Orchestrator) | `ReferenceApp.tsx` | Explicitly set to `null` on navigation |
 
-**Problem:**
-1. **Hårdkodad agent-selection** — `SimpleChatView.tsx` (rad 156–161) har `const clawChrome = sessionLeadFallback === "Claw"` som bara fungerar för Claw. Andra surfaces kan inte dra nytta av samma mekanism utan kodändring.
-2. **Delad session** — Alla surfaces anropar `session.setChatAgent()` globalt. När Kanban sätter agent till `kanban` påverkas Simple och Docs. `KanbanChatPanel` har en egen `useWayOfPiSession()`-instans men delar ändå samma WebSocket/session som resten.
-3. **No cleanup** — Ingen surface återställer agenten när man navigerar bort (förutom `ReferenceApp.tsx` som stödjer `simple`, `technical` och `claw` — men inte `docs` eller `kanban`).
+**Problems:**
+1. **Hardcoded agent selection** — `SimpleChatView.tsx` (lines 156–161) has `const clawChrome = sessionLeadFallback === "Claw"` which only works for Claw. Other surfaces cannot use the same mechanism without code changes.
+2. **Shared session** — All surfaces call `session.setChatAgent()` globally. When Kanban sets agent to `kanban`, Simple and Docs are affected. `KanbanChatPanel` has its own `useWoSession()` instance but still shares the same WebSocket/session as the rest.
+3. **No cleanup** — No surface resets the agent when navigating away (except `ReferenceApp.tsx` which supports `simple`, `technical` and `claw` — but not `docs` or `kanban`).
 
-**Önskad implementation:**
+**Desired implementation:**
 
-Varje surface ska automatiskt välja rätt agent med en enhetlig mekanism:
+Each surface should automatically select the correct agent with a unified mechanism:
 
-- **Surface → Agent-mappning** (i en central config, t.ex. i `src/App.tsx` eller en ny `surface-agents.ts`):
+- **Surface → Agent mapping** (in a central config, e.g. in `src/App.tsx` or a new `surface-agents.ts`):
   ```
   simple → null (Orchestrator)
   claw   → "claw"
@@ -207,13 +207,13 @@ Varje surface ska automatiskt välja rätt agent med en enhetlig mekanism:
   admin  → null
   ```
 
-- **Vid navigering** (i router/navigation effect): anropa `session.setChatAgent(mapping[surface])` när användaren byter vy.
+- **On navigation** (in router/navigation effect): call `session.setChatAgent(mapping[surface])` when user switches views.
 
-- **Vid surface-init** (i page component): anropa `session.setChatAgent(agentName)` med `useRef` guard (som Kanban) om agenten inte redan är satt för den surfacen.
+- **On surface init** (in page component): call `session.setChatAgent(agentName)` with `useRef` guard (like Kanban) if the agent isn't already set for that surface.
 
-- **SimpleChatView generisk**: Byt ut `clawChrome` mot en generisk `autoSelectAgent` prop eller härled agent-namnet från `sessionLeadFallbackLabel.toLowerCase()`:
+- **SimpleChatView generic**: Replace `clawChrome` with a generic `autoSelectAgent` prop or derive the agent name from `sessionLeadFallbackLabel.toLowerCase()`:
   ```tsx
-  // Istället för hårdkodad clawChrome:
+  // Instead of hardcoded clawChrome:
   const autoAgent = sessionLeadFallbackLabel?.trim().toLowerCase() || null;
   const useAutoAgent = autoAgent && agentAvailable(autoAgent);
   const sessionPick = useAutoAgent && !sessionPickRaw ? autoAgent : sessionPickRaw;
@@ -228,12 +228,9 @@ Varje surface ska automatiskt välja rätt agent med en enhetlig mekanism:
   ├── .wo/
   │   ├── agents/                               ← Agent .md-filer (kanonisk källa)
   │   ├── skills/                               ← Skill .md-filer
-  │   ├── agent/auth.json                       ← Pi auth
-  │   ├── agent/sessions/                       ← Pi sessions
-  │   ├── sessions/                             ← Pi workspace sessions
-  │   ├── extensions/                           ← Pi extensions
-  │   ├── prompts/                              ← Pi prompts
-  │   └── scripts/                              ← Pi scripts
+  │   ├── agent/auth.json                       ← Auth (legacy, kept for compat)
+  │   ├── agent/sessions/                       ← Sessions (legacy)
+  │   └── ...
   ├── .claw/                                    ← CLAW per-user workspace (privat per person)
   │   ├── workspace/
   │   │   ├── SOUL.md                           ← Claw identity
@@ -255,50 +252,35 @@ Varje surface ska automatiskt välja rätt agent med en enhetlig mekanism:
   │   └── wayofwork.sqlite                      ← All affärsdata (tenants, users, projects, etc)
   └── workspace/                                ← Företags-globala filer (användardata)
       ├── .wo → ../.wo                          ← SYMLINK — agents & skills tillgängliga
-      ├── .wayofpi/                             ← System-metadata (skapas automatiskt)
-      │   ├── index/                            ← Workspace-index (regenererbart)
-      │   │   ├── state.json
-      │   │   ├── manifest.json
-      │   │   ├── options.json
-      │   │   ├── grep-paths.txt
-      │   │   ├── docs.json
-      │   │   └── docs/*.txt
-      │   ├── ui-views.json                     ← UI-katalog (skapas automatiskt)
-      │   ├── github-credentials.json           ← GitHub PAT (känsligt)
-      │   └── claw-webhook.v1.json              ← Claw webhook secret (känsligt)
+      ├── github-credentials.json               ← GitHub PAT (känsligt)
+      └── ...
       ├── agent/
-      │   ├── settings.json                     ← Pi agent settings
       │   └── sessions/                         ← Chat-transkript (JSONL)
-      │       └── wayofpi-chat-*.jsonl
+      │       └── wo-chat-*.jsonl
       ├── plans/                                ← Planeringsdokument
       │   └── PLAN-*.md
-      ├── agents/                               ← Scan-root agents
-      ├── .claude/agents/                       ← Scan-root (Claude)
-      ├── .pi/
-      │   ├── agents/*.md / teams.yaml          ← Scan-root (Pi)
-      │   ├── settings.json                     ← Pi settings
-      │   └── extensions/*.ts                   ← Pi extensions
-      ├── .cursor/agents/                       ← Scan-root (Cursor)
-      ├── skills/                               ← Scan-root skills
-      ├── .pi/skills/                           ← Scan-root (Pi)
-      ├── .claude/skills/                       ← Scan-root (Claude)
-      ├── .cursor/skills/                       ← Scan-root (Cursor)
+├── agents/                               ← Scan-root agents
+├── .claude/agents/                       ← Scan-root (Claude)
+├── .cursor/agents/                       ← Scan-root (Cursor)
+├── skills/                               ← Scan-root skills
+├── .claude/skills/                       ← Scan-root (Claude)
+├── .cursor/skills/                       ← Scan-root (Cursor)
       └── [dokument, ritningar, fakturor, etc]  ← Företagets filer
 ```
 
-**Varför:** Serverns agent-scanner letar under `WOP_WORKSPACE/.wo/agents/` (= `workspace/.wo/agents/`). Agents och skills måste finnas i workspace för att servern ska hitta dem. `.wo/` i repo-roten är den kanoniska källan, workspace har en symlink. Claw har sitt eget privata workspace under `.claw/` (per person), medan `workspace/` är för företagsglobala filer.
+**Why:** The server's agent scanner looks under `WOP_WORKSPACE/.wo/agents/` (= `workspace/.wo/agents/`). Agents and skills must exist in the workspace for the server to find them. `.wo/` in the repo root is the canonical source, the workspace has a symlink. Claw has its own private workspace under `.claw/` (per person), while `workspace/` is for company-global files.
 
-**Framtida Docker-setup:** Workspace monteras som en volym med `.wo/` kopierad eller monterad inuti.
+**Future Docker setup:** Workspace is mounted as a volume with `.wo/` copied or mounted inside.
 
-### Fix som är gjord (2026-05-22)
-1. **Skapat symlink** `workspace/.wo` → `../.wo` — agents och skills blir tillgängliga för servern
-2. **Skapat docs-agent** `.wo/agents/docs.md` — ny agent för dokumentationsarbete
+### Changes already made (2026-05-22)
+1. **Created symlink** `workspace/.wo` → `../.wo` — agents and skills now accessible to the server
+2. **Created docs agent** `.wo/agents/docs.md` — new agent for documentation work
 
 ---
 
 ## Meta
 
 **Created**: 2026-05-22
-**Updated**: 2026-05-22
+**Updated**: 2026-05-22 (fully translated to English)
 **Priority**: High
 **Estimated Effort**: L

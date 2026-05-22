@@ -1,0 +1,5 @@
+{"type":"session","version":3,"id":"019e4e17-27f6-744d-9904-e40097f19560","timestamp":"2026-05-22T05:10:00.950Z","cwd":"/home/zerwiz/CodeP/wayofwork"}
+{"type":"model_change","id":"1e863377","parentId":null,"timestamp":"2026-05-22T05:10:00.964Z","provider":"ollama","modelId":"qwen3.5:9b"}
+{"type":"thinking_level_change","id":"238cf284","parentId":"1e863377","timestamp":"2026-05-22T05:10:00.964Z","thinkingLevel":"off"}
+{"type":"message","id":"57c8c29a","parentId":"238cf284","timestamp":"2026-05-22T05:10:00.971Z","message":{"role":"user","content":[{"type":"text","text":"Say hello in one word"}],"timestamp":1779426600968}}
+{"type":"message","id":"c067a308","parentId":"57c8c29a","timestamp":"2026-05-22T05:10:00.989Z","message":{"role":"assistant","content":[],"api":"openai-completions","provider":"ollama","model":"qwen3.5:9b","usage":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0,"totalTokens":0,"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0,"total":0}},"stopReason":"error","errorMessage":"No API key for provider: ollama","timestamp":1779426600988}}

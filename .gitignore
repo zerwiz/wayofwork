@@ -13,5 +13,14 @@ electron/build/icon.icns
 # Environment (secrets, tokens)
 .env
 
-# Wo agent project-local config
-.wo/
+# Generated workspace index (regenerable)
+.index/
+workspace/.index/
+
+# Workspace symlink — tracked content lives at repo-root .wo/
+workspace/.wo
+
+# Secrets in workspace
+workspace/.github-credentials.json
+workspace/.claw-webhook.json
+workspace/.ui-views.json

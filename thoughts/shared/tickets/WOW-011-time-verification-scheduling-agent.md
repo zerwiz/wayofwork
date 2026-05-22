@@ -1,50 +1,50 @@
-# WOW-011 [Time Verification & Scheduling Agent] Tidsverifiering, schemaläggning och morgonutskick via Telegram
+# WOW-011 [Time Verification & Scheduling Agent] Time verification, scheduling and morning dispatch via Telegram
 
 ## Problem Statement
 
-Tidrapporter från arbetare måste verifieras mot planeringen i kanban-tavlan. Idag finns ingen automatisk kontroll — ledaren måste manuellt jämföra rapporterad tid med planerade timmar. Det finns inte heller något automatiskt morgonschema för arbetarna. Arbetare bör få ett Telegram-meddelande varje morgon med dagens arbetsuppgifter baserat på deras kanban-kort.
+Time reports from workers must be verified against the kanban board plan. Today there is no automatic check — the leader must manually compare reported time with planned hours. There is also no automatic morning schedule for workers. Workers should get a Telegram message every morning with their daily tasks based on their kanban cards.
 
 ## Desired Outcome
 
-En agent som dagligen:
-1. Granskar alla tidrapporter från gårdagen mot kanban-planeringen
-2. Skickar en sammanställning till admin/projektledare med avvikelser och förslag
-3. Skapar ett förslag för dagens schema baserat på kanban-kortens status
-4. Skickar Telegram till varje arbetare kl 06:30 med deras personliga att-göra-lista
+An agent that daily:
+1. Reviews all time reports from yesterday against the kanban plan
+2. Sends a summary to admin/project leader with variances and suggestions
+3. Creates a proposal for today's schedule based on kanban card status
+4. Sends Telegram to each worker at 06:30 with their personal to-do list
 
-Alla förslag går genom **human-in-the-loop** (WOW-010) — agenten skickar förslag, admin godkänner, först då skickas meddelanden eller scheman.
+All proposals go through **human-in-the-loop** (WOW-010) — the agent sends suggestions, admin approves, only then are messages or schedules sent out.
 
 ## Context & Background
 
 ### Current State
-- Time entries via `kanban_log_time` sparas som `pending` för ledarens godkännande
-- Kanban-kort har `assigned_to`, `estimated_hours`, deadline
-- Telegram-bot finns men används endast för inkommande meddelanden (ingen outbound scheduling)
-- Inget automatiskt morgonutskick
+- Time entries via `kanban_log_time` saved as `pending` for leader approval
+- Kanban cards have `assigned_to`, `estimated_hours`, deadline
+- Telegram bot exists but only used for incoming messages (no outbound scheduling)
+- No automatic morning dispatch
 
 ### Why This Matters
-- Projektledaren lägger timmar per dag på manuell tidssammanställning
-- Arbetare behöver veta vad de ska göra när de kommer till arbetsplatsen
-- Avvikelser i tid upptäcks ofta för sent → budgetöverskridanden
-- Telegram är redan etablerat som kanal
+- The project leader spends hours per day on manual time compilation
+- Workers need to know what to do when they arrive at the worksite
+- Time variances are often detected too late → budget overruns
+- Telegram is already established as a channel
 
 ## Requirements
 
 ### Functional Requirements
-- [ ] Agent läser tidrapporter: `GET /api/portal/time` eller `kanban_card_time_logs`
-- [ ] Agent läser kanban-planering: `kanban_list_cards` med assignee och estimated_hours
-- [ ] Agent jämför rapporterad tid mot planerad tid per kort
-- [ ] Agent skapar avvikelserapport: "Kort X: planerat 8 h, rapporterat 10 h (+2 h)"
-- [ ] Agent föreslår morgondagens schema: delar ut kort per arbetare baserat på deadline/status
-- [ ] Schemaförslag går via godkännandekön (WOW-010) — admin klickar Godkänn
-- [ ] Vid godkännande: Telegram skickas till varje arbetare kl 06:30 med dagens uppgifter
-- [ ] Telegram-meddelande innehåller: kortnamn, projekt, prioritet, planerade timmar
+- [ ] Agent reads time reports: `GET /api/portal/time` or `kanban_card_time_logs`
+- [ ] Agent reads kanban plan: `kanban_list_cards` with assignee and estimated_hours
+- [ ] Agent compares reported time vs planned time per card
+- [ ] Agent creates variance report: "Card X: planned 8 h, reported 10 h (+2 h)"
+- [ ] Agent proposes tomorrow's schedule: distributes cards per worker based on deadline/status
+- [ ] Schedule proposal goes through approval queue (WOW-010) — admin clicks Approve
+- [ ] On approval: Telegram sent to each worker at 06:30 with daily tasks
+- [ ] Telegram message contains: card name, project, priority, planned hours
 
 ### Out of Scope
-- Realtids-ändringar av schema under dagen — framtida
-- GPS-verifiering av närvaro — framtida
-- Automatisk omfördelning vid sjukfrånvaro — framtida
-- Löneunderlag — framtida
+- Real-time schedule changes during the day — future
+- GPS verification of attendance — future
+- Automatic reassignment on sick leave — future
+- Salary basis — future
 
 ## Acceptance Criteria
 
@@ -52,12 +52,12 @@ Alla förslag går genom **human-in-the-loop** (WOW-010) — agenten skickar fö
 - [ ] Build completes: `bun run build`
 
 ### Manual Verification
-- [ ] Agent kan lista tidrapporter för alla arbetare
-- [ ] Agent kan lista kanban-kort per arbetare med estimated_hours
-- [ ] Agent identifierar avvikelser >20% mellan planerat och rapporterat
-- [ ] Agent skapar schemaförslag som pending_change
-- [ ] Admin godkänner → Telegram skickas till arbetarna
-- [ ] Meddelandet innehåller rätt uppgifter per person
+- [ ] Agent can list time reports for all workers
+- [ ] Agent can list kanban cards per worker with estimated_hours
+- [ ] Agent identifies variances >20% between planned and reported
+- [ ] Agent creates schedule proposal as pending_change
+- [ ] Admin approves → Telegram sent to workers
+- [ ] Message contains correct tasks per person
 
 ## Technical Notes
 
@@ -65,44 +65,44 @@ Alla förslag går genom **human-in-the-loop** (WOW-010) — agenten skickar fö
 
 ```
 name: schemaplanerare
-description: Swedish construction scheduler — verifies time, plans daily work, sends Telegram
+description: Construction scheduler — verifies time, plans daily work, sends Telegram
 skills: kanban-time, workers, client-communication, research
 ```
 
 ### Workflow
 
 ```
-06:00 — Agent kör daglig rutin:
-  1. Hämta alla tidrapporter från igår
-  2. Hämta alla kanban-kort med assignees
-  3. Jämför: planerat vs rapporterat per kort
-  4. Skapa avvikelserapport → pending_change
+06:00 — Agent runs daily routine:
+  1. Fetch all time reports from yesterday
+  2. Fetch all kanban cards with assignees
+  3. Compare: planned vs reported per card
+  4. Create variance report → pending_change
 
-  5. Hämta alla aktiva kort sorterade på deadline
-  6. Fördela kort per arbetare för idag
-  7. Skapa schemaförslag → pending_change
+  5. Fetch all active cards sorted by deadline
+  6. Distribute cards per worker for today
+  7. Create schedule proposal → pending_change
 
-08:00 — Admin godkänner (eller justerar och godkänner):
+08:00 — Admin approves (or adjusts and approves):
 
-  8. Telegram skickas till varje arbetare:
-     "God morgon! Dina uppgifter idag:
-      🟢 Projekt X — Montering fönster (planerat 6h)
-      🟡 Projekt Y — Tätskikt badrum (planerat 4h)"
+  8. Telegram sent to each worker:
+     "Good morning! Your tasks today:
+      🟢 Project X — Window assembly (planned 6h)
+      🟡 Project Y — Bathroom waterproofing (planned 4h)"
 ```
 
 ### Scheduled Execution
 
-Använd befintlig `ClawScheduleExecutor` (`server/claw-schedule-executor.ts`):
-- Schedule: dagligen 06:00
-- Action: kör agenten `schemaplanerare`
-- Output: pending_changes för admin
+Use existing `ClawScheduleExecutor` (`server/claw-schedule-executor.ts`):
+- Schedule: daily 06:00
+- Action: run the `schemaplanerare` agent
+- Output: pending_changes for admin
 
 ### Telegram Sending
 
-Återanvänd `sendTelegramMessage` från `server/telegram-bot.ts`:
-- Slå upp arbetarens Telegram-länk i `user_channel_links WHERE channel='telegram'`
-- Skicka meddelande med dagens uppgifter
-- Logga i `channel_message_logs`
+Reuse `sendTelegramMessage` from `server/telegram-bot.ts`:
+- Look up worker's Telegram link in `user_channel_links WHERE channel='telegram'`
+- Send message with daily tasks
+- Log in `channel_message_logs`
 
 ### API Endpoints Needed
 
@@ -130,19 +130,19 @@ CREATE TABLE IF NOT EXISTS scheduled_messages (
 )
 ```
 
-### Meddelandemall (Telegram)
+### Message Template (Telegram)
 
 ```
-God morgon, [namn]! 🌅
+Good morning, [name]! 🌅
 
-Dina uppgifter idag [datum]:
+Your tasks for [date]:
 
-🏗️ [Projekt]
-  ▢ [Kortnamn] — [planerad tid]h (prioritet: [hög/medel])
-  ▢ [Kortnamn] — [planerad tid]h
+🏗️ [Project]
+  ▢ [Card name] — [planned time]h (priority: [high/medium])
+  ▢ [Card name] — [planned time]h
 
-⏱️ Planerad tid totalt: [X]h
-📋 Svara på detta meddelande för frågor
+⏱️ Total planned time: [X]h
+📋 Reply to this message with questions
 ```
 
 ### Affected Components

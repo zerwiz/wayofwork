@@ -1,8 +1,51 @@
 # Changelog
 
+## 0.25.0 — 2026-05-22 — Ticket System, Agent Discovery, i18n Planning & Pi Purge
+
+- **Agent Discovery Fix**:
+  - Created symlink `workspace/.wo` → `../.wo` so server finds agents and skills under `WOP_WORKSPACE`
+  - Created `docs.md` agent for documentation work
+  - 8 agents now available: claw, kanban, docs, fakturering, forskare, projektledare, schemaplanerare, ata
+- **Ticket System Overhaul**:
+  - Translated all tickets to English (WOW-008 through WOW-012)
+  - Created WOW-012: Isolated Chat per Surface (architecture + workspace layout)
+  - Created WOW-013: Orchestrator & GitHub for Construction (Git version control, sub-agent dispatch)
+  - Created WOW-014: Bilingual Support (Swedish/English i18n, legal content handling)
+  - Created WOW-015: Communication Architecture (Telegram, WhatsApp, Email unified routing)
+  - Updated TODO.md with full ticket registry and priority order
+- **Price List Seed Fix**:
+  - Fixed seed logic in `server/db.ts` — now checks by template name instead of `COUNT(*) = 0`
+  - 6 template price lists (Maskiner 2026, Personal 2026, etc.) seed alongside existing lists
+- **Pi Purge** (WO-only architecture):
+  - Purged all Pi references from tickets, AGENTS.md, CHANGELOG.md, agent definitions
+  - Updated naming: `wayofpi-chat-` → `wo-chat-`, `useWayOfPiSession` → `useWoSession`, `.wayofpi/` → `.wo/`
+  - Removed Pi scan roots (`.pi/agents/`, `.pi/skills/`) — only `.wo/`, `.claude/`, `.cursor/`
+  - AGENTS.md: removed `WOP_PI_BINARY` env var, removed headless Pi runtime mode
+  - All tickets now reference `@wayofmono/wo-agent` SDK only
+- **Workspace Architecture**:
+  - Documented full workspace directory tree: `.wo/` (agents/skills), `.claw/` (personal), `workspace/` (company global)
+  - Claw has private workspace under `.claw/` with SOUL.md, AGENTS.md, schedules, mission-events
+  - Workspace holds company files, chat transcripts, plans, index, and GitHub credentials
+
+## 0.24.0 — 2026-05-22 — Claw UI Consolidation & Toolbar Refactoring
+
+- **Claw UI Consolidation**:
+  - Merged redundant session-level strip into the top-level `ClawSecondaryToolbar`.
+  - Moved "New Session" and "Workspace" buttons to the global top bar to eliminate "double chat" headers.
+  - Removed desktop session strip for a cleaner, single-header layout.
+- **Enhanced Navigation**:
+  - Integrated chat session tabs directly into the `ClawSecondaryToolbar` for tabbed session switching.
+  - Implemented responsive button labels that hide on narrow screens to prioritize tab space.
+- **State Architecture**:
+  - Lifted `showFilePanel` state to `ClawApp` to enable cross-component control of the workspace side panel.
+  - Wired `streaming` and `connected` states to toolbar buttons for proper lifecycle feedback and disabling.
+- **Build & Stability**:
+  - Resolved TypeScript errors in `ClawChatView.tsx` following state refactoring.
+  - Fixed "New" button functionality by correctly passing session management callbacks.
+
 ## 0.22.0 — 2026-05-19 — Standalone extraction & build fixes
 
-- Extracted `wayofwork` from the Way of Pi monorepo as a standalone project
+- Extracted `wayofwork` from the Way of Pi monorepo as a standalone project; all Pi references purged from tickets, AGENTS.md, and agent definitions
 - Added `start.sh` / `stop.sh` scripts, `.env.example`, worker portal files, and clean configs
 - Created `plans/agent-role.md` and `plans/fix-system-after-extraction.md`
 - Fixed 39 TypeScript build errors (P2):

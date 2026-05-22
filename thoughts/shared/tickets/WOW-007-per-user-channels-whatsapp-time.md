@@ -23,7 +23,7 @@ Additionally, there's no WhatsApp-based time logging — workers can't message "
 - **Claw automation (`executeClawAutomation`)** passes zero user context — no `tenantId` or `userId` in the payload. Runs as anonymous.
 - **Kanban cards** (`tasks` table) have `assigned_to` but no notification mechanism when assigned/updated.
 - **Time entries** (`time_entries` table) are per-user but have no inbound channel to create them.
-- **Session transcripts** (JSONL files) are not partitioned by user — `agent/sessions/wayofpi-chat-*.jsonl` uses a client-chosen key with no `userId` binding.
+- **Session transcripts** (JSONL files) are not partitioned by user — `agent/sessions/wo-chat-*.jsonl` uses a client-chosen key with no `userId` binding.
 - Existing `kanbanService.ts` has `toggleCardWhatsApp` and `sendWhatsAppMessage` stubs marked `// TODO`.
 
 ### Why This Matters
@@ -106,7 +106,7 @@ Additionally, there's no WhatsApp-based time logging — workers can't message "
   - If not found, respond with a pairing prompt ("Reply with /link to connect this chat to your account")
 - [ ] Thread `tenantId` through `getPrimaryWorkspacePath(tenantId)` and `getAgentBodyByName(name, tenantId)` in `executeClawAutomation`
 - [ ] Update `ClawScheduler` to accept per-schedule tenant/user overrides
-- [ ] Partition session transcripts by user: `agent/sessions/<tenantId>/<userId>/wayofpi-chat-<sessionKey>.jsonl`
+- [ ] Partition session transcripts by user: `agent/sessions/<tenantId>/<userId>/wo-chat-<sessionKey>.jsonl`
 - [ ] Log all channel messages to an audit table for admin review
 
 #### Phase 3: WhatsApp Time Workbot
@@ -120,7 +120,7 @@ Additionally, there's no WhatsApp-based time logging — workers can't message "
   - `4h project X` — log time
   - `status` — today's logged hours
   - `tasks` — my assigned tasks
-- [ ] Add `/whatsapp-time-setup` Pi command for configuring the time bot number
+- [ ] Add `/whatsapp-time-setup` Wo command for configuring the time bot number
 - [ ] Admin can assign which bot account handles time logging vs general chat
 
 #### Phase 4: WhatsApp Kanban Notifications
@@ -136,7 +136,7 @@ Additionally, there's no WhatsApp-based time logging — workers can't message "
 - Voice/audio message processing on WhatsApp
 - Multi-language NLP for time parsing (English only for now)
 - End-to-end encryption for channel messages
-- User self-service channel linking UI (users use Pi commands or chat — admin console covers the management UI)
+- User self-service channel linking UI (users use Wo commands or chat — admin console covers the management UI)
 
 ## Acceptance Criteria
 
@@ -183,13 +183,13 @@ Additionally, there's no WhatsApp-based time logging — workers can't message "
 ### Sequence: Inbound WhatsApp Message Flow
 ```
 WhatsApp message arrives
-  → pi-whatsapp extension receives it
+  → wo-agent SDK receives it
   → POST to inbound webhook with channel_user_id + message text + bot_phone
   → Look up bot_whatsapp_accounts by phone number → get tenant_id
   → Look up user_channel_links WHERE channel='whatsapp' AND channel_user_id=?
   → If found: set tenantId/userId from link
   → If not found: respond with pairing prompt
-  → runPiChatTurn with user context
+  → runSdkChatTurn with user context
   → If time bot number: parse for time entry pattern
   → If match: create time_entries row, reply with confirmation
   → Log message to channel_message_logs audit table

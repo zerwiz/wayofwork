@@ -27,7 +27,7 @@ export type TunnelGateFileV1 = {
 export function getWopHomeDir(): string {
 	const e = process.env.WOP_HOME?.trim();
 	if (e) return e.replace(/^~(?=\/|\\)/, homedir());
-	return join(homedir(), ".wayofpi");
+	return join(homedir(), ".wo");
 }
 
 export function tunnelGateConfigPath(): string {

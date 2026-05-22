@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-This repo was extracted from the Way of Work monorepo. Several dependencies were stripped out to get `bun install` working, file paths were never reconciled, and build is blocked (41 tsc errors). Runtime paths may still reference the old monorepo layout. Database was copied over and may contain stale Pi-specific data.
+This repo was extracted from the Way of Work monorepo. Several dependencies were stripped out to get `bun install` working, file paths were never reconciled, and build is blocked (41 tsc errors). Runtime paths may still reference the old monorepo layout.
 
 ## Desired Outcome
 
@@ -71,17 +71,9 @@ UI modes (`"simple"`, `"work"`, `"claw"`, `"docs"`, `"kanban"`) sync to routes v
    - `server/sdk-runtime.ts` and `server/agent-runtime.ts` both import it — chat won't work without it
    - The agent is a **general-purpose user agent** (no coding tools: no read/bash/edit/write). It only has `web_search` and `web_fetch`. This is correct — Way of Work is a planning/org tool, not a code editor.
 
-8. **Runtime paths from old monorepo**
-   - `server/diagnostics.ts` may reference `@earendil-works/pi-coding-agent` in labels
-   - `server/agent-runtime.ts` comments reference old Pi paths
-   - `server/paths.ts` may point to old Pi repo directories
+8. **Runtime paths from old monorepo** — mostly cleaned up, checked during extraction
 
-9. **Database copied from Pi repo** (`server/wayofpi.sqlite`)
-   - May contain stale Pi-specific data
-   - Safer to delete and let the server recreate it via `server/db.ts`
-   - `server/db_data/` directory may also be stale
-
-10. **Dead code excluded from tsconfig** (imports from removed `@earendil-works/pi-tui/menu`)
+9. **Dead code excluded from tsconfig** (imports from removed `@earendil-works/pi-tui/menu`)
     - `src/components/menus/FileMenu.tsx`, `TerminalMenu.tsx`, `EditMenu.tsx`, `GoMenu.tsx`, `HelpMenu.tsx`, `RunMenu.tsx`, `ViewMenu.tsx`, `MenuBar.tsx`
     - Already excluded in `tsconfig.app.json` — either delete them or keep the exclusion
 
@@ -132,14 +124,14 @@ The app cannot build or start. Unclear which server routes are dead code vs. fut
 - [x] Resolve `server/sdk-runtime.ts` model input type mismatch.
 
 ### P3 — Audit runtime paths
-- [ ] Check `server/diagnostics.ts` for `@earendil-works/pi-coding-agent` references → update or remove
-- [ ] Check `server/agent-runtime.ts` comments for stale Pi path references → clean up
-- [ ] Check `server/paths.ts` for any absolute paths pointing to old Pi monorepo → update
-- [ ] Check `electron/electron-main.mjs` for old Pi repo path references → update
+- [x] Updated diagnostics.ts SDK probes from `@earendil-works/pi-coding-agent` → `@wayofmono/wo-agent`
+- [x] Cleaned up agent-runtime.ts comments
+- [x] Cleaned up server/paths.ts
+- [x] Cleaned up electron paths
 
 ### P4 — Database
-- [x] Delete `server/wayofpi.sqlite` and `server/db_data/` (stale copy from Pi repo)
-- [x] Let server recreate on next start via `server/db.ts`
+- [x] Deleted stale wayofpi.sqlite and db_data/
+- [x] Server recreates fresh DB on next start via server/db.ts
 
 ### P5 — Dead code & routing cleanup
 - [ ] Decide fate of menu files excluded from tsconfig (`FileMenu.tsx`, `EditMenu.tsx`, etc.) — delete or keep excluded
@@ -170,11 +162,8 @@ The app cannot build or start. Unclear which server routes are dead code vs. fut
 - `src/services/mockKanbanService.ts` — add missing fields (`createdAt`, `labels`)
 - `src/types/kanban.ts` — add `role` to User if needed
 - `server/sdk-runtime.ts` — resolve `@wayofmono/wo-agent` dep
-- `server/agent-runtime.ts` — same dep, plus stale Pi path comments
-- `server/diagnostics.ts` — check for old Pi package references
-- `server/paths.ts` — check for old monorepo absolute paths
+- `server/agent-runtime.ts` — imports `@wayofmono/wo-agent`, clean (Pi references removed)
 - `server/index.ts` — add `PUT /api/portal/me` + `POST /api/portal/change-pin`, relax `/admin/stats` role gate
-- `electron/electron-main.mjs` — check for stale Pi paths
 
 ---
 
