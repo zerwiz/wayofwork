@@ -80,7 +80,7 @@ export function ProblemsPanelBody() {
 			/** Vite dev: same spawn as Electron, via dev-only middleware (not proxied to Bun). */
 			if (import.meta.env.DEV) {
 				try {
-					const resp = await fetch("/__wop_dev/start-wayofpi-api", { method: "POST" });
+					const resp = await fetch("/__wop_dev/start-wo-api", { method: "POST" });
 					if (resp.status !== 404) {
 						const data = (await resp.json().catch(() => ({}))) as {
 							ok?: boolean;

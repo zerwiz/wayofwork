@@ -1,5 +1,62 @@
 # Changelog
 
+## 0.26.0 — 2026-05-22 — Access Control Foundation & Rebranding Completion
+
+- **WOW-016 (Access Control)**:
+  - Implemented Phase 1: Added `project_members` table to `server/schema.sql`.
+  - Added join-table support for mapping users to projects with specific roles (`LEADER`, `WORKER`).
+  - Seeded demo data for project membership to verify multi-tenant isolation foundations.
+  - Implemented Phase 2: Role-based data isolation & Economics Shield.
+  - Restricted project visibility for `WORKER` role to only member projects.
+  - Shielded financial data (budgets, costs, price lists, invoices, offers) from `WORKER` and `LEADER` roles.
+  - Isolated worker access to tasks, time entries, and workspace files.
+  - Refactored project management, notes, and calendar routes into separate files (`server/routes/projects.ts`, `server/routes/calendar.ts`).
+  - Implemented Phase 3: Per-user channel session persistence.
+  - Created persistent, isolated JSONL session stores for Telegram and WhatsApp users.
+  - Automated session loading, history trimming (last 20 messages), and persistence in `server/claw-bot-bridge.ts`.
+  - Simplified Telegram bot handler to leverage centralized session management.
+  - Implemented Phase 4: Multi-bot support for Telegram.
+  - Enabled the platform to poll multiple active Telegram bots simultaneously, each with independent state and tenant scoping.
+  - Added management APIs for Telegram and WhatsApp bot accounts.
+  - Implemented Phase 5: Time tracking privacy & bot isolation.
+  - Enforced strict privacy rules in AI system prompts to prevent data leakage between users.
+  - Added role-based "team status" command to `whatsapp-time-bot.ts` for leaders and admins.
+  - Implemented Phase 6: Information Access Audit.
+  - Added `audit_logs` table to database schema.
+  - Created `auditLog` helper to record sensitive data access and administrative actions.
+  - Integrated audit logging across projects, price lists, offers, invoices, and financial reports.
+  - Added `GET /api/admin/audit-logs` endpoint for system oversight.
+  - Implemented Phase 7: Agent-Skill Mapping & Orchestrator Dispatch.
+  - Created Orchestrator agent and `dispatch-agent` skill for intelligent request routing.
+  - Optimized skill assignments across all 8 specialized agents to ensure precise task handling and improved multi-agent collaboration.
+  - Implemented Phase 8: Daily Planning Workflow.
+  - Redirected Claw workspace root to project root for improved portability.
+  - Created automated daily schedules for "Morning Dispatch" (06:30) and "Evening Reconciliation" (18:00) using the `schemaplanerare` agent.
+  - Implemented `telegram_send` and `whatsapp_send` tools in the orchestrator to enable proactive agent-initiated communication.
+  - Implemented Phase 9: User Information Tracking.
+  - Extended audit logging to track search queries (via `grep`) and file access (via `read`).
+  - Completed all 9 phases of WOW-016 (Access Control, User Isolation & Daily Workflow) backend implementation.
+- **WOW-010 (Human-in-the-Loop)**:
+  - Implemented full backend API for `pending_changes` (suggestions queue).
+  - Added support for applying approved changes to `price_lists`, `offers`, `tasks`, and `projects`.
+  - Integrated approval queue into all specialized agents via system prompt instructions.
+- **WOW-012 (Isolated Chat per Surface)**:
+  - Implemented WebSocket state isolation per UI surface (Claw, Docs, Kanban).
+  - Configured unique JSONL session stores with surface namespaces (e.g., `wo-chat-docs-*`).
+  - Enabled automatic agent selection based on current surface (e.g., switching to `docs` agent when in the Docs view).
+  - Fixed "double-bubble" UI bug by conditionally hiding empty assistant rows during streaming.
+- **Process Management & Logging**:
+  - Enhanced `start.sh` with persistent logging: all output is now mirrored to `server.log` using `tee`.
+  - Rebuilt `stop.sh` for "Total Shutdown": aggressively terminates Bun, Vite, Concurrently, Electron, and Ngrok processes to ensure clean restarts and prevent `EADDRINUSE` errors.
+- **Rebranding Completion**:
+  - Rebranded application title and icons in `index.html`.
+  - Updated `SimpleNavRail.tsx` logo to "WAY OF WORK".
+  - Refactored Electron shell (`electron-main.mjs`, `preload.cjs`) to use `WayOfWork` terminology.
+- **Unified Help Center**:
+  - Rebuilt `HowToUseModal.tsx` with comprehensive multi-section guides (Welcome, Getting Started, Agents, Teams, Models, Layout, Workspace, For Developers, Honcho, ngrok, Capabilities).
+  - Updated all internal paths to use `.wo/` and rebranded Wo Agent terminology.
+  - Documented the new Claw UI workflow with integrated session tabs.
+
 ## 0.25.0 — 2026-05-22 — Ticket System, Agent Discovery, i18n Planning & Pi Purge
 
 - **Agent Discovery Fix**:
@@ -43,27 +100,6 @@
   - Resolved TypeScript errors in `ClawChatView.tsx` following state refactoring.
   - Fixed "New" button functionality by correctly passing session management callbacks.
 
-## 0.22.0 — 2026-05-19 — Standalone extraction & build fixes
-
-- Extracted `wayofwork` from the Way of Pi monorepo as a standalone project; all Pi references purged from tickets, AGENTS.md, and agent definitions
-- Added `start.sh` / `stop.sh` scripts, `.env.example`, worker portal files, and clean configs
-- Created `plans/agent-role.md` and `plans/fix-system-after-extraction.md`
-- Fixed 39 TypeScript build errors (P2):
-  - Installed missing `class-variance-authority` dependency
-  - Removed orphaned `workerportal.tsx` (case conflict with `WorkerPortal.tsx`)
-  - Made `BoardCard.labels` and `CardChecklist.createdAt` optional in kanban types
-  - Added missing `setSimpleProviderNonce` to context destructuring in `SimplePage.tsx`
-  - Added `role` field to `User` interface in `AuthContext.tsx`
-- Audited runtime paths (P3):
-  - Updated diagnostics.ts SDK probes from `@earendil-works/pi-coding-agent` → `@wayofmono/wo-agent`
-  - Updated agent-runtime.ts and sdk-runtime.ts comments
-  - Fixed MenuBar.tsx link and HermesFileBrowser.tsx mock data
-- Database cleanup (P4):
-  - Fixed `init-db.ts` path from stale `wayofwork-server/db/` → `data/`
-  - Fixed `schema.sql` header path
-  - Deleted stale `wayofpi.sqlite` and `db_data/` for fresh start
-- Cleaned up backup/copy files (P5)
-
 ## 0.23.0 — 2026-05-19 — Agent Integration & Real Data Transition
 
 - **Wo Agent Integration**:
@@ -87,3 +123,24 @@
   - Resolved ~60 TypeScript build errors related to async service transitions.
   - Updated `BoardSettingsModal`, `PushTaskListToKanbanModal`, `WorkBoard`, and `CardView` to properly `await` backend responses.
   - Fixed broken import paths in `src/components/work/kanban` subdirectory.
+
+## 0.22.0 — 2026-05-19 — Standalone extraction & build fixes
+
+- Extracted `wayofwork` from the Way of Pi monorepo as a standalone project; all Pi references purged from tickets, AGENTS.md, and agent definitions
+- Added `start.sh` / `stop.sh` scripts, `.env.example`, worker portal files, and clean configs
+- Created `plans/agent-role.md` and `plans/fix-system-after-extraction.md`
+- Fixed 39 TypeScript build errors (P2):
+  - Installed missing `class-variance-authority` dependency
+  - Removed orphaned `workerportal.tsx` (case conflict with `WorkerPortal.tsx`)
+  - Made `BoardCard.labels` and `CardChecklist.createdAt` optional in kanban types
+  - Added missing `setSimpleProviderNonce` to context destructuring in `SimplePage.tsx`
+  - Added `role` field to `User` interface in `AuthContext.tsx`
+- Audited runtime paths (P3):
+  - Updated diagnostics.ts SDK probes from `@earendil-works/pi-coding-agent` → `@wayofmono/wo-agent`
+  - Updated agent-runtime.ts and sdk-runtime.ts comments
+  - Fixed MenuBar.tsx link and HermesFileBrowser.tsx mock data
+- Database cleanup (P4):
+  - Fixed `init-db.ts` path from stale `wayofwork-server/db/` → `data/`
+  - Fixed `schema.sql` header path
+  - Deleted stale `wayofpi.sqlite` and `db_data/` for fresh start
+- Cleaned up backup/copy files (P5)

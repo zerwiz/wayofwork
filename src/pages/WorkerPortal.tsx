@@ -119,7 +119,7 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
     setTasks([...DEMO_TASKS]);
     setFiles([...DEMO_FILES]);
     setProfileId("demo-worker");
-    setProfileEmail("demo@wayofpi.dev");
+    setProfileEmail("demo@wayofwork.dev");
     setProfilePhone("+46-555-0123");
     setProfileRole("WORKER");
     setProfileJobTitle("Worker");

@@ -1,9 +1,6 @@
 /**
  * Host **`.claw/schedule/`** on the Way of Work checkout (see `getClawDotDirAbs()`): definitions
  * **`claw-schedules.v1.json`** plus server-owned **`claw-schedule-runs.v1.json`**.
- *
- * Legacy: older builds used **`<WOP_WORKSPACE>/.wayofpi/`** — migrated once on read when the new
- * definitions file is missing but the legacy file exists.
  */
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -17,7 +14,6 @@ import type {
 } from "../shared/claw-schedules-types.ts";
 import { CLAW_SCHEDULES_FILE_VERSION } from "../shared/claw-schedules-types.ts";
 import { getClawDotDirAbs } from "./claw-workspace-root";
-import { getPrimaryWorkspacePath } from "./workspace-state";
 
 function scheduleDir(): string {
 	return join(getClawDotDirAbs(), "schedule");
@@ -31,44 +27,15 @@ function runsPath(): string {
 	return join(scheduleDir(), "claw-schedule-runs.v1.json");
 }
 
-function legacyDefinitionsPath(): string {
-	return join(getPrimaryWorkspacePath(), ".wayofpi", "claw-schedules.v1.json");
-}
-
-function legacyRunsPath(): string {
-	return join(getPrimaryWorkspacePath(), ".wayofpi", "claw-schedule-runs.v1.json");
-}
-
-/** Copy legacy workspace `.wayofpi/*.json` into `.claw/schedule/` if the new definitions file is absent. */
-async function migrateLegacyClawScheduleFilesIfNeeded(): Promise<void> {
-	const nextDef = definitionsPath();
-	if (existsSync(nextDef)) return;
-	const legDef = legacyDefinitionsPath();
-	if (!existsSync(legDef)) return;
-	try {
-		await ensureParentDir(nextDef);
-		await writeFile(nextDef, await readFile(legDef, "utf8"), "utf8");
-		const legRuns = legacyRunsPath();
-		const nextRuns = runsPath();
-		if (existsSync(legRuns)) {
-			await ensureParentDir(nextRuns);
-			await writeFile(nextRuns, await readFile(legRuns, "utf8"), "utf8");
-		}
-	} catch {
-		/* next read will retry */
-	}
+function emptyRuns(): ClawScheduleRunsFile {
+	return { version: 1, byId: {} };
 }
 
 async function ensureParentDir(file: string): Promise<void> {
 	await mkdir(dirname(file), { recursive: true });
 }
 
-function emptyRuns(): ClawScheduleRunsFile {
-	return { version: 1, byId: {} };
-}
-
 export async function readClawScheduleRuns(): Promise<ClawScheduleRunsFile> {
-	await migrateLegacyClawScheduleFilesIfNeeded();
 	const p = runsPath();
 	try {
 		const raw = await readFile(p, "utf8");
@@ -137,7 +104,6 @@ export function normalizeSchedule(raw: unknown): ClawSchedule | null {
 }
 
 export async function readClawSchedulesDefinitions(): Promise<ClawSchedule[]> {
-	await migrateLegacyClawScheduleFilesIfNeeded();
 	const p = definitionsPath();
 	try {
 		const raw = await readFile(p, "utf8");

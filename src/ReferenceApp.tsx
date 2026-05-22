@@ -265,7 +265,7 @@ const TASKS_JSON_TEMPLATE = `{
 `;
 
 /** Public source repo (Help menu links, View License on GitHub). */
-const WOP_PUBLIC_REPO_URL = "https://github.com/zerwiz/wayofpi";
+const WOP_PUBLIC_REPO_URL = "https://github.com/zerwiz/wayofwork";
 
 /** Help → Give Feedback — [WhyNot Productions contact](https://whynotproductions.netlify.app/contact/). */
 const WOP_FEEDBACK_CONTACT_URL =

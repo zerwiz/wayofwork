@@ -123,7 +123,7 @@ function GithubConnectModal({
 						{
 							n: "2",
 							title: "Name it and set expiry",
-							body: "Give it any name (e.g. \u201cway-of-pi\u201d). Pick an expiry date \u2014 90 days is a safe choice. For fine-grained tokens, set the resource owner to your account.",
+							body: "Give it any name (e.g. \u201cway-of-work\u201d). Pick an expiry date \u2014 90 days is a safe choice. For fine-grained tokens, set the resource owner to your account.",
 						},
 						{
 							n: "3",
@@ -142,7 +142,7 @@ function GithubConnectModal({
 						{
 							n: "5",
 							title: "Paste it below and click Save",
-							body: "Paste the token in the box below. Way of Work verifies it with GitHub, then saves it only on your machine under .wayofpi/github-credentials.json. Nothing is sent anywhere else.",
+							body: "Paste the token in the box below. Way of Work verifies it with GitHub, then saves it only on your machine under .github-credentials.json. Nothing is sent anywhere else.",
 						},
 					].map((s) => (
 						<div key={s.n} className="flex gap-2.5">
@@ -201,7 +201,7 @@ function GithubConnectModal({
 }
 
 /**
- * “Manage settings” row: open GitHub in the browser + PAT-based connect (server verifies and stores under `.wayofpi/`).
+ * “Manage settings” row: open GitHub in the browser + PAT-based connect (server verifies and stores under `.github-credentials.json`).
  */
 export function GithubManageSettingsCard({
 	appearanceDark,
@@ -312,7 +312,7 @@ export function GithubManageSettingsCard({
 					<button
 						type="button"
 						className={ghBtn}
-						title="Verify a PAT with GitHub and save it under .wayofpi/ in this workspace"
+						title="Verify a PAT with GitHub and save it under .github-credentials.json in this workspace"
 						onClick={() => setModalOpen(true)}
 					>
 						GitHub

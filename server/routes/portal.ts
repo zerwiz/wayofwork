@@ -83,12 +83,24 @@ export function registerPortalRoutes(router: Router) {
 	router.get("/api/portal/files", async (_req, _params, auth) => {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
 		try {
-			const files = db.query(`
-				SELECT *
-				FROM workspace_files
-				WHERE tenant_id = ?
-				ORDER BY created_at DESC
-			`).all(auth.tenantId) as any[];
+			const isWorker = auth.role === "WORKER";
+			let files;
+			if (isWorker) {
+				files = db.query(`
+					SELECT f.*
+					FROM workspace_files f
+					JOIN project_members pm ON f.project_id = pm.project_id
+					WHERE f.tenant_id = ? AND pm.user_id = ?
+					ORDER BY f.created_at DESC
+				`).all(auth.tenantId, auth.userId) as any[];
+			} else {
+				files = db.query(`
+					SELECT *
+					FROM workspace_files
+					WHERE tenant_id = ?
+					ORDER BY created_at DESC
+				`).all(auth.tenantId) as any[];
+			}
 			return json(files || []);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
@@ -100,8 +112,16 @@ export function registerPortalRoutes(router: Router) {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
 		const id = params.id;
 		try {
-			const file = db.query("SELECT * FROM workspace_files WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
+			const isWorker = auth.role === "WORKER";
+			const file = db.query("SELECT * FROM workspace_files WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId) as any;
 			if (!file) return json({ error: "File not found" }, 404);
+
+			if (isWorker && file.project_id) {
+				const isMember = db.query("SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?")
+					.get(file.project_id, auth.userId);
+				if (!isMember) return json({ error: "Forbidden" }, 403);
+			}
+
 			return json(file);
 		} catch (e) {
 			return json({ error: "Failed to fetch file" }, 500);

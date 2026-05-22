@@ -200,6 +200,21 @@ CREATE INDEX IF NOT EXISTS idx_calendar_tenant ON calendar_events(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_calendar_project ON calendar_events(project_id);
 
 -- ============================================
+-- 11. PROJECT_MEMBERS (Access Control)
+-- ============================================
+CREATE TABLE IF NOT EXISTS project_members (
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role TEXT NOT NULL DEFAULT 'WORKER',
+    created_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (project_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_members_user ON project_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_project_members_tenant ON project_members(tenant_id);
+
+-- ============================================
 -- SAMPLE DATA (Development Only - Remove in Production)
 -- ============================================
 -- Insert demo tenant
@@ -227,6 +242,13 @@ VALUES
 -- Insert Sample Project
 INSERT OR IGNORE INTO projects (id, tenant_id, name, description, budget_allocated)
 VALUES ('proj_1', 'tenant_demo', 'Foundation Work', 'Main building foundation phase', 50000);
+
+-- Insert Project Members
+INSERT OR IGNORE INTO project_members (tenant_id, project_id, user_id, role)
+VALUES 
+    ('tenant_demo', 'proj_1', 'user_leader', 'LEADER'),
+    ('tenant_demo', 'proj_1', 'user_worker1', 'WORKER'),
+    ('tenant_demo', 'proj_1', 'user_worker2', 'WORKER');
 
 -- Insert Sample Tasks
 INSERT OR IGNORE INTO tasks (id, tenant_id, project_id, title, assigned_to, status, estimated_hours)

@@ -1,5 +1,6 @@
 import { db } from "./db";
 import type { Offer, Invoice, OfferItem } from "../shared/offer-types";
+import { auditLog } from "./audit-logger";
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -266,16 +267,43 @@ export async function handleOfferInvoiceApi(p: string, method: string, auth: Aut
   if (!auth) return json({ error: "Unauthorized" }, 401);
 
   const isAdmin = role === "ADMIN" || role === "SUPER_ADMIN";
-  const isLeader = role === "LEADER" || isAdmin;
-  const canWrite = role !== "CLIENT";
+  const isClient = role === "CLIENT";
+
+  // Economics shield: Block WORKER and LEADER from all offers/invoices
+  if (!isAdmin && !isClient) {
+    auditLog({
+      tenantId,
+      userId,
+      action: "ACCESS_DENIED",
+      resourceType: "offer_invoice",
+      summary: "Non-admin attempted to access offers/invoices"
+    });
+    return json({ error: "Forbidden" }, 403);
+  }
+
+  const canWrite = isAdmin; // Only ADMIN can create/edit offers/invoices
 
   // === OFFERS ===
 
   // GET /api/offers
   if (p === "/api/offers" && method === "GET") {
-    const offers = db.query(
-      "SELECT * FROM offers WHERE tenant_id = ? ORDER BY created_at DESC"
-    ).all(tenantId);
+    auditLog({
+      tenantId,
+      userId,
+      action: "VIEW_ECONOMICS",
+      resourceType: "offer",
+      summary: isClient ? "Client viewed their offers" : "Admin viewed all offers"
+    });
+    let offers;
+    if (isClient) {
+      offers = db.query(
+        "SELECT * FROM offers WHERE tenant_id = ? AND client_id = ? ORDER BY created_at DESC"
+      ).all(tenantId, userId);
+    } else {
+      offers = db.query(
+        "SELECT * FROM offers WHERE tenant_id = ? ORDER BY created_at DESC"
+      ).all(tenantId);
+    }
     return json(offers);
   }
 
@@ -402,9 +430,23 @@ export async function handleOfferInvoiceApi(p: string, method: string, auth: Aut
 
   // GET /api/invoices
   if (p === "/api/invoices" && method === "GET") {
-    const invoices = db.query(
-      "SELECT * FROM invoices WHERE tenant_id = ? ORDER BY created_at DESC"
-    ).all(tenantId);
+    auditLog({
+      tenantId,
+      userId,
+      action: "VIEW_ECONOMICS",
+      resourceType: "invoice",
+      summary: isClient ? "Client viewed their invoices" : "Admin viewed all invoices"
+    });
+    let invoices;
+    if (isClient) {
+      invoices = db.query(
+        "SELECT * FROM invoices WHERE tenant_id = ? AND client_id = ? ORDER BY created_at DESC"
+      ).all(tenantId, userId);
+    } else {
+      invoices = db.query(
+        "SELECT * FROM invoices WHERE tenant_id = ? ORDER BY created_at DESC"
+      ).all(tenantId);
+    }
     return json(invoices);
   }
 

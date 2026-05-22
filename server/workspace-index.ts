@@ -343,7 +343,7 @@ export async function syncWorkspaceIndexDoc(id: string): Promise<WorkspaceIndexD
 		const res = await fetch(e.url, {
 			signal: ac.signal,
 			headers: {
-				"User-Agent": "WayOfPi-Indexing/1.0 (+local docs crawl)",
+				"User-Agent": "Wo-Indexing/1.0 (+local docs crawl)",
 				Accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8",
 			},
 		});

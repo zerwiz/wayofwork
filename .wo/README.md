@@ -6,29 +6,39 @@ Canonical source for Way of Work agent definitions and skill files. The workspac
 
 ```
 .wo/
-  ├── agents/          → Agent .md files with YAML frontmatter
-  │   ├── ata.md          Swedish ÄTA expert
-  │   ├── claw.md         General assistant (web chat, Telegram)
-  │   ├── docs.md         Documentation specialist
-  │   ├── fakturering.md  Invoice & offer expert
-  │   ├── forskare.md     Construction research agent
-  │   ├── kanban.md       Kanban board assistant
-  │   ├── projektledare.md Project manager
-  │   └── schemaplanerare.md Scheduler
-  ├── skills/          → Skill directories with SKILL.md
-  │   ├── ata/             ÄTA change order management
-  │   ├── client-communication/ WhatsApp, Telegram, Email
-  │   ├── document-generation/ Offers, invoices, documents
-  │   ├── kanban-time/     Kanban boards + time tracking
-  │   ├── project-pricing/ Construction pricing frameworks
-  │   ├── research/        Web research for certifications/prices
-  │   ├── safety/          Workplace safety (AFS regulations)
-  │   ├── scheduling/      Daily planning, time verification
-  │   ├── swedish-building-laws/ PBL, BBR, AB 04, ABT 06, AMA
-  │   ├── time-calculation/ Construction time estimation
-  │   └── workers/         Worker & crew management
-  └── README.md        ← This file
+  agents/          Agent .md files with YAML frontmatter
+  skills/          Skill directories with SKILL.md
+  README.md        This file
 ```
+
+## Agents
+
+| File | Description |
+|---|---|
+| `agents/ata.md` | Swedish ÄTA expert — change orders |
+| `agents/claw.md` | General assistant — web chat, Telegram, tasks |
+| `agents/docs.md` | Documentation specialist |
+| `agents/fakturering.md` | Invoice & offer expert |
+| `agents/forskare.md` | Construction research agent |
+| `agents/kanban.md` | Kanban board assistant |
+| `agents/projektledare.md` | Project manager |
+| `agents/schemaplanerare.md` | Scheduler |
+
+## Skills
+
+| Directory | Description |
+|---|---|
+| `skills/ata/` | ÄTA change order management |
+| `skills/client-communication/` | WhatsApp, Telegram, Email |
+| `skills/document-generation/` | Offers, invoices, documents |
+| `skills/kanban-time/` | Kanban boards + time tracking |
+| `skills/project-pricing/` | Construction pricing frameworks |
+| `skills/research/` | Web research for certifications/prices |
+| `skills/safety/` | Workplace safety (AFS regulations) |
+| `skills/scheduling/` | Daily planning, time verification |
+| `skills/swedish-building-laws/` | PBL, BBR, AB 04, ABT 06, AMA |
+| `skills/time-calculation/` | Construction time estimation |
+| `skills/workers/` | Worker & crew management |
 
 ## Adding an Agent
 

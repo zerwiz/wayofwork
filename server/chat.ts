@@ -151,7 +151,7 @@ export async function streamChatCompletion(
 				headers: {
 					Authorization: `Bearer ${key}`,
 					"Content-Type": "application/json",
-					"HTTP-Referer": process.env.WOP_OPENROUTER_REFERER || "https://wayofpi.local",
+					"HTTP-Referer": process.env.WOP_OPENROUTER_REFERER || "https://wayofwork.local",
 					"X-Title": "Way of Work",
 				},
 				body: JSON.stringify({

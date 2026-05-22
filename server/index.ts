@@ -26,7 +26,15 @@ import { imageMimeFromPath } from "./workspace-file-mime";
 import { listPlansCatalog } from "./plans-catalog";
 import { readPackageScripts } from "./package-scripts";
 import { readUiViewsCatalog, seedUiViewsCatalogIfMissing } from "./ui-views-catalog";
-import { gitStageAbsolutePath, gitStageAllFromAbsolutePath } from "./git";
+import {
+	gitCommit,
+	gitLog,
+	gitPush,
+	gitStageAbsolutePath,
+	gitStageAllFromAbsolutePath,
+	gitStatusMap,
+	gitWorktreeSnapshot,
+} from "./git";
 import { buildClawHostTree, buildWorkspaceTree } from "./tree";
 import {
 	addFolder,
@@ -80,12 +88,12 @@ import {
 	unregisterChatSocketForToolLogs,
 } from "./tool-log-broadcast";
 import {
-	appendWayofpiSessionMessage,
-	loadWayofpiSessionMessages,
+	appendWoSessionMessage,
+	loadWoSessionMessages,
 	sanitizeSessionKey,
-	syncWayofpiSessionFile,
-	wayofpiSessionBasename,
-} from "./wop-session-jsonl";
+	syncWoSessionFile,
+	woSessionBasename,
+} from "./wo-session-jsonl";
 import { tryAutoDispatchFromUserText } from "./orchestrator-dispatch-intent";
 import {
 	orchestratorBashEnabled,
@@ -146,6 +154,8 @@ import { registerAuthRoutes } from "./routes/auth";
 import { registerPortalRoutes } from "./routes/portal";
 import { registerAdminRoutes } from "./routes/admin";
 import { registerClientRoutes } from "./routes/client";
+import { registerProjectRoutes } from "./routes/projects";
+import { registerCalendarRoutes } from "./routes/calendar";
 
 // Integrated terminal: in production (`NODE_ENV=production`) keep opt-in via WOP_ALLOW_TERMINAL only.
 // In non-production, default on when unset so local `npm run dev` gets a real shell; disable with WOP_ALLOW_TERMINAL=0|false|no|off.
@@ -196,8 +206,10 @@ type ChatWsData = {
 	/** Cumulative prompt + completion tokens (Pi footer-style — sums per finished assistant turn). */
 	cumPromptTokens: number;
 	cumCompletionTokens: number;
-	/** Client chat tab id — persists transcript under `agent/sessions/wayofpi-chat-*.jsonl`. */
+	/** Client chat tab id — persists transcript under `agent/sessions/wo-chat-*.jsonl`. */
 	wopSessionKey: string | null;
+	/** UI surface name for session isolation (e.g. claw, docs, kanban). */
+	surface: string | null;
 	tenantId: string;
 	userId: string;
 };
@@ -361,7 +373,7 @@ async function processActivateSession(
 
 	let hydratedFromDisk = false;
 	if (next.length === 0 && sessionKey) {
-		const disk = await loadWayofpiSessionMessages(sessionKey);
+		const disk = await loadWoSessionMessages(sessionKey, ws.data.surface || undefined);
 		if (disk.length > 0) {
 			ws.data.messages = disk;
 			hydratedFromDisk = true;
@@ -380,12 +392,12 @@ async function processActivateSession(
 
 	if (sessionKey) {
 		try {
-			await syncWayofpiSessionFile(sessionKey, ws.data.messages);
+			await syncWoSessionFile(sessionKey, ws.data.messages, ws.data.surface || undefined);
 			const n = ws.data.messages.filter((m) => m.role === "user" || m.role === "assistant").length;
 			broadcastToolLog(
 				"INFO",
 				"session",
-				`JSONL ${wayofpiSessionBasename(sessionKey)} (${n} turn${n === 1 ? "" : "s"})`,
+				`JSONL ${woSessionBasename(sessionKey, ws.data.surface || undefined)} (${n} turn${n === 1 ? "" : "s"})`,
 			);
 		} catch (e) {
 			const m = e instanceof Error ? e.message : String(e);
@@ -403,7 +415,7 @@ async function processActivateSession(
 			"INFO",
 			"chat",
 			hydratedFromDisk && sessionKey
-				? `Restored ${userAsstCount} message(s) from ${wayofpiSessionBasename(sessionKey)}`
+				? `Restored ${userAsstCount} message(s) from ${woSessionBasename(sessionKey)}`
 				: `Chat tab active — ${userAsstCount} message${userAsstCount === 1 ? "" : "s"} for this connection.`,
 		),
 	);
@@ -522,7 +534,7 @@ async function runChatTurn(
 				await applyLeadFromCache(data);
 				if (data.wopSessionKey) {
 					try {
-						await syncWayofpiSessionFile(data.wopSessionKey, data.messages);
+						await syncWoSessionFile(data.wopSessionKey, data.messages, data.surface || undefined);
 					} catch (e) {
 						const m = e instanceof Error ? e.message : String(e);
 						ws.send(logLine("WARN", "session", `sync JSONL after /clear: ${m}`));
@@ -538,14 +550,14 @@ async function runChatTurn(
 			if (!slash.skipUserEcho) {
 				if (notifyUser) ws.send(JSON.stringify({ type: "user_message", content: trimmed }));
 				data.messages.push({ role: "user", content: trimmed });
-				if (data.wopSessionKey) await appendWayofpiSessionMessage(data.wopSessionKey, "user", trimmed).catch(() => {});
+				if (data.wopSessionKey) await appendWoSessionMessage(data.wopSessionKey, "user", trimmed, data.surface || undefined).catch(() => {});
 			}
 			ws.send(JSON.stringify({ type: "assistant_turn_start" }));
 			const reply = slash.assistantText;
 			if (reply.length > 0) {
 				ws.send(JSON.stringify({ type: "assistant_delta", content: reply }));
 				data.messages.push({ role: "assistant", content: reply });
-				if (data.wopSessionKey) await appendWayofpiSessionMessage(data.wopSessionKey, "assistant", reply).catch(() => {});
+				if (data.wopSessionKey) await appendWoSessionMessage(data.wopSessionKey, "assistant", reply, data.surface || undefined).catch(() => {});
 			}
 			ws.send(JSON.stringify({ type: "done" }));
 			return;
@@ -568,7 +580,7 @@ async function runChatTurn(
 
 			if (data.wopSessionKey) {
 				try {
-					await appendWayofpiSessionMessage(data.wopSessionKey, "user", historyText);
+					await appendWoSessionMessage(data.wopSessionKey, "user", historyText, data.surface || undefined);
 				} catch (e) {
 					const m = e instanceof Error ? e.message : String(e);
 					ws.send(logLine("WARN", "session", `append user JSONL: ${m}`));
@@ -589,7 +601,7 @@ async function runChatTurn(
 				data.messages.push({ role: "assistant", content: reply });
 				if (data.wopSessionKey) {
 					try {
-						await appendWayofpiSessionMessage(data.wopSessionKey, "assistant", reply);
+						await appendWoSessionMessage(data.wopSessionKey, "assistant", reply, data.surface || undefined);
 					} catch (e) {
 						const m = e instanceof Error ? e.message : String(e);
 						ws.send(logLine("WARN", "session", `append assistant JSONL: ${m}`));
@@ -607,7 +619,7 @@ async function runChatTurn(
 		data.messages.push({ role: "user", content: text });
 		if (data.wopSessionKey) {
 			try {
-				await appendWayofpiSessionMessage(data.wopSessionKey, "user", text);
+				await appendWoSessionMessage(data.wopSessionKey, "user", text, data.surface || undefined);
 			} catch (e) {
 				const m = e instanceof Error ? e.message : String(e);
 				ws.send(logLine("WARN", "session", `append user JSONL: ${m}`));
@@ -675,7 +687,7 @@ async function runChatTurn(
 			data.messages.length = lenBeforeUserMsg;
 			if (data.wopSessionKey) {
 				try {
-					await syncWayofpiSessionFile(data.wopSessionKey, data.messages);
+					await syncWoSessionFile(data.wopSessionKey, data.messages, data.surface || undefined);
 				} catch {
 					/* ignore */
 				}
@@ -686,7 +698,7 @@ async function runChatTurn(
 		const budget = applyChatContextBudget(data.messages, sendLog);
 		if (budget.droppedMessages > 0 && data.wopSessionKey) {
 			try {
-				await syncWayofpiSessionFile(data.wopSessionKey, data.messages);
+				await syncWoSessionFile(data.wopSessionKey, data.messages, data.surface || undefined);
 			} catch (e) {
 				const m = e instanceof Error ? e.message : String(e);
 				sendLog("WARN", "session", `sync JSONL after context budget trim: ${m}`);
@@ -819,7 +831,7 @@ async function runChatTurn(
 						data.messages.push({ role: "assistant", content: full });
 						if (data.wopSessionKey) {
 							try {
-								await appendWayofpiSessionMessage(data.wopSessionKey, "assistant", full);
+								await appendWoSessionMessage(data.wopSessionKey, "assistant", full, data.surface || undefined);
 							} catch (e) {
 								const m = e instanceof Error ? e.message : String(e);
 								sendLog("WARN", "session", `append assistant JSONL: ${m}`);
@@ -838,7 +850,7 @@ async function runChatTurn(
 					data.messages.length = lenBeforeUserMsg;
 					if (data.wopSessionKey) {
 						try {
-							await syncWayofpiSessionFile(data.wopSessionKey, data.messages);
+							await syncWoSessionFile(data.wopSessionKey, data.messages, data.surface || undefined);
 						} catch {
 							/* ignore */
 						}
@@ -860,7 +872,7 @@ async function runChatTurn(
 			}
 			if (data.wopSessionKey && full.length > 0) {
 				try {
-					await appendWayofpiSessionMessage(data.wopSessionKey, "assistant", full);
+					await appendWoSessionMessage(data.wopSessionKey, "assistant", full, data.surface || undefined);
 				} catch (e) {
 					const m = e instanceof Error ? e.message : String(e);
 					sendLog("WARN", "session", `append assistant JSONL: ${m}`);
@@ -874,7 +886,7 @@ async function runChatTurn(
 			data.messages.length = lenBeforeUserMsg;
 			if (data.wopSessionKey) {
 				try {
-					await syncWayofpiSessionFile(data.wopSessionKey, data.messages);
+					await syncWoSessionFile(data.wopSessionKey, data.messages, data.surface || undefined);
 				} catch {
 					/* ignore */
 				}
@@ -945,6 +957,8 @@ registerAuthRoutes(apiRouter);
 registerPortalRoutes(apiRouter);
 registerAdminRoutes(apiRouter);
 registerClientRoutes(apiRouter);
+registerProjectRoutes(apiRouter);
+registerCalendarRoutes(apiRouter);
 
 async function handleApi(url: URL, req: Request): Promise<Response> {
 	/** Collapse duplicate slashes; strip trailing slash (except root). */
@@ -1069,218 +1083,6 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	}
 
 	// Worker Portal APIs
-	if (p === "/api/projects" && req.method === "GET") {
-		if (!auth) return json({ error: "Unauthorized" }, 401);
-		try {
-			const projects = db.query("SELECT * FROM projects WHERE tenant_id = ?").all(auth.tenantId) as any[];
-			return json(projects || []);
-		} catch (e) {
-			const message = e instanceof Error ? e.message : String(e);
-			return json({ error: "Failed to fetch projects", details: message }, 500);
-		}
-	}
-
-	if (p === "/api/projects" && req.method === "POST") {
-		if (!auth) return json({ error: "Unauthorized" }, 401);
-		let body: { name?: string; description?: string; budget_allocated?: number; status?: string };
-		try {
-			body = (await req.json()) as any;
-		} catch {
-			return json({ error: "Invalid JSON" }, 400);
-		}
-		if (!body.name) return json({ error: "Name required" }, 400);
-		try {
-			const id = `proj_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-			db.query(`
-				INSERT INTO projects (id, tenant_id, name, description, budget_allocated, status, created_by)
-				VALUES (?, ?, ?, ?, ?, ?, ?)
-			`).run(id, auth.tenantId, body.name, body.description || null, body.budget_allocated || 0, body.status || "active", auth.userId);
-			const project = db.query("SELECT * FROM projects WHERE id = ?").get(id);
-			return json(project);
-		} catch (e) {
-			const message = e instanceof Error ? e.message : String(e);
-			return json({ error: "Failed to create project", details: message }, 500);
-		}
-	}
-
-	if (p.startsWith("/api/projects/") && req.method === "PUT") {
-		if (!auth) return json({ error: "Unauthorized" }, 401);
-		const id = p.split("/")[3];
-		let body: any;
-		try {
-			body = await req.json();
-		} catch {
-			return json({ error: "Invalid JSON" }, 400);
-		}
-		try {
-			const existing = db.query("SELECT * FROM projects WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
-			if (!existing) return json({ error: "Project not found" }, 404);
-			
-			db.query(`
-				UPDATE projects 
-				SET name = COALESCE(?, name), 
-				    description = COALESCE(?, description), 
-				    budget_allocated = COALESCE(?, budget_allocated), 
-				    status = COALESCE(?, status)
-				WHERE id = ? AND tenant_id = ?
-			`).run(body.name, body.description, body.budget_allocated, body.status, id, auth.tenantId);
-			
-			const project = db.query("SELECT * FROM projects WHERE id = ?").get(id);
-			return json(project);
-		} catch (e) {
-			return json({ error: "Failed to update project" }, 500);
-		}
-	}
-
-	if (p.startsWith("/api/projects/") && req.method === "DELETE") {
-		if (!auth) return json({ error: "Unauthorized" }, 401);
-		const id = p.split("/")[3];
-		try {
-			const existing = db.query("SELECT * FROM projects WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
-			if (!existing) return json({ error: "Project not found" }, 404);
-			db.query("DELETE FROM projects WHERE id = ? AND tenant_id = ?").run(id, auth.tenantId);
-			db.query("UPDATE tasks SET project_id = NULL WHERE project_id = ?").run(id);
-			return json({ ok: true });
-		} catch (e) {
-			return json({ error: "Failed to delete project" }, 500);
-		}
-	}
-
-	if (p === "/api/notes" && req.method === "GET") {
-		if (!auth) return json({ error: "Unauthorized" }, 401);
-		try {
-			const notes = db.query("SELECT * FROM notes WHERE tenant_id = ?").all(auth.tenantId) as any[];
-			return json(notes || []);
-		} catch (e) {
-			const message = e instanceof Error ? e.message : String(e);
-			return json({ error: "Failed to fetch notes", details: message }, 500);
-		}
-	}
-
-	if (p === "/api/notes" && req.method === "POST") {
-		if (!auth) return json({ error: "Unauthorized" }, 401);
-		let body: { title?: string; content?: string; project_id?: string };
-		try {
-			body = (await req.json()) as any;
-		} catch {
-			return json({ error: "Invalid JSON" }, 400);
-		}
-		if (!body.title) return json({ error: "Title required" }, 400);
-		try {
-			const id = `note_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-			db.query(`
-				INSERT INTO notes (id, tenant_id, project_id, title, content, created_by)
-				VALUES (?, ?, ?, ?, ?, ?)
-			`).run(id, auth.tenantId, body.project_id || null, body.title, body.content || null, auth.userId);
-			const note = db.query("SELECT * FROM notes WHERE id = ?").get(id);
-			return json(note);
-		} catch (e) {
-			const message = e instanceof Error ? e.message : String(e);
-			return json({ error: "Failed to create note", details: message }, 500);
-		}
-	}
-
-	if (p.startsWith("/api/notes/") && req.method === "PUT") {
-		if (!auth) return json({ error: "Unauthorized" }, 401);
-		const id = p.split("/")[3];
-		let body: any;
-		try {
-			body = await req.json();
-		} catch {
-			return json({ error: "Invalid JSON" }, 400);
-		}
-		try {
-			db.query(`
-				UPDATE notes 
-				SET title = COALESCE(?, title), 
-				    content = COALESCE(?, content),
-				    updated_at = datetime('now')
-				WHERE id = ? AND tenant_id = ?
-			`).run(body.title, body.content, id, auth.tenantId);
-			const note = db.query("SELECT * FROM notes WHERE id = ?").get(id);
-			return json(note);
-		} catch (e) {
-			return json({ error: "Failed to update note" }, 500);
-		}
-	}
-
-	if (p === "/api/calendar/events" && req.method === "GET") {
-		if (!auth) return json({ error: "Unauthorized" }, 401);
-		try {
-			const events = db.query("SELECT * FROM calendar_events WHERE tenant_id = ? AND (user_id = ? OR created_by = ?)").all(auth.tenantId, auth.userId, auth.userId) as any[];
-			return json(events || []);
-		} catch (e) {
-			const message = e instanceof Error ? e.message : String(e);
-			return json({ error: "Failed to fetch events", details: message }, 500);
-		}
-	}
-
-	if (p === "/api/calendar/events" && req.method === "POST") {
-		if (!auth) return json({ error: "Unauthorized" }, 401);
-		let body: { title?: string; description?: string; start_date?: string; end_date?: string; all_day?: boolean; project_id?: string };
-		try {
-			body = (await req.json()) as any;
-		} catch {
-			return json({ error: "Invalid JSON" }, 400);
-		}
-		if (!body.title || !body.start_date || !body.end_date) return json({ error: "Title, start_date and end_date required" }, 400);
-		try {
-			const id = `event_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-			db.query(`
-				INSERT INTO calendar_events (id, tenant_id, user_id, project_id, title, description, start_date, end_date, all_day, created_by)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`).run(id, auth.tenantId, auth.userId, body.project_id || null, body.title, body.description || null, body.start_date, body.end_date, body.all_day ? 1 : 0, auth.userId);
-			const event = db.query("SELECT * FROM calendar_events WHERE id = ?").get(id);
-			return json(event);
-		} catch (e) {
-			return json({ error: "Failed to create event" }, 500);
-		}
-	}
-
-	// PUT /api/calendar/events/:id
-	const calendarEventMatch = p.match(/^\/api\/calendar\/events\/(.+)$/);
-	if (calendarEventMatch && req.method === "PUT") {
-		if (!auth) return json({ error: "Unauthorized" }, 401);
-		const eventId = calendarEventMatch[1];
-		let body: { title?: string; description?: string; start_date?: string; end_date?: string; all_day?: boolean; project_id?: string };
-		try {
-			body = (await req.json()) as any;
-		} catch {
-			return json({ error: "Invalid JSON" }, 400);
-		}
-		try {
-			const existing = db.query("SELECT * FROM calendar_events WHERE id = ? AND tenant_id = ?").get(eventId, auth.tenantId) as any;
-			if (!existing) return json({ error: "Event not found" }, 404);
-			const title = body.title ?? existing.title;
-			const description = body.description !== undefined ? body.description : existing.description;
-			const start_date = body.start_date ?? existing.start_date;
-			const end_date = body.end_date ?? existing.end_date;
-			const all_day = body.all_day !== undefined ? (body.all_day ? 1 : 0) : existing.all_day;
-			const project_id = body.project_id !== undefined ? body.project_id : existing.project_id;
-			db.query(`
-				UPDATE calendar_events SET title = ?, description = ?, start_date = ?, end_date = ?, all_day = ?, project_id = ?
-				WHERE id = ? AND tenant_id = ?
-			`).run(title, description, start_date, end_date, all_day, project_id, eventId, auth.tenantId);
-			const updated = db.query("SELECT * FROM calendar_events WHERE id = ?").get(eventId);
-			return json(updated);
-		} catch (e) {
-			return json({ error: "Failed to update event" }, 500);
-		}
-	}
-
-	if (calendarEventMatch && req.method === "DELETE") {
-		if (!auth) return json({ error: "Unauthorized" }, 401);
-		const eventId = calendarEventMatch[1];
-		try {
-			const existing = db.query("SELECT * FROM calendar_events WHERE id = ? AND tenant_id = ?").get(eventId, auth.tenantId) as any;
-			if (!existing) return json({ error: "Event not found" }, 404);
-			db.query("DELETE FROM calendar_events WHERE id = ? AND tenant_id = ?").run(eventId, auth.tenantId);
-			return json({ ok: true });
-		} catch (e) {
-			return json({ error: "Failed to delete event" }, 500);
-		}
-	}
-
 	if (p === "/api/portal/me" && req.method === "GET") {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
 		const user = db.query("SELECT id, username, role, tenant_id FROM users WHERE id = ?").get(auth.userId) as any;
@@ -2744,13 +2546,61 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	}
 
 	if (p === "/api/github/disconnect" && req.method === "POST") {
+		await removeGithubCredentials();
+		return json({ ok: true });
+	}
+
+	if (p === "/api/github/save-version" && req.method === "POST") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: { message?: string };
 		try {
-			await removeGithubCredentials();
+			body = (await req.json()) as any;
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		const message = body.message?.trim() || `Version saved by ${auth.userId} at ${new Date().toLocaleString()}`;
+		const root = getWorkspaceRoot();
+
+		try {
+			// 1. Stage all
+			const stageRes = await gitStageAllFromAbsolutePath(root);
+			if (!stageRes.ok) return json({ error: `Stage failed: ${stageRes.error}` }, 500);
+
+			// 2. Commit
+			const commitRes = await gitCommit(root, message);
+			if (!commitRes.ok) {
+				if (commitRes.error.includes("nothing to commit")) {
+					return json({ ok: true, message: "Nothing to save" });
+				}
+				return json({ error: `Commit failed: ${commitRes.error}` }, 500);
+			}
+
+			// 3. Push
+			const token = await readGithubTokenForGit();
+			const pushRes = await gitPush(root, token);
+			if (!pushRes.ok) return json({ error: `Push failed: ${pushRes.error}` }, 500);
+
+			auditLog({
+				tenantId: auth.tenantId,
+				userId: auth.userId,
+				action: "SAVE_VERSION",
+				resourceType: "git",
+				summary: `User saved a new version: ${message}`
+			});
+
 			return json({ ok: true });
 		} catch (e) {
-			const message = e instanceof Error ? e.message : String(e);
-			return json({ ok: false, error: message }, 500);
+			const m = e instanceof Error ? e.message : String(e);
+			return json({ error: `Save version failed: ${m}` }, 500);
 		}
+	}
+
+	if (p === "/api/github/version-history" && req.method === "GET") {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const root = getWorkspaceRoot();
+		const history = await gitLog(root);
+		if ("error" in history) return json({ error: history.error }, 500);
+		return json(history);
 	}
 
 	if (p === "/api/manifest" && req.method === "GET") {
@@ -3252,11 +3102,13 @@ const server = Bun.serve<ServerWsData>({
                                         chatAbort: null,
                                         cumPromptTokens: 0,
                                         cumCompletionTokens: 0,
-                                        wopSessionKey: null,
+                                        wopSessionKey: url.searchParams.get("wopSessionKey") || null,
+                                        surface: url.searchParams.get("surface") || null,
 					tenantId: auth?.tenantId || "dev-tenant",
 					userId: auth?.userId || "dev-user",
                                 } satisfies ChatWsData,
                         });
+
                         if (upgraded) return undefined as unknown as Response;
                         return new Response("WebSocket upgrade failed", { status: 500 });
                 }
@@ -3276,6 +3128,19 @@ const server = Bun.serve<ServerWsData>({
 					attachTerminalSession(ws);
 					return;
 				}
+
+				// Auto-select agent based on surface if not already set
+				if (!ws.data.agentName && ws.data.surface) {
+					const s = ws.data.surface;
+					if (s === "claw") ws.data.agentName = "claw";
+					else if (s === "docs") ws.data.agentName = "docs";
+					else if (s === "kanban") ws.data.agentName = "kanban";
+					else if (s === "ata") ws.data.agentName = "ata";
+					else if (s === "billing") ws.data.agentName = "fakturering";
+					else if (s === "planning") ws.data.agentName = "schemaplanerare";
+					else if (s === "project") ws.data.agentName = "projektledare";
+				}
+
 				await applyLeadFromCache(ws.data);
 				const provider = (process.env.WOP_LLM_PROVIDER || "ollama").toLowerCase();
 				const envOllama = resolveOllamaModelDefault();

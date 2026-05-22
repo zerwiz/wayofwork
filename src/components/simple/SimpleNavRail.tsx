@@ -71,7 +71,7 @@ export function SimpleNavRail({
 				<div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full border border-[#ea580c]/35 bg-[#ea580c]/15 shadow-sm">
 					<Cpu className="text-[#fb923c]" size={28} />
 				</div>
-				<span className={`hidden text-xs font-extrabold tracking-tight md:inline ${logoText}`}>WAY OF PI</span>
+				<span className={`hidden text-xs font-extrabold tracking-tight md:inline ${logoText}`}>WAY OF WORK</span>
 			</div>
 
 			<NavItem icon={MessageCircle} label="Chat" id="chat" />

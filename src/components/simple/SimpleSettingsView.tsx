@@ -239,10 +239,11 @@ export function SimpleSettingsView({
 						<div className={`rounded-2xl border p-6 shadow-sm ${card}`}>
 							<h3 className={`font-bold ${heading}`}>Indexing & Docs</h3>
 							<p className={`mt-1 text-sm ${sub}`}>
-								Local workspace manifest under <code className="text-xs">.wayofpi/index</code>, optional chat
+								Local workspace manifest under <code className="text-xs">.index</code>, optional chat
 								context, and HTTP(S) doc crawls — same product area as Cursor’s Indexing & Docs (without cloud
 								embeddings).
 							</p>
+
 							<button
 								type="button"
 								onClick={onOpenIndexingDocs}

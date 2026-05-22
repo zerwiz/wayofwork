@@ -70,7 +70,7 @@ export function UserProfilePage({
 
       if (import.meta.env.DEV) {
         try {
-          const resp = await fetch("/__wop_dev/start-wayofpi-api", {
+          const resp = await fetch("/__wop_dev/start-wo-api", {
             method: "POST",
           });
           if (resp.status !== 404) {
@@ -87,12 +87,12 @@ export function UserProfilePage({
         }
       }
 
-      const cmd = "./start-wayofpi.sh --web";
+      const cmd = "./start-wo.sh --web";
       try {
         await navigator.clipboard.writeText(cmd);
-        setStartHint("Command copied to clipboard: ./start-wayofpi.sh --web");
+        setStartHint("Command copied to clipboard: ./start-wo.sh --web");
       } catch {
-        setStartHint("Run this in your terminal: ./start-wayofpi.sh --web");
+        setStartHint("Run this in your terminal: ./start-wo.sh --web");
       }
     } catch (e) {
       setStartHint(e instanceof Error ? e.message : String(e));
@@ -133,7 +133,7 @@ export function UserProfilePage({
               id: payload.id,
               username: payload.id,
               fullName: nameMap[payload.id] || payload.id,
-              email: "demo@wayofpi.dev",
+              email: "demo@wayofwork.dev",
               phone: "+46-555-0123",
               role: payload.role,
               jobTitle: jobMap[payload.id] || payload.role,
@@ -147,7 +147,7 @@ export function UserProfilePage({
                 { id: "cert-6", name: "Truckkort (Forklift A/B)", issuer: "TYA", validUntil: "2028-01-15", category: "machine" as const, status: "valid" as const },
               ] : [],
               calendarConnections: [
-                { id: "cal-1", provider: "internal" as const, connected: true, email: "demo@wayofpi.dev" },
+                { id: "cal-1", provider: "internal" as const, connected: true, email: "demo@wayofwork.dev" },
               ],
             };
             setProfile(demoProfile);

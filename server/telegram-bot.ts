@@ -10,109 +10,79 @@ import { processBotMessage } from "./claw-bot-bridge";
 const TELEGRAM_API = "https://api.telegram.org";
 
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
-let lastUpdateId = 0;
-let botUsername = "";
-
-export function getBotUsername(): string {
-	return botUsername;
-}
+const lastUpdateIds = new Map<string, number>();
 
 /**
- * Start long-polling for Telegram updates.
- * Must be called after server is ready.
+ * Start long-polling for all active Telegram bots.
  */
 export async function startTelegramBot(): Promise<void> {
-	const token = process.env.WOP_TELEGRAM_BOT_TOKEN;
-	if (!token) {
-		console.log("[telegram-bot] No WOP_TELEGRAM_BOT_TOKEN set — bot disabled");
-		return;
-	}
-
-	// Validate token and get bot info
-	try {
-		const meRes = await fetch(`${TELEGRAM_API}/bot${token}/getMe`);
-		const me = await meRes.json() as any;
-		if (!me.ok) {
-			console.error("[telegram-bot] Invalid token:", me.description);
-			return;
+	// Initialize with the env token if provided (for backwards compatibility)
+	const envToken = process.env.WOP_TELEGRAM_BOT_TOKEN;
+	if (envToken) {
+		// Just ensure it's in the DB with 'default' tenant
+		try {
+			const existing = db.query(
+				"SELECT id FROM bot_telegram_accounts WHERE bot_token_encrypted = ?"
+			).get(envToken) as any;
+			if (!existing) {
+				const id = `tgb_env_${Date.now()}`;
+				db.query(`
+					INSERT INTO bot_telegram_accounts (id, tenant_id, label, bot_token_encrypted, active)
+					VALUES (?, 'default', 'System Bot', ?, 1)
+				`).run(id, envToken);
+			}
+		} catch (e) {
+			console.error("[telegram-bot] Failed to sync env token to DB:", e);
 		}
-		botUsername = me.result.username;
-		console.log(`[telegram-bot] Started as @${botUsername}`);
-	} catch (e) {
-		console.error("[telegram-bot] Failed to connect:", e);
-		return;
 	}
 
-	// Register/update the bot account in the database
-	registerBotInDb(token, botUsername);
-
-	pollingInterval = setInterval(() => pollUpdates(token), 2000);
+	console.log("[telegram-bot] Started multi-bot polling");
+	pollingInterval = setInterval(() => pollAllBots(), 3000);
 }
 
-function registerBotInDb(token: string, username: string): void {
+async function pollAllBots(): Promise<void> {
 	try {
-		const existing = db.query(
-			"SELECT id FROM bot_telegram_accounts WHERE bot_username = ?"
-		).get(username) as any;
-		if (existing) {
-			// Update bot_token_encrypted and reactivate
-			db.query(
-				"UPDATE bot_telegram_accounts SET bot_token_encrypted = ?, active = 1 WHERE id = ?"
-			).run(token, existing.id);
-		} else {
-			const id = `tgb_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-			db.query(`
-				INSERT INTO bot_telegram_accounts (id, tenant_id, label, bot_token_encrypted, bot_username, active)
-				VALUES (?, 'default', ?, ?, ?, 1)
-			`).run(id, username, token, username);
+		const activeBots = db.query(`
+			SELECT id, tenant_id, bot_token_encrypted as token
+			FROM bot_telegram_accounts
+			WHERE active = 1
+		`).all() as { id: string, tenant_id: string, token: string }[];
+
+		for (const bot of activeBots) {
+			void pollUpdates(bot.token, bot.tenant_id).catch(() => {});
 		}
 	} catch (e) {
-		console.error("[telegram-bot] Failed to register bot in DB:", e);
+		console.error("[telegram-bot] Error fetching active bots:", e);
 	}
 }
 
-export function stopTelegramBot(): void {
-	if (pollingInterval) {
-		clearInterval(pollingInterval);
-		pollingInterval = null;
-		console.log("[telegram-bot] Stopped");
-	}
-}
-
-interface TelegramUpdate {
-	update_id: number;
-	message?: {
-		message_id: number;
-		from: { id: number; first_name?: string; last_name?: string; username?: string };
-		chat: { id: number; type: string };
-		text?: string;
-	};
-}
-
-async function pollUpdates(token: string): Promise<void> {
+async function pollUpdates(token: string, tenantId: string): Promise<void> {
+	const lastUpdateId = lastUpdateIds.get(token) || 0;
 	try {
 		const res = await fetch(
-			`${TELEGRAM_API}/bot${token}/getUpdates?offset=${lastUpdateId + 1}&timeout=10`
+			`${TELEGRAM_API}/bot${token}/getUpdates?offset=${lastUpdateId + 1}&timeout=5`
 		);
 		const data = await res.json() as { ok: boolean; result: TelegramUpdate[] };
 		if (!data.ok || !data.result?.length) return;
 
+		let maxId = lastUpdateId;
 		for (const update of data.result) {
-			if (update.update_id >= lastUpdateId) {
-				lastUpdateId = update.update_id;
+			if (update.update_id > maxId) {
+				maxId = update.update_id;
 			}
 			if (update.message?.text) {
-				void handleMessage(token, update).catch((e) =>
+				void handleMessage(token, tenantId, update).catch((e) =>
 					console.error("[telegram-bot] Error handling message:", e)
 				);
 			}
 		}
+		lastUpdateIds.set(token, maxId);
 	} catch (e) {
-		// Network errors in polling are normal (timeouts, etc.)
+		// Network errors in polling are normal
 	}
 }
 
-async function handleMessage(token: string, update: TelegramUpdate): Promise<void> {
+async function handleMessage(token: string, botTenantId: string, update: TelegramUpdate): Promise<void> {
 	const msg = update.message!;
 	const chatId = msg.chat.id;
 	const fromId = String(msg.from.id);
@@ -123,19 +93,20 @@ async function handleMessage(token: string, update: TelegramUpdate): Promise<voi
 	if (!text) return;
 
 	// Find the user by their Telegram user ID in channel links
+	// Scoped to the bot's tenant
 	const link = db.query(`
 		SELECT l.tenant_id, l.user_id, u.full_name
 		FROM user_channel_links l
 		JOIN users u ON l.user_id = u.id AND l.tenant_id = u.tenant_id
-		WHERE l.channel = 'telegram' AND l.channel_user_id = ?
+		WHERE l.channel = 'telegram' AND l.channel_user_id = ? AND l.tenant_id = ?
 		LIMIT 1
-	`).get(fromId) as { tenant_id: string; user_id: string; full_name: string | null } | undefined;
+	`).get(fromId, botTenantId) as { tenant_id: string; user_id: string; full_name: string | null } | undefined;
 
 	if (!link) {
 		await sendTelegramMessage(token, chatId, [
-			`Hello ${userName}! I'm Claw (@${botUsername}).`,
+			`Hello ${userName}!`,
 			"",
-			"You are not linked to a Way of Work account yet.",
+			"You are not linked to a Way of Work account for this bot yet.",
 			"To link your account:",
 			"1. Log into Way of Work",
 			"2. Go to your Profile → Channel Links",
@@ -154,13 +125,14 @@ async function handleMessage(token: string, update: TelegramUpdate): Promise<voi
 	// Show typing indicator
 	await sendTelegramChatAction(token, chatId, "typing");
 
-	// Process through Claw AI
+	// Process through Claw AI (session persistence is automated in processBotMessage)
 	const result = await processBotMessage({
 		tenantId: link.tenant_id,
 		userId: link.user_id,
 		userName: displayName,
 		messageText: text,
 		channel: "telegram",
+		channelUserId: fromId,
 	});
 
 	if (result.ok && result.response) {

@@ -1,7 +1,5 @@
 /**
- * Resolve Ollama host + default chat model the same way Pi in this playground is typically run:
- * repo **`.env`** uses **`OLLAMA_BASE_URL`** + **`OLLAMA_MODEL`** (see **`scripts/pi-with-env`**);
- * Pi session defaults also live in **`agent/settings.json`** (`defaultProvider`, `defaultModel`).
+ * Resolve Ollama host + default chat model.
  *
  * Way of Work historically used **`OLLAMA_HOST`** only — we merge both shapes here.
  *
@@ -16,21 +14,16 @@ import { listWorkspaceFolders } from "./workspace-state";
  * Absolute path to this **Way of Work** web-server package on disk: the directory that contains
  * **`apps/wayofwork-ui`** (resolved to the monorepo / checkout root with `wop.upstream.lock.json`, etc.).
  *
- * Use only for **install / upstream / self-check** paths. **Never** treat as the user’s opened
+ * Use only for **install / upstream / self-check** paths. **Never** treat as the user's opened
  * project — project roots come from **`listWorkspaceFolders()`** / **`WOP_WORKSPACE`** / Open Folder
  * (see **`workspace-state.ts`**).
  */
-export function getWayOfPiBundleRepoRoot(): string {
+export function getWoBundleRepoRoot(): string {
 	return join(import.meta.dir, "..", "..");
 }
 
-/** @deprecated Prefer {@link getWayOfPiBundleRepoRoot} — same path; old name referred to “playground” checkout. */
-export function getPlaygroundRepoRoot(): string {
-	return getWayOfPiBundleRepoRoot();
-}
-
 /** Strip trailing `/` and trailing OpenAI-style **`/v1`** so Ollama REST roots match **`fetchOllamaTags`**. */
-export function normalizePiOllamaBaseUrlToHost(raw: string): string {
+export function normalizeOllamaBaseUrlToHost(raw: string): string {
 	let u = raw.trim().replace(/\/+$/, "");
 	if (u.endsWith("/v1")) u = u.slice(0, -3).replace(/\/+$/, "");
 	return u || "http://127.0.0.1:11434";
@@ -52,12 +45,12 @@ function tryReadAgentSettingsDefaultModel(agentDirRoot: string): string | null {
 	}
 }
 
-/** Prefer **`OLLAMA_HOST`**, else Pi-style **`OLLAMA_BASE_URL`** from repo `.env`. */
+/** Prefer **`OLLAMA_HOST`**, else **`OLLAMA_BASE_URL`** from repo `.env`. */
 export function resolveOllamaHost(): string {
 	const host = process.env.OLLAMA_HOST?.trim();
 	if (host) return host.replace(/\/$/, "");
 	const base = process.env.OLLAMA_BASE_URL?.trim();
-	if (base) return normalizePiOllamaBaseUrlToHost(base);
+	if (base) return normalizeOllamaBaseUrlToHost(base);
 	return "http://127.0.0.1:11434";
 }
 

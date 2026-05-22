@@ -202,7 +202,7 @@ export function SimpleModelsView({
 							<span className="font-mono text-[11px]">OPENROUTER_*</span>, … Full list:{" "}
 							<span className="font-mono text-[11px]">apps/wayofwork-ui/.env.sample</span> in the Way of Work repo. When you
 							start from <span className="font-mono text-[11px]">./start-wayofwork-ui.sh</span> or{" "}
-							<span className="font-mono text-[11px]">./start-wayofpi-electron.sh</span>, a <span className="font-mono text-[11px]">.env</span>{" "}
+							<span className="font-mono text-[11px]">./start-wo-electron.sh</span>, a <span className="font-mono text-[11px]">.env</span>{" "}
 							at the <strong className={heading}>repository root</strong> (next to <span className="font-mono text-[11px]">apps/</span>) is
 							sourced before Bun. Change env → restart the dev server.
 						</li>

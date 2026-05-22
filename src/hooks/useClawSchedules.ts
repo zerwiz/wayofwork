@@ -12,11 +12,11 @@ import type {
 } from "../../shared/claw-schedules-types";
 import { apiGet, apiPutJson } from "../api/client";
 import {
-	ensureDevWayOfPiApiFresh,
+	ensureDevWoApiFresh,
 	healthSupportsClawHostTree,
-	staleWayOfPiApiMessage,
-} from "../utils/wayofpiDevApiWarmup";
-import { WAYOFPI_CLAW_SCHEDULES_SYNCED_EVENT } from "./useClawAutomationStatus";
+	staleWoApiMessage,
+} from "../utils/woDevApiWarmup";
+import { WO_CLAW_SCHEDULES_SYNCED_EVENT } from "./useClawAutomationStatus";
 
 export type { ClawSchedule, ScheduleLastResult, ScheduleStatus, ScheduleTriggerMode };
 
@@ -104,9 +104,9 @@ type SchedulesApiGet = { version?: number; schedules?: ClawSchedule[] };
 type SchedulesApiPut = { ok?: boolean; schedules?: ClawSchedule[] };
 
 async function fetchSchedulesFromApi(): Promise<SchedulesApiGet> {
-	const caps = await ensureDevWayOfPiApiFresh();
+	const caps = await ensureDevWoApiFresh();
 	if (caps !== null && !healthSupportsClawHostTree(caps)) {
-		throw new Error(staleWayOfPiApiMessage());
+		throw new Error(staleWoApiMessage());
 	}
 	try {
 		return await apiGet<SchedulesApiGet>("/api/claw/schedules");
@@ -117,7 +117,7 @@ async function fetchSchedulesFromApi(): Promise<SchedulesApiGet> {
 		const emb = cfg.clawSchedules;
 		if (emb?.version === 1 && Array.isArray(emb.schedules)) return emb;
 		throw new Error(
-			`${m1} Schedules need GET /api/claw/schedules or GET /api/config?schedules=1 with clawSchedules. ${staleWayOfPiApiMessage()}`,
+			`${m1} Schedules need GET /api/claw/schedules or GET /api/config?schedules=1 with clawSchedules. ${staleWoApiMessage()}`,
 		);
 	}
 }
@@ -182,7 +182,7 @@ export function useClawSchedules() {
 					if (Array.isArray(out.schedules)) {
 						setSchedules(out.schedules);
 						setSyncError(null);
-						window.dispatchEvent(new CustomEvent(WAYOFPI_CLAW_SCHEDULES_SYNCED_EVENT));
+						window.dispatchEvent(new CustomEvent(WO_CLAW_SCHEDULES_SYNCED_EVENT));
 					}
 				} catch (e) {
 					setSyncError(

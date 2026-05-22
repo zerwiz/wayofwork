@@ -1,21 +1,21 @@
 /**
  * Browser dev: Vite proxies `/api` to Bun on WOP_SERVER_PORT. If nothing is listening,
  * or the UI was started with `vite` alone, Claw file calls 404. The Vite plugin exposes
- * POST `/__wop_dev/start-wayofpi-api` to spawn `bun run server/index.ts` (see vite.config.ts).
+ * POST `/__wop_dev/start-wo-api` to spawn `bun run server/index.ts` (see vite.config.ts).
  */
 
-export type WayofpiHealthCapabilities = {
+export type WoHealthCapabilities = {
 	workspaceProblems?: boolean;
 	configRuntimePost?: boolean;
 	clawHostTreeGet?: boolean;
 	clawTelegramStatusGet?: boolean;
 };
 
-export async function fetchWayofpiHealthCapabilities(): Promise<WayofpiHealthCapabilities | null> {
+export async function fetchWoHealthCapabilities(): Promise<WoHealthCapabilities | null> {
 	try {
 		const r = await fetch("/api/health", { headers: { Accept: "application/json" } });
 		if (!r.ok) return null;
-		const j = (await r.json().catch(() => null)) as { capabilities?: WayofpiHealthCapabilities } | null;
+		const j = (await r.json().catch(() => null)) as { capabilities?: WoHealthCapabilities } | null;
 		if (!j || typeof j !== "object") return null;
 		const c = j.capabilities;
 		if (c && typeof c === "object") return c;
@@ -27,7 +27,7 @@ export async function fetchWayofpiHealthCapabilities(): Promise<WayofpiHealthCap
 }
 
 /** True when this build’s Way of Work Bun is answering (not an older server on the same port). */
-export function healthSupportsClawHostTree(caps: WayofpiHealthCapabilities | null): boolean {
+export function healthSupportsClawHostTree(caps: WoHealthCapabilities | null): boolean {
 	return caps?.clawHostTreeGet === true;
 }
 
@@ -38,7 +38,7 @@ export function healthSupportsClawHostTree(caps: WayofpiHealthCapabilities | nul
 export async function warmDevWayOfPiApiIfNeeded(): Promise<void> {
 	if (!import.meta.env.DEV) return;
 	try {
-		const r = await fetch("/__wop_dev/start-wayofpi-api", { method: "POST" });
+		const r = await fetch("/__wop_dev/start-wo-api", { method: "POST" });
 		await r.json().catch(() => ({}));
 	} catch {
 		/* No Vite plugin (preview / non-dev) */
@@ -46,7 +46,7 @@ export async function warmDevWayOfPiApiIfNeeded(): Promise<void> {
 	await new Promise((r) => setTimeout(r, 700));
 }
 
-export function staleWayOfPiApiMessage(): string {
+export function staleWoApiMessage(): string {
 	return [
 		"The process on your API port (default 3333, or WOP_SERVER_PORT) is an older Way of Work server without the current Claw routes (files, schedules, mission APIs).",
 		"Stop it, then start the current API from apps/wayofwork-ui:",
@@ -60,23 +60,23 @@ export function staleWayOfPiApiMessage(): string {
  * Returns latest `/api/health` capabilities. In Vite dev, may spawn the Bun API once and poll
  * until it is fresh, stale (old Bun on port), or the deadline passes.
  */
-export async function ensureDevWayOfPiApiFresh(): Promise<WayofpiHealthCapabilities | null> {
+export async function ensureDevWoApiFresh(): Promise<WoHealthCapabilities | null> {
 	if (!import.meta.env.DEV) {
-		return fetchWayofpiHealthCapabilities();
+		return fetchWoHealthCapabilities();
 	}
-	let caps = await fetchWayofpiHealthCapabilities();
+	let caps = await fetchWoHealthCapabilities();
 	if (healthSupportsClawHostTree(caps)) return caps;
 
 	await warmDevWayOfPiApiIfNeeded();
 	const deadline = Date.now() + 20_000;
 	while (Date.now() < deadline) {
-		caps = await fetchWayofpiHealthCapabilities();
+		caps = await fetchWoHealthCapabilities();
 		if (caps !== null && !healthSupportsClawHostTree(caps)) return caps;
 		if (healthSupportsClawHostTree(caps)) return caps;
 		await new Promise((r) => setTimeout(r, 450));
 	}
-	return fetchWayofpiHealthCapabilities();
+	return fetchWoHealthCapabilities();
 }
 
-/** @deprecated Use {@link ensureDevWayOfPiApiFresh} */
-export const ensureDevWayOfPiApiForClawFiles = ensureDevWayOfPiApiFresh;
+/** @deprecated Use {@link ensureDevWoApiFresh} */
+export const ensureDevWayOfPiApiForClawFiles = ensureDevWoApiFresh;

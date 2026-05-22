@@ -811,8 +811,19 @@ export function ChatPanel({
 								</div>
 							</div>
 						) : null}
-						{transcriptRows.map((msg) => (
-							<div key={msg.id} className="flex w-full flex-col gap-1">
+						{transcriptRows.map((msg, idx) => {
+							// Skip the last assistant row if it's empty while streaming (avoid double-bubble with placeholder)
+							if (
+								streaming &&
+								idx === transcriptRows.length - 1 &&
+								msg.role === "assistant" &&
+								!msg.content?.trim() &&
+								!msg.reasoning?.trim()
+							) {
+								return null;
+							}
+							return (
+								<div key={msg.id} className="flex w-full flex-col gap-1">
 								<div className="flex items-center justify-between">
 									<span
 										className={

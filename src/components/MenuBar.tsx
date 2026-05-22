@@ -180,7 +180,7 @@ export function MenuBar({
 	onOpenPiModelConfig?: (path: PiModelConfigPath) => void;
 	/** Technical UI: View → Appearance / Editor Layout + chrome toggles. */
 	viewTechnical?: ViewMenuTechnicalOptions | null;
-	/** Simple UI: View → Appearance + workspace views catalog (`.wayofpi/ui-views.json`). */
+	/** Simple UI: View → Appearance + workspace views catalog (`.ui-views.json`). */
 	viewSimple?: ViewMenuSimpleOptions | null;
 }) {
 	/** Shared chrome for Technical and Simple layouts (WAY OF PI, mode toggle, menus, search, model). */
@@ -3084,7 +3084,7 @@ WAY OF WORK
 													<button
 														type="button"
 														className={menuBtnClass()}
-														title="Edit `.wayofpi/ui-views.json` (Simple workspace views catalog)."
+														title="Edit `.ui-views.json` (Simple workspace views catalog)."
 														onClick={() => {
 															settingsMenu.onEditWorkspaceViewsCatalog?.();
 															closeMenus();

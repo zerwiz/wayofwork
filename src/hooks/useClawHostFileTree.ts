@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { apiGet } from "../api/client";
 import type { TreeNode } from "../types/tree";
 import {
-	ensureDevWayOfPiApiFresh,
+	ensureDevWoApiFresh,
 	healthSupportsClawHostTree,
-	staleWayOfPiApiMessage,
-} from "../utils/wayofpiDevApiWarmup";
+	staleWoApiMessage,
+} from "../utils/woDevApiWarmup";
 
 export type ClawHostTreeResponse = {
 	rootDisplay: string;
@@ -23,9 +23,9 @@ export function useClawHostFileTree(enabled: boolean) {
 		setLoading(true);
 		setError(null);
 		try {
-			const caps = await ensureDevWayOfPiApiFresh();
+			const caps = await ensureDevWoApiFresh();
 			if (caps !== null && !healthSupportsClawHostTree(caps)) {
-				throw new Error(staleWayOfPiApiMessage());
+				throw new Error(staleWoApiMessage());
 			}
 
 			let data: ClawHostTreeResponse;
@@ -43,7 +43,7 @@ export function useClawHostFileTree(enabled: boolean) {
 					};
 				} else {
 					throw new Error(
-						`${m1} Claw files need GET /api/claw/tree or GET /api/config?clawTree=1 with clawHostTree. ${staleWayOfPiApiMessage()}`,
+						`${m1} Claw files need GET /api/claw/tree or GET /api/config?clawTree=1 with clawHostTree. ${staleWoApiMessage()}`,
 					);
 				}
 			}

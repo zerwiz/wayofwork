@@ -138,6 +138,66 @@ export async function handlePendingChangesApi(
             tenantId
           );
         }
+      } else if (row.target_table === "tasks") {
+        if (row.target_id) {
+          db.query(`
+            UPDATE tasks SET 
+              title = COALESCE(?, title),
+              description = COALESCE(?, description),
+              status = COALESCE(?, status),
+              priority = COALESCE(?, priority),
+              assigned_to = COALESCE(?, assigned_to),
+              due_date = COALESCE(?, due_date),
+              estimated_hours = COALESCE(?, estimated_hours),
+              updated_at = datetime('now')
+            WHERE id = ? AND tenant_id = ?
+          `).run(
+            proposed.title || null,
+            proposed.description || null,
+            proposed.status || null,
+            proposed.priority || null,
+            proposed.assigned_to || null,
+            proposed.due_date || null,
+            proposed.estimated_hours ?? null,
+            row.target_id,
+            tenantId
+          );
+        } else {
+          const newId = `task_${Date.now()}_${uuid().slice(0, 8)}`;
+          db.query(`
+            INSERT INTO tasks (id, tenant_id, project_id, title, description, assigned_to, status, priority, due_date, estimated_hours, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(
+            newId,
+            tenantId,
+            proposed.project_id || null,
+            proposed.title,
+            proposed.description || null,
+            proposed.assigned_to || null,
+            proposed.status || 'todo',
+            proposed.priority || 'medium',
+            proposed.due_date || null,
+            proposed.estimated_hours ?? null,
+            auth.userId
+          );
+        }
+      } else if (row.target_table === "projects") {
+        if (row.target_id) {
+          db.query(`
+            UPDATE projects SET
+              name = COALESCE(?, name),
+              description = COALESCE(?, description),
+              status = COALESCE(?, status),
+              updated_at = datetime('now')
+            WHERE id = ? AND tenant_id = ?
+          `).run(
+            proposed.name || null,
+            proposed.description || null,
+            proposed.status || null,
+            row.target_id,
+            tenantId
+          );
+        }
       }
 
       db.query(`UPDATE pending_changes SET status = 'approved', approved_by = ?, approved_at = ? WHERE id = ?`).run(

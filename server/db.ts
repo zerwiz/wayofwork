@@ -226,6 +226,24 @@ db.run(`
   )
 `);
 
+db.run(`
+  CREATE TABLE IF NOT EXISTS audit_logs (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    action TEXT NOT NULL,
+    resource_type TEXT NOT NULL,
+    resource_id TEXT,
+    summary TEXT,
+    ip_address TEXT,
+    user_agent TEXT,
+    details_json TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`);
+
 // Migration: add user_id column if missing (existing databases)
 try {
   db.run("ALTER TABLE calendar_events ADD COLUMN user_id TEXT");

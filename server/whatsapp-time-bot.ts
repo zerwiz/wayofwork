@@ -140,15 +140,36 @@ export function getTodayHours(tenantId: string, userId: string): number {
 export function handleTimeBotMessage(
 	tenantId: string,
 	userId: string,
+	role: string,
 	messageText: string,
 	userName: string,
 ): string {
 	const trimmed = messageText.trim().toLowerCase();
+	const isLeader = role === "LEADER" || role === "ADMIN" || role === "SUPER_ADMIN";
 
 	// Command: "status" — today's hours
 	if (trimmed === "status" || trimmed === "today" || trimmed === "summary") {
 		const total = getTodayHours(tenantId, userId);
 		return `📊 *Time summary for ${userName}*\nToday: *${total}h* logged`;
+	}
+
+	// Command: "team status" (Leader/Admin only)
+	if ((trimmed === "team status" || trimmed === "team today") && isLeader) {
+		try {
+			const teamTotal = db.query(`
+				SELECT u.full_name, u.username, COALESCE(SUM(te.hours), 0) as total
+				FROM users u
+				LEFT JOIN time_entries te ON u.id = te.user_id AND te.date = ?
+				WHERE u.tenant_id = ? AND u.role = 'WORKER'
+				GROUP BY u.id
+			`).all(todayDate(), tenantId) as any[];
+			
+			if (teamTotal.length === 0) return "👥 No workers found in your tenant.";
+			const lines = teamTotal.map((w: any) => `• *${w.full_name || w.username}*: ${w.total}h`);
+			return `👥 *Team today:* \n${lines.join("\n")}`;
+		} catch (e) {
+			return "Could not fetch team status.";
+		}
 	}
 
 	// Command: "tasks" — assigned tasks

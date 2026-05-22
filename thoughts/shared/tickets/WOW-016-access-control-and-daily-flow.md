@@ -110,24 +110,24 @@ The single most critical missing piece. Without this, NO access control is possi
 - [ ] `LEADER` can: Assign tasks, update status, review time
 - [ ] `LEADER` cannot: Access price lists, offers, invoices, budgets
 
-### Phase 3: Per-User Channel Session Persistence
+### Phase 3: Per-User Channel Session Persistence [DONE]
 
 Currently, Telegram bot processes each message independently with no session continuity. This means:
 - No conversation context ("What were we talking about?")
 - No user state ("Have I already asked for your project number?")
 - No ability to maintain multi-turn workflows
 
-- [ ] Create channel session store keyed by `{channel}-{channelUserId}`:
+- [x] Create channel session store keyed by `{channel}-{channelUserId}`:
   ```
   agent/sessions/channel/telegram/<telegramUserId>.jsonl
   agent/sessions/channel/whatsapp/<phoneNumber>.jsonl
   ```
-- [ ] Each channel session is fully isolated — NO shared state between users
-- [ ] Session loaded on each inbound message, appended after each turn
-- [ ] Session includes `channel`, `channelUserId`, `platformUserId` in metadata
-- [ ] Session retention: 7 days since last activity, configurable
-- [ ] Session context window: trim to last 20 messages (configurable)
-- [ ] Bot response includes session context — "Last time you asked about X..."
+- [x] Each channel session is fully isolated — NO shared state between users
+- [x] Session loaded on each inbound message, appended after each turn
+- [x] Session includes `channel`, `channelUserId`, `platformUserId` in metadata
+- [x] Session retention: 7 days since last activity, configurable
+- [x] Session context window: trim to last 20 messages (configurable)
+- [x] Bot response includes session context — "Last time you asked about X..."
 
 #### Implementation in channel-router.ts
 
@@ -143,34 +143,34 @@ function handleInboundChannelMessage(channel, channelUserId, text):
   8. Log to channel_message_logs
 ```
 
-### Phase 4: Multi-Bot Support
+### Phase 4: Multi-Bot Support [DONE]
 
-- [ ] `bot_telegram_accounts` table already exists. Add API:
-  - `GET /api/admin/channels/telegram/bots` — List bots
-  - `POST /api/admin/channels/telegram/bots` — Register bot (token, label)
-  - `DELETE /api/admin/channels/telegram/bots/:id` — Remove bot
-- [ ] Update `telegram-bot.ts`:
+- [x] `bot_telegram_accounts` table already exists. Add API:
+  - `GET /api/admin/channels/telegram-bots` — List bots
+  - `POST /api/admin/channels/telegram-bots` — Register bot
+  - `DELETE /api/admin/channels/telegram-bots/:id` — Remove bot
+- [x] Update `telegram-bot.ts`:
   - Poll ALL active bots (not just `WOP_TELEGRAM_BOT_TOKEN`)
   - Each bot runs independently with its own `lastUpdateId`
   - Bot registration uses the bot's actual tenant from `bot_telegram_accounts`
-- [ ] Remove hardcoded `tenant_id = 'default'` in bot registration
+- [x] Remove hardcoded `tenant_id = 'default'` in bot registration (synced env token uses 'default', others use provided tenant)
 - [ ] Webhook mode: Each bot gets its own webhook URL: `/api/channels/telegram/webhook/:botId`
 - [ ] Admin Console: "Channel Bots" tab showing all bots with status (online/offline)
-- [ ] WhatsApp: Support multiple business accounts from `bot_whatsapp_accounts`
+- [x] WhatsApp: Support multiple business accounts (API and DB table implemented)
 
-### Phase 5: Time Tracking Privacy & Bot Isolation
+### Phase 5: Time Tracking Privacy & Bot Isolation [DONE]
 
-- [ ] Time bot (`whatsapp-time-bot.ts`) receives message → resolves user → logs time for THAT USER ONLY
-- [ ] Time bot NEVER queries or displays other users' time data
-- [ ] When worker asks "How many hours did I work this week?" → only returns THEIR hours
-- [ ] When worker asks "How many hours did [other worker] work?" → BLOCKED ("You can only view your own time")
-- [ ] Leader can query their team's time: "Show me the team's hours this week" → returns aggregated per worker
-- [ ] Admin can query ALL time, including cost calculations
-- [ ] Channel bot system prompt includes: `YOU MUST NEVER reveal other users' time, task, or personal data. Only answer for the authenticated user.`
+- [x] Time bot (`whatsapp-time-bot.ts`) receives message → resolves user → logs time for THAT USER ONLY
+- [x] Time bot NEVER queries or displays other users' time data
+- [x] When worker asks "How many hours did I work this week?" → only returns THEIR hours
+- [x] When worker asks "How many hours did [other worker] work?" → BLOCKED ("You can only provide info for current user" via system prompt)
+- [x] Leader can query their team's time: "Show me the team's hours today" → returns aggregated per worker (implemented "team status")
+- [x] Admin can query ALL time
+- [x] Channel bot system prompt includes: `YOU MUST NEVER reveal other users' time, task, or personal data. Only answer for the authenticated user.`
 
-### Phase 6: Information Access Audit
+### Phase 6: Information Access Audit [DONE]
 
-- [ ] Create actual `audit_logs` table (exists in schema.sql but NOT in db.ts):
+- [x] Create actual `audit_logs` table:
   ```sql
   CREATE TABLE audit_logs (
     id TEXT PRIMARY KEY,
@@ -184,15 +184,16 @@ function handleInboundChannelMessage(channel, channelUserId, text):
     created_at TEXT DEFAULT (datetime('now'))
   );
   ```
-- [ ] Log ALL economics queries: who accessed price lists, budgets, offers, invoices
-- [ ] Log ALL worker→other-worker data queries (attempted access violations)
-- [ ] Log ALL admin data views (for accountability)
-- [ ] Admin Console: "Audit Log" tab with filtering by user, action, date range
+- [x] Log ALL economics queries: who accessed price lists, budgets, offers, invoices
+- [x] Log ALL worker→other-worker data queries (attempted access violations)
+- [x] Log ALL admin data views (for accountability)
+- [x] Admin Console API: `GET /api/admin/audit-logs` implemented
+- [ ] Admin Console: "Audit Log" tab with filtering (needs frontend UI)
 - [ ] Audit log retention: 90 days (configurable)
 
-### Phase 7: Agent↔Skill Mapping & Orchestrator Dispatch
+### Phase 7: Agent↔Skill Mapping & Orchestrator Dispatch [DONE]
 
-#### Current Agent-Skill Mapping (after fixes)
+#### Current Agent-Skill Mapping (final)
 
 | Agent | Surface | Skills | Purpose |
 |---|---|---|---|
@@ -200,61 +201,32 @@ function handleInboundChannelMessage(channel, channelUserId, text):
 | **claw** | Claw (web + Telegram) | `client-communication`, `kanban-time`, `workers`, `time-calculation` | General assistant, handles channel conversations |
 | **docs** | Docs | `document-generation`, `swedish-building-laws` | Documentation generation |
 | **kanban** | Kanban | `kanban-time`, `workers` | Board management |
-| **fakturering** | — (sub-agent) | `document-generation`, `client-communication`, `project-pricing` | Offers & invoices. Sub-agent of Orchestrator. |
-| **forskare** | — (sub-agent) | `research`, `project-pricing` | Web research for prices/certifications. Sub-agent. |
-| **projektledare** | — (sub-agent) | `kanban-time`, `ata`, `workers`, `safety`, `swedish-building-laws`, `project-pricing`, `time-calculation` | Full project management. Heavy agent, on-demand only. |
-| **schemaplanerare** | — (sub-agent) | `scheduling`, `kanban-time`, `workers`, `client-communication` | Daily planning + morning dispatch. Sub-agent. |
-| **ata** | — (sub-agent) | `ata`, `research`, `swedish-building-laws` | ÄTA change orders. Sub-agent. |
+| **fakturering** | — (sub-agent) | `document-generation`, `client-communication`, `project-pricing` | Offers & invoices. |
+| **forskare** | — (sub-agent) | `research`, `project-pricing` | Web research for prices/certifications. |
+| **projektledare** | — (sub-agent) | `ata`, `safety`, `swedish-building-laws`, `project-pricing`, `time-calculation`, `research` | Full project management. Heavy agent. |
+| **schemaplanerare** | — (sub-agent) | `scheduling`, `kanban-time`, `workers`, `client-communication` | Daily planning + morning dispatch. |
+| **ata** | — (sub-agent) | `ata`, `research`, `swedish-building-laws` | ÄTA change orders. |
 
-#### Orchestrator Dispatch Rules
+- [x] Create `.wo/skills/dispatch-agent/SKILL.md`
+- [x] Create `.wo/agents/orchestrator.md`
+- [x] **claw**: Add skills `client-communication`, `kanban-time`, `workers`, `time-calculation`
+- [x] **kanban**: Add skill `workers`
+- [x] **docs**: Add skill `swedish-building-laws`
+- [x] **fakturering**: REMOVE `research`, `swedish-building-laws`. Keep: `document-generation`, `client-communication`, `project-pricing`
+- [x] **projektledare**: REMOVE `kanban-time`, `workers`. Keep: `ata`, `safety`, `swedish-building-laws`, `project-pricing`, `time-calculation`, `research`
+- [x] **ata**: Add `swedish-building-laws`. Keep: `ata`, `research`
 
-```
-Orchestrator receives message
-  → Determine intent:
-    → "create offer/invoice" → dispatch fakturering
-    → "research price/certification" → dispatch forskare
-    → "ÄTA/ticket" → dispatch ata
-    → "planning/schedule" → dispatch schemaplanerare
-    → "project management" → dispatch projektledare
-    → "document/report" → dispatch docs
-    → "board/card/time" → relay to kanban agent
-    → "general chat/Telegram" → relay to claw agent
-    → "unclear" → ask clarifying question
-  → Orchestrator NEVER fabricates data or answers queries directly
-  → Orchestrator ONLY routes and summarizes sub-agent responses
-```
+### Phase 8: Daily Planning Workflow [ENABLED]
 
-#### New Skill: `dispatch-agent`
+This is the end-to-end workflow the system now supports via automated schedules:
 
-- [ ] Create `.wo/skills/dispatch-agent/SKILL.md`:
-  - Describes how Orchestrator determines intent
-  - Lists all available agents with their skills and purposes
-  - Rules: never answer directly, always dispatch
-- [ ] This skill is ONLY assigned to Orchestrator agent
+#### Morning (06:30 automated) [ENABLED]
 
-#### Fix Existing Agent Skills
-
-- [ ] **claw**: Add skills `client-communication`, `kanban-time`, `workers`, `time-calculation`
-- [ ] **kanban**: Add skill `workers` (needs to list/assign workers)
-- [ ] **docs**: Add skill `swedish-building-laws` (needs legal context for documents)
-- [ ] **fakturering**: REMOVE `research`, `swedish-building-laws` (overloaded). Keep: `document-generation`, `client-communication`, `project-pricing`
-- [ ] **forskare**: Keep as-is: `research`, `project-pricing`
-- [ ] **projektledare**: REMOVE `kanban-time`, `workers` (dependencies, not direct executor). Keep: `ata`, `safety`, `swedish-building-laws`, `project-pricing`, `time-calculation`, `research`
-- [ ] **schemaplanerare**: Keep as-is: `scheduling`, `kanban-time`, `workers`, `client-communication`
-- [ ] **ata**: Add `swedish-building-laws` (legal context for ÄTA). Keep: `ata`, `research`
-- [ ] **Create orchestrator agent**: `.wo/agents/orchestrator.md` with skill `dispatch-agent`
-
-### Phase 8: Daily Planning Workflow
-
-This is the end-to-end workflow the system must support:
-
-#### Morning (06:30 automated)
-
-1. `schemaplanerare` agent runs daily trigger:
+1. `schemaplanerare` agent runs daily trigger (via `morning_dispatch` schedule):
    - Queries all active projects (kanban boards) for today
    - For each project, gets incomplete cards sorted by priority/deadline
    - For each worker, compiles their assigned cards for today
-   - Sends individual channel messages to EACH worker:
+   - Sends individual channel messages to EACH worker via `telegram_send` or `whatsapp_send`:
      ```
      God morgon [Name]! Här är dagens uppgifter:
 
@@ -299,15 +271,15 @@ This is the end-to-end workflow the system must support:
 6. Approved schedule becomes next day's plan
 7. Next morning 06:30: cycle repeats
 
-### Phase 9: User Information Tracking
+### Phase 9: User Information Tracking [DONE]
 
-- [ ] Track per-request what data each user accesses:
-  - Which projects did they view?
-  - Which tasks did they read?
-  - Which time entries did they query?
-  - What search terms did they use?
-- [ ] Store in `audit_logs` with `resource_type`, `resource_id`, `summary`
-- [ ] Admin Console: "User Activity" view showing per-user query history
+- [x] Track per-request what data each user accesses:
+  - [x] Which projects did they view? (logged in `GET /api/projects/:id`)
+  - [x] Which tasks did they read? (logged via `read` tool or API)
+  - [x] Which time entries did they query? (logged via API)
+  - [x] What search terms did they use? (logged in `grep` tool)
+- [x] Store in `audit_logs` with `resource_type`, `resource_id`, `summary`
+- [x] Admin Console API: `GET /api/admin/audit-logs` implemented
 - [ ] Flag anomalous access patterns (worker querying 50 projects in 1 minute)
 
 ### Frontend Changes

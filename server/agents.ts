@@ -130,22 +130,21 @@ function agentScanRoots(workspaceRoot: string): string[] {
 		join(workspaceRoot, ".wo", "agents"),
 		join(workspaceRoot, "agents"),
 		join(workspaceRoot, ".claude", "agents"),
-		join(workspaceRoot, ".pi", "agents"),
 		join(workspaceRoot, ".cursor", "agents"),
 	];
 
 	// Also include Way of Work host repo root agents if it's different from the workspace
 	const hostRoot = getClawHostRepoRoot();
 	if (hostRoot && normalize(hostRoot) !== normalize(workspaceRoot)) {
-		roots.push(join(hostRoot, ".pi", "agents"));
+		roots.push(join(hostRoot, ".wo", "agents"));
 	}
 
 	return roots;
 }
 
 /**
- * Sync read of `planner.md` from Pi agent scan roots (same order as `agent-team`).
- * Used for Plan mode system prompt so the web shell matches on-disk `.pi/agents/planner.md`.
+ * Sync read of `planner.md` from Wo agent scan roots (same order as `agent-team`).
+ * Used for Plan mode system prompt so the web shell matches on-disk agent files.
  */
 export function readPlannerAgentBodySync(workspaceRoot: string): string | null {
 	for (const dir of agentScanRoots(workspaceRoot)) {

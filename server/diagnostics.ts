@@ -4,7 +4,7 @@ import { homedir } from "node:os";
 import { join, normalize } from "node:path";
 import { fetchOllamaTags, ollamaTagsIncludeRequestedModel } from "./llm-models";
 import { orchestratorBashEnabled, orchestratorToolsEnabled } from "./orchestrator-tools-exec";
-import { getWayOfPiBundleRepoRoot, resolveOllamaHost, resolveOllamaModelDefault } from "./pi-ollama-env";
+import { getWoBundleRepoRoot, resolveOllamaHost, resolveOllamaModelDefault } from "./pi-ollama-env";
 import { isSdkAvailable, wopChatEngineFromEnv } from "./agent-runtime";
 import { collectStaticWebManifest } from "./web-manifest";
 import {
@@ -25,9 +25,9 @@ export type DoctorCheck = {
 	hint?: string;
 };
 
-/** @deprecated use {@link getWayOfPiBundleRepoRoot} from pi-ollama-env */
-export function getWayOfPiPlaygroundRoot(): string {
-	return getWayOfPiBundleRepoRoot();
+/** @deprecated use {@link getWoBundleRepoRoot} from pi-ollama-env */
+export function getWoPlaygroundRoot(): string {
+	return getWoBundleRepoRoot();
 }
 
 function canonicalFsPath(abs: string): string {
@@ -411,7 +411,7 @@ export async function collectDiagnostics(): Promise<Record<string, unknown>> {
 	const terminalEnabled = terminalAllowed();
 	const openRouterKeySet = Boolean(process.env.OPENROUTER_API_KEY?.trim());
 	const primary = getPrimaryWorkspacePath();
-	const bundleRepoRoot = getWayOfPiBundleRepoRoot();
+	const bundleRepoRoot = getWoBundleRepoRoot();
 	const checks = buildDoctorChecks({
 		primary,
 		bundleRepoRoot,
@@ -531,7 +531,7 @@ export async function collectDiagnostics(): Promise<Record<string, unknown>> {
 
 /** Read-only snapshot of upstream mirror config + lock (no GitHub/npm refresh). */
 export async function collectUpstreamSnapshot(): Promise<Record<string, unknown>> {
-	const root = getWayOfPiBundleRepoRoot();
+	const root = getWoBundleRepoRoot();
 	const lockPath = join(root, "wop.upstream.lock.json");
 	const configPath = join(root, "scripts", "wop-upstream", "config.json");
 	const lockRaw = await readTextIfExists(lockPath);

@@ -151,7 +151,7 @@ function electronSkipBunAutostart() {
  * Electron dev: ensure Bun serves `/api/health` on `WOP_SERVER_PORT` (spawn `bun run server/index.ts` from `apps/wayofwork-ui` if needed).
  * Used at startup and by IPC **Start service**.
  */
-async function ensureWayofpiBunServerDev() {
+async function ensureWayofworkBunServerDev() {
 	if (!isDev) {
 		return {
 			ok: false,
@@ -300,9 +300,9 @@ function registerWopShellIpc() {
 	/**
 	 * Electron dev: Vite proxies `/api` to Bun on `WOP_SERVER_PORT`. If Bun is down, spawn
 	 * `bun run server/index.ts` from `apps/wayofwork-ui` (parent of this `electron/` folder).
-	 * Same logic as startup autostart (`ensureWayofpiBunServerDev`).
+	 * Same logic as startup autostart (`ensureWayofworkBunServerDev`).
 	 */
-	ipcMain.handle("wop-shell:start-wayofwork-bun-server", () => ensureWayofpiBunServerDev());
+	ipcMain.handle("wop-shell:start-wayofwork-bun-server", () => ensureWayofworkBunServerDev());
 }
 
 const devUrl = process.env.WOP_ELECTRON_DEV_URL || "http://127.0.0.1:5173";

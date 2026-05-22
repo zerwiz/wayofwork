@@ -17,9 +17,9 @@ function thisModuleDir(): string {
 	return dirname(fileURLToPath(import.meta.url));
 }
 
-/** Repo root when running from `apps/wayofwork-ui/server/*.ts` (three hops: server → wayofwork-ui → apps → checkout). */
-export function getDefaultWayOfPiRepoRootFromServerLayout(): string {
-	return normalize(resolve(join(thisModuleDir(), "..", "..", "..")));
+/** Repo root when running from `server/*.ts` (one hop: server → checkout). */
+export function getDefaultWoRepoRootFromServerLayout(): string {
+	return normalize(resolve(join(thisModuleDir(), "..")));
 }
 
 /**
@@ -31,7 +31,7 @@ export function getClawHostRepoRoot(): string {
 	if (a) return normalize(resolve(a));
 	const b = process.env.WOP_PLAYGROUND_ROOT?.trim();
 	if (b) return normalize(resolve(b));
-	return getDefaultWayOfPiRepoRootFromServerLayout();
+	return getDefaultWoRepoRootFromServerLayout();
 }
 
 /** Absolute path to host **`.claw/`** (e.g. `telegram.json` lives here, not in `workspace/`). */

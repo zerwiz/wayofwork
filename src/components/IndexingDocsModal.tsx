@@ -97,7 +97,7 @@ export function IndexingDocsModal({
 	};
 
 	const onClear = async () => {
-		if (!window.confirm("Delete the local index under .wayofpi/index?")) return;
+		if (!window.confirm("Delete the local index under .index?")) return;
 		setBusy(true);
 		try {
 			await apiPostJson("/api/workspace-index/clear", {});
@@ -205,7 +205,7 @@ export function IndexingDocsModal({
 						of workspace files (respecting <code className="text-[11px]">.gitignore</code> and{" "}
 						<code className="text-[11px]">.cursorignore</code> where listed). Cursor also uses Merkle sync, AST
 						chunking, and cloud embeddings — this build stores metadata under{" "}
-						<code className="text-[11px]">.wayofpi/index/</code> only.
+						<code className="text-[11px]">.index/</code> only.
 					</p>
 
 					<div className={`mb-6 rounded-lg border p-4 ${card}`}>
@@ -346,7 +346,7 @@ export function IndexingDocsModal({
 					<p className={`mb-4 text-xs ${sub}`}>
 						Ignore files: add <code className="text-[11px]">.cursorignore</code> at the workspace root (same line
 						shape as <code className="text-[11px]">.gitignore</code>). Open{" "}
-						<code className="text-[11px]">.wayofpi/index/manifest.json</code> to inspect the manifest.
+						<code className="text-[11px]">.index/manifest.json</code> to inspect the manifest.
 					</p>
 
 					<div className={`rounded-lg border p-4 ${card}`}>
@@ -354,7 +354,7 @@ export function IndexingDocsModal({
 							<h3 className="font-semibold">Docs</h3>
 						</div>
 						<p className={`mb-3 text-xs ${sub}`}>
-							Crawl HTTP(S) pages into <code className="text-[11px]">.wayofpi/index/docs/</code> (plain text
+							Crawl HTTP(S) pages into <code className="text-[11px]">.index/docs/</code> (plain text
 							strips). For large sites, prefer a sitemap or single doc URL.
 						</p>
 						<div className="mb-4 flex gap-2">

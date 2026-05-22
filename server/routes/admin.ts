@@ -84,6 +84,25 @@ export function registerAdminRoutes(router: Router) {
 		}
 	});
 
+	router.get("/api/admin/audit-logs", async (_req, _params, auth) => {
+		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
+
+		try {
+			const logs = db.query(`
+				SELECT al.*, u.username, u.full_name
+				FROM audit_logs al
+				JOIN users u ON al.user_id = u.id
+				WHERE al.tenant_id = ?
+				ORDER BY al.created_at DESC
+				LIMIT 500
+			`).all(auth!.tenantId) as any[];
+			return json(logs);
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to fetch audit logs", details: message }, 500);
+		}
+	});
+
 	router.get("/api/admin/channels/whatsapp-bots", async (_req, _params, auth) => {
 		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
 		try {

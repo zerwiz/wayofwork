@@ -10,6 +10,7 @@ import { db } from "./db";
 import { formatUnknownOrchestratorToolMessage } from "../shared/session-log-metadata.ts";
 import { broadcastToolLog } from "./tool-log-broadcast";
 import { MAX_FILE_BYTES, shouldSkipDir } from "./paths";
+import { auditLog } from "./audit-logger";
 import {
 	ORCHESTRATOR_GIT_TOOLS_OPENAI,
 	orchestratorGitWorkspaceToolsEnabled,
@@ -48,6 +49,11 @@ import {
 	kanbanCardTimeLogs,
 	kanbanListWorkers,
 } from "./orchestrator-kanban-tools";
+import {
+	ORCHESTRATOR_CHANNEL_TOOLS_OPENAI,
+	toolTelegramSend,
+	toolWhatsappSend,
+} from "./orchestrator-channel-tools";
 
 export type OrchestratorToolResult = {
 	output: string;
@@ -421,6 +427,14 @@ export async function executeOrchestratorTool(
 			const offset = typeof args.offset === "number" ? args.offset : undefined;
 			const limit = typeof args.limit === "number" ? args.limit : undefined;
 			logTool("read", path);
+			auditLog({
+				tenantId,
+				userId,
+				action: "READ",
+				resourceType: "file",
+				resourceId: path,
+				summary: `User read file ${path}`
+			});
 			return { output: await toolRead(path, offset, limit) };
 		}
 		case "list_dir": {
@@ -433,6 +447,14 @@ export async function executeOrchestratorTool(
 			const path = args.path != null ? String(args.path) : undefined;
 			const glob = args.glob != null ? String(args.glob) : undefined;
 			logTool("grep", `${pattern} @ ${path ?? "."}`);
+			auditLog({
+				tenantId,
+				userId,
+				action: "SEARCH",
+				resourceType: "workspace",
+				summary: `User searched for "${pattern}" in ${path ?? "."}`,
+				details: { pattern, path, glob }
+			});
 			return { output: await toolGrep(pattern, path, glob) };
 		}
 		case "write": {
@@ -571,6 +593,11 @@ export async function executeOrchestratorTool(
 		case "kanban_list_workers":
 			logTool("kanban_list_workers", "");
 			return { output: await kanbanListWorkers(tenantId) };
+		// ── Channel tools ──
+		case "telegram_send":
+			return { output: await toolTelegramSend(args as any, tenantId) };
+		case "whatsapp_send":
+			return { output: await toolWhatsappSend(args as any, tenantId) };
 		// ── Calendar tools ──
 		case "calendar_list": {
 			logTool("calendar_list", `user=${userId}`);
@@ -869,10 +896,12 @@ export function orchestratorToolsForLlm(): (typeof ORCHESTRATOR_TOOLS_OPENAI)[nu
 		? [...ORCHESTRATOR_TOOLS_OPENAI]
 		: ORCHESTRATOR_TOOLS_OPENAI.filter((t) => t.function.name !== "bash");
 	const kanban = [...ORCHESTRATOR_KANBAN_TOOLS_OPENAI] as unknown as (typeof ORCHESTRATOR_TOOLS_OPENAI)[number][];
-	if (!orchestratorGitWorkspaceToolsEnabled()) return [...base, ...kanban];
+	const channel = [...ORCHESTRATOR_CHANNEL_TOOLS_OPENAI] as unknown as (typeof ORCHESTRATOR_TOOLS_OPENAI)[number][];
+	if (!orchestratorGitWorkspaceToolsEnabled()) return [...base, ...kanban, ...channel];
 	return [
 		...base,
 		...kanban,
+		...channel,
 		...(ORCHESTRATOR_GIT_TOOLS_OPENAI as unknown as (typeof ORCHESTRATOR_TOOLS_OPENAI)[number][]),
 	];
 }

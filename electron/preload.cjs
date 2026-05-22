@@ -8,5 +8,5 @@ contextBridge.exposeInMainWorld("wopShell", {
 	openExternalUrl: (url) => ipcRenderer.invoke("wop-shell:open-external-url", url),
 	saveWorkspaceFileAs: (suggestedName) => ipcRenderer.invoke("wop-shell:save-workspace-file", suggestedName),
 	saveFileAs: (payload) => ipcRenderer.invoke("wop-shell:save-file", payload),
-	startWayOfPiBunServer: () => ipcRenderer.invoke("wop-shell:start-wayofwork-bun-server"),
+	startWayOfWorkBunServer: () => ipcRenderer.invoke("wop-shell:start-wayofwork-bun-server"),
 });

@@ -1,5 +1,6 @@
 import { db } from "./db";
 import type { Ticket, TimeBlock, TimeSession, PriceList } from "../shared/ticket-types";
+import { auditLog } from "./audit-logger";
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -75,11 +76,19 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
 
   // GET /api/tickets
   if (p === "/api/tickets" && method === "GET") {
-    let rows;
+    let rows: any[];
     if (role === "WORKER" || role === "user") {
-      rows = db.query("SELECT * FROM tickets WHERE tenant_id = ? AND created_by = ? ORDER BY created_at DESC").all(tenantId, userId);
+      rows = db.query("SELECT * FROM tickets WHERE tenant_id = ? AND created_by = ? ORDER BY created_at DESC").all(tenantId, userId) as any[];
     } else {
-      rows = db.query("SELECT * FROM tickets WHERE tenant_id = ? ORDER BY created_at DESC").all(tenantId);
+      rows = db.query("SELECT * FROM tickets WHERE tenant_id = ? ORDER BY created_at DESC").all(tenantId) as any[];
+    }
+
+    // Economics shield
+    if (role === "WORKER" || role === "user" || role === "LEADER") {
+      rows = rows.map(r => {
+        const { cost_estimate, cost_actual, ...rest } = r;
+        return rest;
+      });
     }
     return json(rows);
   }
@@ -88,20 +97,30 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
   if (p === "/api/tickets" && method === "POST") {
     const b = await readBody<Partial<Ticket>>();
     const id = uuid();
+    // Shield writing financial data if not admin
+    const costEstimate = (role === "ADMIN" || role === "SUPER_ADMIN") ? (b?.cost_estimate ?? null) : null;
     db.run(
-      `INSERT INTO tickets (id, tenant_id, project_id, title, description, category, status, priority, created_by, materials_json, photos_json)
-       VALUES (?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?)`,
-      [id, tenantId, b?.project_id ?? null, b?.title, b?.description ?? null, b?.category ?? "tillägg", b?.priority ?? "medium", userId, b?.materials_json ?? "[]", b?.photos_json ?? "[]"]
+      `INSERT INTO tickets (id, tenant_id, project_id, title, description, category, status, priority, created_by, materials_json, photos_json, cost_estimate)
+       VALUES (?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?)`,
+      [id, tenantId, b?.project_id ?? null, b?.title, b?.description ?? null, b?.category ?? "tillägg", b?.priority ?? "medium", userId, b?.materials_json ?? "[]", b?.photos_json ?? "[]", costEstimate]
     );
-    const ticket = db.query("SELECT * FROM tickets WHERE id = ?").get(id);
+    const ticket = db.query("SELECT * FROM tickets WHERE id = ?").get(id) as any;
+    if (role === "WORKER" || role === "user" || role === "LEADER") {
+      const { cost_estimate, cost_actual, ...rest } = ticket;
+      return json(rest, 201);
+    }
     return json(ticket, 201);
   }
 
   // GET /api/tickets/:id
   const ticketGetMatch = p.match(/^\/api\/tickets\/([^/]+)$/);
   if (ticketGetMatch && method === "GET") {
-    const ticket = db.query("SELECT * FROM tickets WHERE id = ? AND tenant_id = ?").get(ticketGetMatch[1], tenantId);
+    const ticket = db.query("SELECT * FROM tickets WHERE id = ? AND tenant_id = ?").get(ticketGetMatch[1], tenantId) as any;
     if (!ticket) return json({ error: "Not found" }, 404);
+    if (role === "WORKER" || role === "user" || role === "LEADER") {
+      const { cost_estimate, cost_actual, ...rest } = ticket;
+      return json(rest);
+    }
     return json(ticket);
   }
 
@@ -212,12 +231,16 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
     return json({ ok: true, status: "invoiced" });
   }
 
-  // === Time Blocks ===
-
   // GET /api/tickets/:id/time-blocks
   const tbListMatch = p.match(/^\/api\/tickets\/([^/]+)\/time-blocks$/);
   if (tbListMatch && method === "GET") {
-    const blocks = db.query("SELECT * FROM time_blocks WHERE ticket_id = ? ORDER BY date DESC").all(tbListMatch[1]);
+    let blocks = db.query("SELECT * FROM time_blocks WHERE ticket_id = ? ORDER BY date DESC").all(tbListMatch[1]) as any[];
+    if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
+      blocks = blocks.map(b => {
+        const { hourly_rate, overtime_rate, ...rest } = b;
+        return rest;
+      });
+    }
     return json(blocks);
   }
 
@@ -225,12 +248,18 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
   if (tbListMatch && method === "POST") {
     const b = await readBody<Partial<TimeBlock>>();
     const id = uuid();
+    const rate = (role === "ADMIN" || role === "SUPER_ADMIN") ? (b?.hourly_rate ?? null) : null;
+    const otRate = (role === "ADMIN" || role === "SUPER_ADMIN") ? (b?.overtime_rate ?? null) : null;
     db.run(
       `INSERT INTO time_blocks (id, ticket_id, user_id, date, check_in, check_out, hours, break_hours, description, hourly_rate, overtime, overtime_hours, overtime_rate)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, tbListMatch[1], userId, b?.date ?? now().slice(0, 10), b?.check_in ?? null, b?.check_out ?? null, b?.hours ?? 0, b?.break_hours ?? 0, b?.description ?? null, b?.hourly_rate ?? null, b?.overtime ? 1 : 0, b?.overtime_hours ?? 0, b?.overtime_rate ?? null]
+      [id, tbListMatch[1], userId, b?.date ?? now().slice(0, 10), b?.check_in ?? null, b?.check_out ?? null, b?.hours ?? 0, b?.break_hours ?? 0, b?.description ?? null, rate, b?.overtime ? 1 : 0, b?.overtime_hours ?? 0, otRate]
     );
-    const block = db.query("SELECT * FROM time_blocks WHERE id = ?").get(id);
+    const block = db.query("SELECT * FROM time_blocks WHERE id = ?").get(id) as any;
+    if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
+      const { hourly_rate, overtime_rate, ...rest } = block;
+      return json(rest, 201);
+    }
     return json(block, 201);
   }
 
@@ -240,9 +269,13 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
     const b = await readBody<Partial<TimeBlock>>();
     const existing = db.query("SELECT * FROM time_blocks WHERE id = ?").get(tbUpdateMatch[2]) as TimeBlock | undefined;
     if (!existing) return json({ error: "Not found" }, 404);
+    
+    const rate = (role === "ADMIN" || role === "SUPER_ADMIN") ? (b?.hourly_rate ?? existing.hourly_rate) : existing.hourly_rate;
+    const otRate = (role === "ADMIN" || role === "SUPER_ADMIN") ? (b?.overtime_rate ?? existing.overtime_rate) : existing.overtime_rate;
+
     db.run(
       "UPDATE time_blocks SET date = ?, check_in = ?, check_out = ?, hours = ?, break_hours = ?, description = ?, hourly_rate = ?, overtime = ?, overtime_hours = ?, overtime_rate = ? WHERE id = ?",
-      [b?.date ?? existing.date, b?.check_in ?? existing.check_in, b?.check_out ?? existing.check_out, b?.hours ?? existing.hours, b?.break_hours ?? existing.break_hours, b?.description ?? existing.description, b?.hourly_rate ?? existing.hourly_rate, b?.overtime ? 1 : 0, b?.overtime_hours ?? existing.overtime_hours, b?.overtime_rate ?? existing.overtime_rate, tbUpdateMatch[2]]
+      [b?.date ?? existing.date, b?.check_in ?? existing.check_in, b?.check_out ?? existing.check_out, b?.hours ?? existing.hours, b?.break_hours ?? existing.break_hours, b?.description ?? existing.description, rate, b?.overtime ? 1 : 0, b?.overtime_hours ?? existing.overtime_hours, otRate, tbUpdateMatch[2]]
     );
     return json({ ok: true });
   }
@@ -254,17 +287,32 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
     return json({ ok: true });
   }
 
-  // === Price Lists ===
-
   // GET /api/price-lists
   if (p === "/api/price-lists" && method === "GET") {
+    if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
+      auditLog({
+        tenantId,
+        userId,
+        action: "ACCESS_DENIED",
+        resourceType: "price_list",
+        summary: "Non-admin attempted to access price lists"
+      });
+      return json({ error: "Forbidden" }, 403);
+    }
+    auditLog({
+      tenantId,
+      userId,
+      action: "VIEW_ECONOMICS",
+      resourceType: "price_list",
+      summary: "Admin viewed price lists"
+    });
     const lists = db.query("SELECT * FROM price_lists WHERE tenant_id = ? AND active = 1 ORDER BY name").all(tenantId);
     return json(lists);
   }
 
   // POST /api/price-lists
   if (p === "/api/price-lists" && method === "POST") {
-    if (role !== "LEADER" && role !== "ADMIN" && role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
+    if (role !== "ADMIN" && role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
     const b = await readBody<Partial<PriceList>>();
     const id = uuid();
     db.run("INSERT INTO price_lists (id, tenant_id, name, items_json) VALUES (?, ?, ?, ?)",
@@ -276,7 +324,7 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
   // PUT /api/price-lists/:id
   const plMatch = p.match(/^\/api\/price-lists\/([^/]+)$/);
   if (plMatch && method === "PUT") {
-    if (role !== "LEADER" && role !== "ADMIN" && role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
+    if (role !== "ADMIN" && role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
     const b = await readBody<Partial<PriceList>>();
     const existing = db.query("SELECT * FROM price_lists WHERE id = ? AND tenant_id = ?").get(plMatch[1], tenantId) as PriceList | undefined;
     if (!existing) return json({ error: "Not found" }, 404);
@@ -303,7 +351,25 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
 
   // GET /api/reports/project-budget
   if (p === "/api/reports/project-budget" && method === "GET") {
-    if (role !== "LEADER" && role !== "ADMIN" && role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
+    if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
+      auditLog({
+        tenantId,
+        userId,
+        action: "ACCESS_DENIED",
+        resourceType: "report",
+        resourceId: "project-budget",
+        summary: "Non-admin attempted to access project budget report"
+      });
+      return json({ error: "Forbidden" }, 403);
+    }
+    auditLog({
+      tenantId,
+      userId,
+      action: "VIEW_ECONOMICS",
+      resourceType: "report",
+      resourceId: "project-budget",
+      summary: "Admin viewed project budget report"
+    });
     const projects = db.query("SELECT * FROM projects WHERE tenant_id = ? AND status = 'active'").all(tenantId) as Array<{ id: string; name: string }>;
     const result = projects.map(p => {
       const hours = db.query("SELECT COALESCE(SUM(tb.hours), 0) as total FROM time_blocks tb JOIN tickets t ON t.id = tb.ticket_id WHERE t.project_id = ?").get(p.id) as { total: number };
@@ -323,7 +389,7 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
 
   // GET /api/invoices/approved-tickets
   if (p === "/api/invoices/approved-tickets" && method === "GET") {
-    if (role !== "LEADER" && role !== "ADMIN" && role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
+    if (role !== "ADMIN" && role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
     const tickets = db.query("SELECT * FROM tickets WHERE tenant_id = ? AND status = 'approved' ORDER BY updated_at DESC").all(tenantId);
     return json(tickets);
   }
