@@ -205,24 +205,26 @@ db.run(`
   )
 `);
 
-CREATE TABLE IF NOT EXISTS pending_changes (
-  id TEXT PRIMARY KEY,
-  tenant_id TEXT NOT NULL,
-  change_type TEXT NOT NULL,
-  status TEXT DEFAULT 'pending',
-  target_table TEXT NOT NULL,
-  target_id TEXT,
-  proposed_data TEXT NOT NULL,
-  current_data TEXT,
-  summary TEXT NOT NULL,
-  suggested_by TEXT,
-  suggested_by_user TEXT,
-  assigned_to TEXT,
-  approved_by TEXT,
-  approved_at TEXT,
-  rejected_reason TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
-);
+db.run(`
+  CREATE TABLE IF NOT EXISTS pending_changes (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    change_type TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    target_table TEXT NOT NULL,
+    target_id TEXT,
+    proposed_data TEXT NOT NULL,
+    current_data TEXT,
+    summary TEXT NOT NULL,
+    suggested_by TEXT,
+    suggested_by_user TEXT,
+    assigned_to TEXT,
+    approved_by TEXT,
+    approved_at TEXT,
+    rejected_reason TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`);
 
 // Migration: add user_id column if missing (existing databases)
 try {
