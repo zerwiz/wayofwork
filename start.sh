@@ -7,50 +7,52 @@ HEALTH="http://127.0.0.1:${PORT}/api/health"
 LOG_FILE="${ROOT}/server.log"
 
 # Initialize log file
-echo "--- Starting Way of Work Server (Electron) at $(date) ---" > "$LOG_FILE"
+echo "--- Starting Way of Work Server at $(date) ---" > "$LOG_FILE"
 
 # Redirect all subsequent output to both stdout and the log file
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo "============================================"
-echo "  Way of Work Server (Electron)"
+echo "  Way of Work Server"
 echo "============================================"
 echo ""
 echo "  Web interface:    http://127.0.0.1:${PORT}"
 echo "  API health:       ${HEALTH}"
+echo "  API docs:         http://127.0.0.1:${PORT}/api/manifest"
 echo "  Logs:             ${LOG_FILE}"
+echo ""
+echo "  Set WOP_AUTH_SECRET in .env for production JWT signing."
 echo ""
 echo "============================================"
 echo ""
 
 echo "==> Building app (tsc -b && vite build)..."
-bun run build | tee -a "$LOG_FILE"
+bun run build
 
 echo "==> Starting Bun server..."
-bun run server/index.ts >> "$LOG_FILE" 2>&1 &
+bun run server/index.ts &
 SERVER_PID=$!
 
 cleanup() {
-    echo "==> Stopping server (PID $SERVER_PID)..."
-    kill "$SERVER_PID" 2>/dev/null || true
+	echo "==> Stopping server (PID $SERVER_PID)..."
+	kill "$SERVER_PID" 2>/dev/null || true
 }
 trap cleanup EXIT
 
 echo "==> Waiting for server at $HEALTH..."
 for i in $(seq 1 60); do
-    if curl -sf "$HEALTH" >/dev/null 2>&1; then
-        echo "==> Server ready."
-        break
-    fi
-    if [ "$i" -eq 60 ]; then
-        echo "==> Server failed to start within 60s."
-        exit 1
-    fi
-    sleep 1
+	if curl -sf "$HEALTH" >/dev/null 2>&1; then
+		echo "==> Server ready."
+		break
+	fi
+	if [ "$i" -eq 60 ]; then
+		echo "==> Server failed to start within 60s."
+		exit 1
+	fi
+	sleep 1
 done
 
-echo "==> Starting Electron..."
-# Launching electron directly via the production loader
-node electron/wait-prod.mjs | tee -a "$LOG_FILE"
+echo "==> Open http://127.0.0.1:${PORT} in your browser (Electron disabled)"
+echo "    Press Ctrl+C to stop the server."
 
-echo "==> Electron exited, shutting down."
+wait "$SERVER_PID"

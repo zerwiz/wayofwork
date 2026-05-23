@@ -407,13 +407,16 @@ export const websocketHandler = {
 
 			if (!ws.data.agentName && ws.data.surface) {
 				const s = ws.data.surface;
+				console.log(`[WS] Mapping surface '${s}' to agent.`);
 				if (s === "claw") ws.data.agentName = "claw";
+				else if (s === "simple") ws.data.agentName = "orchestrator";
 				else if (s === "docs") ws.data.agentName = "docs";
 				else if (s === "kanban") ws.data.agentName = "kanban";
 				else if (s === "ata") ws.data.agentName = "ata";
 				else if (s === "billing") ws.data.agentName = "fakturering";
 				else if (s === "planning") ws.data.agentName = "schemaplanerare";
 				else if (s === "project") ws.data.agentName = "projektledare";
+				console.log(`[WS] Mapped surface '${s}' to agent '${ws.data.agentName}'.`);
 			}
 
 			if (ws.data.agentName && !ws.data.cachedAgentBody) {

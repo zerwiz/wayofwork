@@ -353,25 +353,9 @@ const neededUsers = [
   { username: "kalle", full_name: "Kalle Nilsson", role: "WORKER" },
   { username: "craig", full_name: "Craig", role: "ADMIN" },
   { username: "josef", full_name: "Josef", role: "ADMIN" },
-  { username: "emma", full_name: "Em
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-ma", role: "ADMIN" },
+  { username: "emma", full_name: "Emma", role: "ADMIN" },
+  { username: "malin", full_name: "Malin", role: "ADMIN" },
+  { username: "jorgen", full_name: "Jörgen", role: "ADMIN" },
 ];
 for (const u of neededUsers) {
   if (existingUsernames.includes(u.username)) {
@@ -385,7 +369,7 @@ for (const u of neededUsers) {
 }
 
 // Remove old test users that don't match our real users
-const keepUsers = new Set(["admin", "anna", "bjorn", "cecilia", "demo-worker", "demo-leader", "demo-client", "byggab", "kalle", "craig", "josef", "emma"]);
+const keepUsers = new Set(["admin", "anna", "bjorn", "cecilia", "demo-worker", "demo-leader", "demo-client", "byggab", "kalle", "craig", "josef", "emma", "malin", "jorgen"]);
 const toRemove = existingUsernames.filter((u: string) => !keepUsers.has(u));
 for (const u of toRemove) {
   db.run("DELETE FROM users WHERE username = ?", [u]);

@@ -207,7 +207,7 @@ export const RefactorProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // External Hooks
   const tree = useWorkspaceTree();
   const server = useServerConfig();
-  const session = useWayOfWorkSession("claw");
+  const session = useWayOfWorkSession(uiMode === 'simple' ? 'simple' : uiMode);
   const preferences = useSimplePreferences();
   const agents = useAgents();
   const viewsCatalog = useUiViewsCatalog();

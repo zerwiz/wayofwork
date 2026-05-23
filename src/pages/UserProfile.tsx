@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 // UiMode typed as string
 
 interface Certificate {
@@ -37,6 +38,7 @@ export function UserProfilePage({
   uiMode: string;
   setUiMode: (m: string) => void;
 }) {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -276,11 +278,12 @@ export function UserProfilePage({
                 </div>
                 <div className="flex items-center justify-center gap-3">
                   <button
-                    onClick={() => window.history.back()}
+                    onClick={() => navigate(-1)}
                     className="rounded bg-[#3c3c3c] px-6 py-2.5 text-sm font-medium text-[#cccccc] hover:bg-[#4c4c4c] transition-colors"
                   >
                     Back
                   </button>
+
                   <button
                     onClick={() => window.location.reload()}
                     className="rounded bg-[#ea580c] px-6 py-2.5 text-sm font-medium text-white hover:bg-[#c2410c] transition-colors"
@@ -310,7 +313,7 @@ export function UserProfilePage({
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-center gap-3">
                     <button
-                      onClick={() => window.history.back()}
+                      onClick={() => navigate(-1)}
                       className="rounded bg-[#3c3c3c] px-6 py-2.5 text-sm font-medium text-[#cccccc] hover:bg-[#4c4c4c] transition-colors"
                     >
                       Back

@@ -28,8 +28,8 @@ function SingleToast({ notif, onDismiss }: { notif: Notification; onDismiss: (id
 
 	return (
 		<div
-			className={`flex items-start gap-3 rounded-lg border p-3 shadow-lg transition-all duration-300 ${
-				visible ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
+			className={`flex items-start gap-3 rounded-lg border p-3 shadow-lg transition-all duration-300 opacity-90 ${
+				visible ? "translate-x-0 opacity-90" : "translate-x-full opacity-0"
 			} ${cfg.bg} border-[#3c3c3c] bg-[#252526]`}
 			style={{ minWidth: 320, maxWidth: 420 }}
 		>
