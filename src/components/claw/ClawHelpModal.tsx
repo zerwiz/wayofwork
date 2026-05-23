@@ -134,24 +134,25 @@ function SectionOverview() {
 		<>
 			<H>What is Claw?</H>
 			<P>
-				Claw is the <strong className="text-[#fb923c]">operator shell</strong> of Way of Work.
+				Claw is the <strong className="text-[#fb923c]">operator shell</strong> of the{" "}
+				<strong className="text-[#cccccc]">Way of Work</strong> system.
 				Where <strong>Simple</strong> mode gives you a clean chat window and{" "}
 				<strong>Technical</strong> mode gives you a full IDE grid, Claw is designed for
-				running <strong>autonomous, persistent, and scheduled Pi agent tasks</strong> — with
+				running <strong>autonomous, persistent, and scheduled Way of Work agent tasks</strong> — with
 				a mission-control dashboard, isolated workspace documents, and channel integrations.
 			</P>
 
 			<Tip>
-				Think of Claw as your agent&apos;s &ldquo;home base.&rdquo; It uses the same Pi
-				engine as Simple and Technical modes — all tools, extensions, and skills work the
+				Think of Claw as your agent&apos;s &ldquo;home base.&rdquo; It uses the same engine
+				as Simple and Technical modes — all tools, extensions, and skills work the
 				same way. Only the interface and operational context differ.
 			</Tip>
 
-			<H>How Claw relates to Pi</H>
+			<H>How Claw relates to the system</H>
 			<P>
 				Claw is a shell around the{" "}
-				<strong className="text-[#cccccc]">Pi Coding Agent</strong> — it does not replace
-				it. When you chat in Claw, Pi runs your turn with its full tool set (read, write,
+				<strong className="text-[#cccccc]">Way of Work Agent</strong> — it does not replace
+				it. When you chat in Claw, the agent runs your turn with its full tool set (read, write,
 				bash, grep, <Code>dispatch_agent</Code>, extensions, skills). The Claw shell adds
 				the operator context: workspace files, session history, schedules, and channel
 				bridges.
@@ -198,7 +199,7 @@ function SectionExtendingClaw() {
 			</P>
 
 			<Tip>
-				Prefer the <strong className="text-[#cccccc]">Pi engine</strong> for chat (Mission tab
+				Prefer the <strong className="text-[#cccccc]">Way of Work engine</strong> for chat (Mission tab
 				→ Engine status) so tools and extensions actually execute — not prompt-only merges.
 			</Tip>
 
@@ -209,19 +210,19 @@ function SectionExtendingClaw() {
 				the <strong className="text-[#cccccc]">Claw agent</strong> can create or refine those
 				files, attach skills in <Code>.pi/agents/*.md</Code> frontmatter, and log what changed
 				in <Code>.claw/workspace/TOOLS.md</Code>. Skills compose with tools: the agent follows the skill
-				while using Pi&apos;s built-ins and extension tools.
+				while using the engine&apos;s built-ins and extension tools.
 			</P>
 
 			<H>Extensions & tools</H>
 			<P>
-				Extensions are TypeScript modules Pi loads from your workspace (e.g.{" "}
+				Extensions are TypeScript modules the engine loads from your workspace (e.g.{" "}
 				<Code>extensions/&lt;name&gt;.ts</Code>), often with a one-line re-export under{" "}
 				<Code>.pi/extensions/</Code> and an entry in <Code>.pi/settings.json</Code>{" "}
 				<Code>extensions[]</Code>. They <strong className="text-[#cccccc]">register tools</strong>,{" "}
 				slash commands, and hooks — the primary way to add custom capabilities beyond plain
 				skills. The Claw agent is instructed to <strong className="text-[#cccccc]">write those files and settings</strong>{" "}
 				(and run <Code>pi install …</Code> when appropriate), not only describe steps. After
-				edits, run <Code>/reload</Code> in the Pi TUI or restart the app so Pi picks up changes.
+				edits, run <Code>/reload</Code> in the TUI or restart the app so the engine picks up changes.
 			</P>
 			<P>
 				Repo conventions and imports are documented in <Code>docs/EXTENSIONS.md</Code>,{" "}
@@ -231,11 +232,11 @@ function SectionExtendingClaw() {
 			<H>Using what others built</H>
 			<P>
 				Any skill, extension, or agent-team pattern published for the{" "}
-				<strong className="text-[#cccccc]">Pi Coding Agent</strong> can be dropped into your
+				<strong className="text-[#cccccc]">Way of Work agent</strong> can be dropped into your
 				workspace the same way: copy or vendor the files, wire <Code>extensions[]</Code>, list
 				skills in agent frontmatter, and keep licenses and trust in mind for third-party code.
-				Claw is a <em>shell</em> — the ecosystem is Pi-shaped, so community work &ldquo;for
-				Pi&rdquo; is the right compatibility lens.
+				Claw is a <em>shell</em> — the ecosystem is agent-shaped, so community work &ldquo;for
+				the agent&rdquo; is the right compatibility lens.
 			</P>
 
 			<H>Custom Claw UI (operator panels)</H>
@@ -418,7 +419,7 @@ function SectionTabs() {
 				Each module provides an id, label, optional Lucide icon, sort order, and a{" "}
 				<Code>render</Code> callback that receives workspace root, dark/light flag,{" "}
 				<Code>GET /api/config</Code> payload, and helpers to switch tabs or open a workspace
-				file on the Files tab. For Pi skills, extensions, and community-built Pi add-ons, open
+				file on the Files tab. For skills, extensions, and community-built agent add-ons, open
 				the <strong className="text-[#cccccc]">Extending Claw</strong> section in this help
 				sidebar.
 			</Tip>

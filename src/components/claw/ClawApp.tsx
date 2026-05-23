@@ -28,7 +28,7 @@ import type {
   ChatSessionMode,
   ChatSessionTab,
   LogRow,
-} from "../../hooks/useWayOfPiSession";
+} from "../../hooks/useWayOfWorkSession";
 import type { ChatQueueItem } from "../../utils/chatQueueTranscript";
 import type { TreeNode } from "../../types/tree";
 import type { FilePersistEncoding } from "../../hooks/useFileEditor";

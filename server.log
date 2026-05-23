@@ -1,93 +1,79 @@
---- Starting Way of Work Server at Sat May 23 01:35:59 PM EEST 2026 ---
-============================================
-  Way of Work Server
-============================================
-
-  Web interface:    http://127.0.0.1:3333
-  API health:       http://127.0.0.1:3333/api/health
-  API docs:         http://127.0.0.1:3333/api/manifest
-  Logs:             /home/zerwiz/CodeP/wayofwork/server.log
-
-  Set WOP_AUTH_SECRET in .env for production JWT signing.
-
-============================================
-
-==> Building app (tsc -b && vite build)...
+--- Starting Way of Work Server (Electron) at Sat May 23 04:44:11 PM EEST 2026 ---
+==> Building app...
 $ tsc -b && vite build
 vite v6.4.2 building for production...
 transforming...
-✓ 3861 modules transformed.
+✓ 3863 modules transformed.
 rendering chunks...
 [plugin vite:reporter] 
 (!) /home/zerwiz/CodeP/wayofwork/src/api/client.ts is dynamically imported by /home/zerwiz/CodeP/wayofwork/src/hooks/useClawWorkspace.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawWorkspace.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawWorkspace.ts but also statically imported by /home/zerwiz/CodeP/wayofwork/src/components/GitExplorerStatusBadge.tsx, /home/zerwiz/CodeP/wayofwork/src/components/HostDoctorModal.tsx, /home/zerwiz/CodeP/wayofwork/src/components/IndexingDocsModal.tsx, /home/zerwiz/CodeP/wayofwork/src/components/RestartServerModal.tsx, /home/zerwiz/CodeP/wayofwork/src/components/TeamsGuiEditorModal.tsx, /home/zerwiz/CodeP/wayofwork/src/components/claw/ClawApp.tsx, /home/zerwiz/CodeP/wayofwork/src/components/claw/ClawChannelsView.tsx, /home/zerwiz/CodeP/wayofwork/src/components/docs/DocsApp.tsx, /home/zerwiz/CodeP/wayofwork/src/components/simple/SimpleTeamView.tsx, /home/zerwiz/CodeP/wayofwork/src/components/technical/TerminalSettingsSection.tsx, /home/zerwiz/CodeP/wayofwork/src/contexts/NotificationContext.tsx, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawAutomationStatus.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawHostFileTree.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawMissionEvents.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawSchedules.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawTelegramStatus.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawWhatsAppStatus.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useCommandItems.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useFileEditor.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useGithubConnection.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useLlmModels.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/usePlanHandoffSelection.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useWorkspaceActions.ts, /home/zerwiz/CodeP/wayofwork/src/pages/ClientDashboard.tsx, /home/zerwiz/CodeP/wayofwork/src/utils/planModeWorkspace.ts, dynamic import will not move module into another chunk.
 
 computing gzip size...
-dist/index.html                                           0.58 kB │ gzip:   0.34 kB
-dist/assets/index-CvwUo9tp.css                          155.08 kB │ gzip:  24.85 kB
-dist/assets/channel-CpPiM9H4.js                           0.11 kB │ gzip:   0.13 kB
+dist/index.html                                           0.58 kB │ gzip:   0.35 kB
+dist/assets/index-C9tDVrdw.css                          148.93 kB │ gzip:  24.01 kB
+dist/assets/channel-Cbk-P1sQ.js                           0.11 kB │ gzip:   0.13 kB
 dist/assets/init-Gi6I4Gst.js                              0.15 kB │ gzip:   0.13 kB
-dist/assets/chunk-QZHKN3VN-CGXtqlqd.js                    0.19 kB │ gzip:   0.16 kB
-dist/assets/chunk-55IACEB6-DzrzcOIn.js                    0.23 kB │ gzip:   0.21 kB
-dist/assets/chunk-4BX2VUAB-bZD69zOi.js                    0.30 kB │ gzip:   0.20 kB
-dist/assets/chunk-FMBD7UC4-C-UYXuCa.js                    0.37 kB │ gzip:   0.27 kB
-dist/assets/stateDiagram-v2-BHNVJYJU-BUS9hxkd.js          0.40 kB │ gzip:   0.29 kB
-dist/assets/classDiagram-4FO5ZUOK-D6GlmWhM.js             0.47 kB │ gzip:   0.32 kB
-dist/assets/classDiagram-v2-Q7XG4LA2-D6GlmWhM.js          0.47 kB │ gzip:   0.32 kB
-dist/assets/chunk-2J33WTMH-BpVWLtX-.js                    0.53 kB │ gzip:   0.38 kB
-dist/assets/infoDiagram-5YYISTIA-CZmK0rk5.js              0.59 kB │ gzip:   0.41 kB
+dist/assets/chunk-QZHKN3VN-BQYOka7q.js                    0.19 kB │ gzip:   0.16 kB
+dist/assets/chunk-55IACEB6-CGMcF30A.js                    0.23 kB │ gzip:   0.21 kB
+dist/assets/chunk-4BX2VUAB-C6DTZD1C.js                    0.30 kB │ gzip:   0.21 kB
+dist/assets/chunk-FMBD7UC4-DJztklSF.js                    0.37 kB │ gzip:   0.27 kB
+dist/assets/stateDiagram-v2-BHNVJYJU-DtGujbbu.js          0.40 kB │ gzip:   0.29 kB
+dist/assets/classDiagram-4FO5ZUOK-B0ycNTR5.js             0.47 kB │ gzip:   0.32 kB
+dist/assets/classDiagram-v2-Q7XG4LA2-B0ycNTR5.js          0.47 kB │ gzip:   0.32 kB
+dist/assets/chunk-2J33WTMH-Bi8c10up.js                    0.53 kB │ gzip:   0.38 kB
+dist/assets/infoDiagram-5YYISTIA-35Mgk4Ys.js              0.59 kB │ gzip:   0.41 kB
 dist/assets/ordinal-Cboi1Yqb.js                           1.19 kB │ gzip:   0.57 kB
-dist/assets/chunk-ND2GUHAM-bsebaYIz.js                    1.89 kB │ gzip:   0.83 kB
-dist/assets/diagram-5GNKFQAL-DKuoyrNZ.js                  2.77 kB │ gzip:   1.38 kB
-dist/assets/arc-CAd_cRUN.js                               3.43 kB │ gzip:   1.48 kB
-dist/assets/diagram-LMA3HP47-wHtiCIny.js                  4.25 kB │ gzip:   1.86 kB
+dist/assets/chunk-ND2GUHAM-C9ggPOyv.js                    1.89 kB │ gzip:   0.83 kB
+dist/assets/diagram-5GNKFQAL-B3MUKxum.js                  2.77 kB │ gzip:   1.38 kB
+dist/assets/arc-BVqh4m9q.js                               3.43 kB │ gzip:   1.48 kB
+dist/assets/diagram-LMA3HP47-DKjshhET.js                  4.25 kB │ gzip:   1.86 kB
 dist/assets/defaultLocale-CrowFXzY.js                     4.69 kB │ gzip:   2.18 kB
-dist/assets/pieDiagram-4H26LBE5-DgsEcuAa.js               5.33 kB │ gzip:   2.37 kB
-dist/assets/linear-BfUo36JU.js                            5.66 kB │ gzip:   2.31 kB
-dist/assets/diagram-2AECGRRQ-DXAcgETQ.js                  5.98 kB │ gzip:   2.52 kB
-dist/assets/stateDiagram-AJRCARHV-DzlzYEpO.js            10.36 kB │ gzip:   3.62 kB
-dist/assets/diagram-KO2AKTUF-CJW65qvS.js                 10.83 kB │ gzip:   4.18 kB
-dist/assets/dagre-BM42HDAG--22qGifA.js                   11.39 kB │ gzip:   4.21 kB
-dist/assets/diagram-OG6HWLK6-CjnN-dhO.js                 15.93 kB │ gzip:   5.70 kB
-dist/assets/ishikawaDiagram-YF4QCWOH-DNDfiZYo.js         17.57 kB │ gzip:   6.68 kB
-dist/assets/kanban-definition-UN3LZRKU-DSQTdDLS.js       20.71 kB │ gzip:   7.30 kB
-dist/assets/mindmap-definition-RKZ34NQL-DooQBbnm.js      23.37 kB │ gzip:   7.90 kB
-dist/assets/sankeyDiagram-5OEKKPKP-CIawNmb-.js           23.40 kB │ gzip:   8.59 kB
-dist/assets/journeyDiagram-JHISSGLW-Dt672nUT.js          23.58 kB │ gzip:   8.36 kB
+dist/assets/pieDiagram-4H26LBE5-Brt0W2hx.js               5.33 kB │ gzip:   2.37 kB
+dist/assets/linear-D05Zmodu.js                            5.66 kB │ gzip:   2.31 kB
+dist/assets/diagram-2AECGRRQ-DAPEUxGq.js                  5.98 kB │ gzip:   2.52 kB
+dist/assets/stateDiagram-AJRCARHV-BHlDL_8W.js            10.36 kB │ gzip:   3.62 kB
+dist/assets/diagram-KO2AKTUF-CsUSpf7S.js                 10.83 kB │ gzip:   4.18 kB
+dist/assets/dagre-BM42HDAG-DCBtBTWX.js                   11.39 kB │ gzip:   4.21 kB
+dist/assets/diagram-OG6HWLK6-CBHFc-hR.js                 15.93 kB │ gzip:   5.70 kB
+dist/assets/ishikawaDiagram-YF4QCWOH-BCHTdjBe.js         17.57 kB │ gzip:   6.68 kB
+dist/assets/kanban-definition-UN3LZRKU-a_mcgHU-.js       20.71 kB │ gzip:   7.30 kB
+dist/assets/mindmap-definition-RKZ34NQL-CUfrd5Zg.js      23.37 kB │ gzip:   7.90 kB
+dist/assets/sankeyDiagram-5OEKKPKP-CiO_AJc_.js           23.40 kB │ gzip:   8.59 kB
+dist/assets/journeyDiagram-JHISSGLW-DUKR75YZ.js          23.58 kB │ gzip:   8.36 kB
 dist/assets/graph-BEmEBUp_.js                            23.95 kB │ gzip:   8.32 kB
-dist/assets/wardleyDiagram-YWT4CUSO-DzrtU_08.js          26.11 kB │ gzip:   6.94 kB
-dist/assets/erDiagram-TEJ5UH35-C1hkkaB-.js               26.99 kB │ gzip:   9.39 kB
-dist/assets/gitGraphDiagram-PVQCEYII-CXNF7IEd.js         29.95 kB │ gzip:   8.89 kB
-dist/assets/requirementDiagram-4Y6WPE33-Dcrk2K3X.js      31.22 kB │ gzip:   9.82 kB
-dist/assets/timeline-definition-PNZ67QCA-QpVGJzOv.js     31.35 kB │ gzip:  10.43 kB
-dist/assets/quadrantDiagram-W4KKPZXB-C88k7rqE.js         34.51 kB │ gzip:  10.14 kB
+dist/assets/wardleyDiagram-YWT4CUSO-BbLB-C3x.js          26.11 kB │ gzip:   6.94 kB
+dist/assets/erDiagram-TEJ5UH35-DibE67r5.js               26.99 kB │ gzip:   9.39 kB
+dist/assets/gitGraphDiagram-PVQCEYII-B5Bkz1gI.js         29.95 kB │ gzip:   8.89 kB
+dist/assets/requirementDiagram-4Y6WPE33-BhgzOPIb.js      31.22 kB │ gzip:   9.82 kB
+dist/assets/timeline-definition-PNZ67QCA-B16kWEoP.js     31.35 kB │ gzip:  10.43 kB
+dist/assets/quadrantDiagram-W4KKPZXB-D8k35Rwf.js         34.51 kB │ gzip:  10.14 kB
 dist/assets/layout-Bw0msyOw.js                           35.83 kB │ gzip:  12.87 kB
-dist/assets/chunk-AQP2D5EJ-tVXSlP27.js                   37.58 kB │ gzip:  12.24 kB
-dist/assets/xychartDiagram-2RQKCTM6-BJ-IF9oh.js          40.40 kB │ gzip:  11.57 kB
-dist/assets/vennDiagram-CIIHVFJN-230jLlaj.js             41.84 kB │ gzip:  15.59 kB
-dist/assets/chunk-727SXJPM-CLoqVzw0.js                   49.11 kB │ gzip:  15.77 kB
-dist/assets/flowDiagram-I6XJVG4X-DWmAfyVD.js             61.20 kB │ gzip:  19.53 kB
-dist/assets/ganttDiagram-6RSMTGT7-ElwY_5a2.js            69.58 kB │ gzip:  23.49 kB
-dist/assets/c4Diagram-AAUBKEIU-iM-c7BA2.js               69.98 kB │ gzip:  19.66 kB
-dist/assets/blockDiagram-GPEHLZMM-B-q06t0P.js            74.92 kB │ gzip:  21.57 kB
-dist/assets/cose-bilkent-S5V4N54A-BJYFvlfc.js            81.72 kB │ gzip:  22.48 kB
-dist/assets/sequenceDiagram-3UESZ5HK-C6Gv-Fbs.js        117.33 kB │ gzip:  31.19 kB
-dist/assets/architectureDiagram-3BPJPVTR-6G4kdhxJ.js    149.77 kB │ gzip:  42.33 kB
+dist/assets/chunk-AQP2D5EJ-Bn87a2o6.js                   37.58 kB │ gzip:  12.24 kB
+dist/assets/xychartDiagram-2RQKCTM6-TAc8o4df.js          40.40 kB │ gzip:  11.57 kB
+dist/assets/vennDiagram-CIIHVFJN-D3EVcZcT.js             41.84 kB │ gzip:  15.59 kB
+dist/assets/chunk-727SXJPM-BoFS8EJa.js                   49.11 kB │ gzip:  15.76 kB
+dist/assets/flowDiagram-I6XJVG4X-BBO-vR3-.js             61.20 kB │ gzip:  19.52 kB
+dist/assets/ganttDiagram-6RSMTGT7-sDgvvNS5.js            69.58 kB │ gzip:  23.49 kB
+dist/assets/c4Diagram-AAUBKEIU-DkeU3k3K.js               69.98 kB │ gzip:  19.66 kB
+dist/assets/blockDiagram-GPEHLZMM-BIlmX-Wq.js            74.92 kB │ gzip:  21.57 kB
+dist/assets/cose-bilkent-S5V4N54A-K5DTYYd9.js            81.72 kB │ gzip:  22.48 kB
+dist/assets/sequenceDiagram-3UESZ5HK-BQ3iiD9v.js        117.33 kB │ gzip:  31.20 kB
+dist/assets/architectureDiagram-3BPJPVTR-Cc35r6CF.js    149.77 kB │ gzip:  42.33 kB
 dist/assets/katex-C5jXJg4s.js                           261.33 kB │ gzip:  77.57 kB
 dist/assets/cytoscape.esm-D_LviqZs.js                   442.60 kB │ gzip: 141.99 kB
-dist/assets/mermaid.core-hF9oy7yk.js                    591.92 kB │ gzip: 138.29 kB
-dist/assets/wardley-L42UT6IY-DJWgXfwc.js                615.46 kB │ gzip: 148.57 kB
-dist/assets/index-CPSUTOfW.js                         1,470.45 kB │ gzip: 378.08 kB
+dist/assets/mermaid.core-BWDZ4zTa.js                    591.92 kB │ gzip: 138.29 kB
+dist/assets/wardley-L42UT6IY-Wg8Fc5Sl.js                615.46 kB │ gzip: 148.57 kB
+dist/assets/index-CBKDXvcM.js                         1,486.17 kB │ gzip: 381.47 kB
 
 (!) Some chunks are larger than 500 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
-✓ built in 8.80s
+✓ built in 9.04s
 ==> Starting Bun server...
 ==> Waiting for server at http://127.0.0.1:3333/api/health...
 Way of Work server http://127.0.0.1:3333 workspace=/home/zerwiz/CodeP/wayofwork/workspace chatEngine=sdk piDrivesChat=false manifest=/api/manifest
-[telegram-bot] Webhook failed for bot tgb_1779381852674_mc2jh2i: Bad Request: bad webhook: An HTTPS URL must be provided for webhook — falling back to polling
+[telegram-bot] No HTTPS public URL — using polling
 [telegram-bot] Starting polling fallback
 ==> Server ready.
-==> Open http://127.0.0.1:3333 in your browser (Electron disabled)
-    Press Ctrl+C to stop the server.
+==> Starting Electron...

@@ -353,7 +353,25 @@ const neededUsers = [
   { username: "kalle", full_name: "Kalle Nilsson", role: "WORKER" },
   { username: "craig", full_name: "Craig", role: "ADMIN" },
   { username: "josef", full_name: "Josef", role: "ADMIN" },
-  { username: "emma", full_name: "Emma", role: "ADMIN" },
+  { username: "emma", full_name: "Em
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+ma", role: "ADMIN" },
 ];
 for (const u of neededUsers) {
   if (existingUsernames.includes(u.username)) {

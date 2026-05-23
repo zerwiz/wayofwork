@@ -69,6 +69,7 @@ export type ChatWsData = {
 	surface: string | null;
 	tenantId: string;
 	userId: string;
+	lang?: string;
 };
 
 export type ServerWsData = ChatWsData | TerminalWsData;
@@ -91,6 +92,7 @@ async function applyLeadFromCache(data: ChatWsData, opts?: { effectiveAgentNameL
 		orchestratorToolsEnabled: orchestratorToolsEnabled() && !piJson,
 		authoritativeRuntime: piJson,
 		workspaceIndexBoost: getWorkspaceIndexChatBoostSync(),
+		lang: data.lang,
 	});
 }
 

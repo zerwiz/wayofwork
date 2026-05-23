@@ -85,7 +85,6 @@ function applySessionRuntimePostBody(body: Record<string, unknown>): Response {
 
 export function registerConfigRoutes(router: Router) {
 	router.get("/api/config", async (req, _params, auth) => {
-		if (!auth) return json({ error: "Unauthorized" }, 401);
 		const provider = (process.env.WOP_LLM_PROVIDER || "ollama").toLowerCase();
 		const engineMode = wopChatEngineFromEnv();
 		const chatEngine = engineMode === "bundled" ? (process.env.WOP_CHAT_ENGINE || "").trim().toLowerCase() || provider : engineMode;

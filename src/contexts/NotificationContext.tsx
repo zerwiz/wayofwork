@@ -60,14 +60,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 	const markAsRead = useCallback(async (id: string) => {
 		setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: 1 } : n)));
 		try {
-			await fetch(`/api/notifications/${id}/read`, { method: "PATCH", headers: { Authorization: `Bearer ${localStorage.getItem("wop_token")}` } });
+			await fetch(`/api/notifications/${id}/read`, { method: "POST", headers: { Authorization: `Bearer ${localStorage.getItem("wop_token")}` } });
 		} catch {}
 	}, []);
 
 	const markAllAsRead = useCallback(async () => {
 		setNotifications((prev) => prev.map((n) => ({ ...n, read: 1 })));
 		try {
-			await fetch("/api/notifications/read-all", { method: "PATCH", headers: { Authorization: `Bearer ${localStorage.getItem("wop_token")}` } });
+			await fetch("/api/notifications/read-all", { method: "POST", headers: { Authorization: `Bearer ${localStorage.getItem("wop_token")}` } });
 		} catch {}
 	}, []);
 

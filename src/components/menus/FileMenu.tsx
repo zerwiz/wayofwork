@@ -6,7 +6,7 @@ import { useWorkspaceTree } from "../../hooks/useWorkspaceTree";
 import { useAgents } from "../../hooks/useAgents";
 import { useUiViewsCatalog } from "../../hooks/useUiViewsCatalog";
 import { useRunMenuDebugState } from "../../hooks/useRunMenuDebugState";
-import { useWayOfPiSession } from "../../hooks/useWayOfPiSession";
+import { useWayOfWorkSession } from "../../hooks/useWayOfWorkSession";
 import { useServerConfig } from "../../hooks/useServerConfig";
 import { useShellMobile } from "../../hooks/useShellMobile";
 import { useMaxWidthMediaQuery } from "../../hooks/useMaxWidthMediaQuery";

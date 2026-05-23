@@ -27,8 +27,10 @@ import {
   HowToUseModal,
   type HowToUseSectionId,
 } from "./components/HowToUseModal";
-import { MitLicenseModal } from "./components/MitLicenseModal";
-import { RestartServerModal } from "./components/RestartServerModal";
+import { MitLicenseModal } from "./components/modals/MitLicenseModal";
+import BugReportModal from "./components/modals/BugReportModal";
+import { RestartServerModal } from "./components/modals/RestartServerModal";
+
 import { LaunchConfigAddModal } from "./components/LaunchConfigAddModal";
 import { NewPlanFileModal } from "./components/NewPlanFileModal";
 import { NewWorkspaceFileModal } from "./components/NewWorkspaceFileModal";
@@ -84,10 +86,10 @@ import {
   writeSimpleChatStreamUiEnabled,
 } from "./hooks/useSimplePreferences";
 import {
-  useWayOfPiSession,
+  useWayOfWorkSession,
   type ChatSessionMode,
   type ChatSessionSurfaceId,
-} from "./hooks/useWayOfPiSession";
+} from "./hooks/useWayOfWorkSession";
 import { useMaxWidthMediaQuery } from "./hooks/useMaxWidthMediaQuery";
 import { useWorkspaceTree } from "./hooks/useWorkspaceTree";
 import { useWorkspaceStaticAnalysis } from "./hooks/useWorkspaceStaticAnalysis";
@@ -361,12 +363,8 @@ export default function App() {
    * `uiMode` swaps the active slice and re-`activate_session`s the socket for that surface.
    */
   const chatSurfaceId: ChatSessionSurfaceId = uiMode as ChatSessionSurfaceId;
-  const session = useWayOfPiSession(
-    chatSurfaceId,
-    refresh,
-    bufferAssistantDeltasRef,
-    reloadAgentsCatalog,
-    (rel) => focusAgentWrittenWorkspaceFileRef.current(rel),
+  const session = useWayOfWorkSession(
+    chatSurfaceId
   );
   const teamPulseSessionTokenSummary = useMemo(
     () => ({
@@ -2244,7 +2242,7 @@ description:
   const [clawHelpDefaultSection, setClawHelpDefaultSection] =
     useState<ClawHelpSectionId | null>(null);
   /**
-   * Per-shell session agent (see **`useWayOfPiSession`** `surfaceId`): Simple + Technical use orchestrator
+   * Per-shell session agent (see **`useWayOfWorkSession`** `surfaceId`): Simple + Technical use orchestrator
    * (null); Claw defaults to **`claw`** once per Claw visit (including after `/api/agents` loads), without
    * overriding a deliberate orchestrator choice on Claw.
    */
@@ -5154,6 +5152,10 @@ description:
           onDismiss={() => setInstallDebuggersModalOpen(false)}
           appearanceDark={llmFixModalAppearanceDark}
         />
+        <BugReportModal
+          isOpen={bugReportModalOpen}
+          onClose={() => setBugReportModalOpen(false)}
+        />
         <MitLicenseModal
           open={mitLicenseModalOpen}
           onDismiss={() => setMitLicenseModalOpen(false)}
@@ -5419,6 +5421,10 @@ description:
           open={installDebuggersModalOpen}
           onDismiss={() => setInstallDebuggersModalOpen(false)}
           appearanceDark={llmFixModalAppearanceDark}
+        />
+        <BugReportModal
+          isOpen={bugReportModalOpen}
+          onClose={() => setBugReportModalOpen(false)}
         />
         <MitLicenseModal
           open={mitLicenseModalOpen}

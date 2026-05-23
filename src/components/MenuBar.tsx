@@ -14,10 +14,11 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNotifications } from "../contexts/NotificationContext";
+import { useTranslation } from "../contexts/LanguageContext";
 import type { PiModelConfigPath } from "../constants/piModelConfigPaths";
 import { PI_MODEL_CONFIG_ENTRIES } from "../constants/piModelConfigPaths";
 import type { ServerConfig } from "../hooks/useServerConfig";
-import type { ChatSessionMode } from "../hooks/useWayOfPiSession";
+import type { ChatSessionMode } from "../hooks/useWayOfWorkSession";
 import type { useLlmModels } from "../hooks/useLlmModels";
 // UiMode typed as string
 import type {
@@ -185,7 +186,8 @@ export function MenuBar({
 	viewSimple?: ViewMenuSimpleOptions | null;
 }) {
 	const { unreadCount } = useNotifications();
-	/** Shared chrome for Technical and Simple layouts (WAY OF PI, mode toggle, menus, search, model). */
+	const { language, setLanguage } = useTranslation();
+	/** Shared chrome for Technical and Simple layouts (WAY OF WORK, mode toggle, menus, search, model). */
 	const menuLabels = [
 		"File",
 		"Edit",
@@ -3415,6 +3417,14 @@ WAY OF WORK
 					<Search size={12} className="text-[#cccccc]" />
 					<span className="hidden text-[12px] text-[#cccccc] lg:inline">Search or command…</span>
 					<span className="ml-1 hidden font-mono text-[#858585] lg:inline">⌘K</span>
+				</button>
+				<button
+					type="button"
+					onClick={() => setLanguage(language === 'sv' ? 'en' : 'sv')}
+					className="hidden cursor-pointer items-center gap-2 rounded border border-[#454545] bg-[#3c3c3c] px-2 py-1 text-[12px] text-[#cccccc] transition-colors hover:bg-[#4d4d4d] sm:flex"
+					title="Toggle language"
+				>
+					{language.toUpperCase()}
 				</button>
 
 				<button

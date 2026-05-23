@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Square, MessageSquare, X } from "lucide-react";
-import { useWayOfPiSession } from "../../hooks/useWayOfPiSession";
+import { useWayOfWorkSession } from "../../hooks/useWayOfWorkSession";
 
 interface KanbanChatPanelProps {
   open: boolean;
@@ -15,7 +15,7 @@ export default function KanbanChatPanel({ open, onToggle }: KanbanChatPanelProps
     sendChat,
     stop,
     setChatAgent,
-  } = useWayOfPiSession();
+  } = useWayOfWorkSession("kanban");
 
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);

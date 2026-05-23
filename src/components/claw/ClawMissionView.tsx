@@ -21,7 +21,7 @@ import { useMemo, useState } from "react";
 import type { AgentMeta } from "../../hooks/useAgents";
 import { useClawAutomationStatus } from "../../hooks/useClawAutomationStatus";
 import { useClawMissionEvents } from "../../hooks/useClawMissionEvents";
-import type { LogRow } from "../../hooks/useWayOfPiSession";
+import type { LogRow } from "../../hooks/useWayOfWorkSession";
 import type { ServerConfig } from "../../hooks/useServerConfig";
 import type { ClawHelpSectionId } from "./ClawHelpModal";
 import type { UseClawWorkspaceResult } from "../../hooks/useClawWorkspace";

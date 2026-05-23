@@ -1,5 +1,5 @@
 import { PanelLeft, FileText, Cpu, Plus, FileCode, X, MessageSquare } from "lucide-react";
-import type { ChatSessionTab } from "../../hooks/useWayOfPiSession";
+import type { ChatSessionTab } from "../../hooks/useWayOfWorkSession";
 
 /** Shared toolbar for Claw views: sidebar toggle + status (matches Simple mode feel). */
 export function ClawSecondaryToolbar({

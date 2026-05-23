@@ -9,17 +9,25 @@ export const kanbanService = {
     if (!res.ok) return [];
     const projects = await res.json();
     
-    return projects.map((p: any) => ({
-      id: p.id,
-      name: p.name,
-      description: p.description,
-      columns: [
-        { id: 'todo', name: 'To Do', order: 0, boardId: p.id },
-        { id: 'in_progress', name: 'In Progress', order: 1, boardId: p.id },
-        { id: 'complete', name: 'Complete', order: 2, boardId: p.id },
-      ],
-      members: [],
-      createdAt: new Date(p.created_at).getTime(),
+    return Promise.all(projects.map(async (p: any) => {
+      const membersRes = await fetch(`/api/projects/${p.id}/members`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const members = membersRes.ok ? await membersRes.json() : [];
+      const settings = p.settings_json ? JSON.parse(p.settings_json) : {};
+      
+      return {
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        columns: settings.columns || [
+          { id: 'todo', name: 'To Do', order: 0, boardId: p.id },
+          { id: 'in_progress', name: 'In Progress', order: 1, boardId: p.id },
+          { id: 'complete', name: 'Complete', order: 2, boardId: p.id },
+        ],
+        members: members.map((m: any) => m.id),
+        createdAt: new Date(p.created_at).getTime(),
+      };
     }));
   },
 
@@ -85,12 +93,17 @@ export const kanbanService = {
 
   // ── Columns ──
   createColumn: async (boardId: string, column: Partial<BoardColumn>): Promise<void> => {
-    // Columns map to task statuses. To create a custom column, add a new status
-    // via the task's status field. For now, default columns (todo/in_progress/complete) are used.
+    const board = await kanbanService.getBoard(boardId);
+    if (!board) throw new Error('Board not found');
+    const newColumns = [...board.columns, { ...column, id: column.id || Date.now().toString(), boardId, order: board.columns.length }];
+    await kanbanService.updateBoard(boardId, { settings: { ...board.settings, columns: newColumns } } as any);
   },
 
   deleteColumn: async (boardId: string, columnId: string): Promise<void> => {
-    // Default columns cannot be deleted. Custom column deletion is a future feature.
+    const board = await kanbanService.getBoard(boardId);
+    if (!board) throw new Error('Board not found');
+    const newColumns = board.columns.filter(c => c.id !== columnId);
+    await kanbanService.updateBoard(boardId, { settings: { ...board.settings, columns: newColumns } } as any);
   },
 
   // ── Cards ──
@@ -220,19 +233,65 @@ export const kanbanService = {
 
   // ── Members ──
   getBoardMembers: async (boardId: string): Promise<BoardMember[]> => {
-    return [];
+    const token = localStorage.getItem('wop_token');
+    const res = await fetch(`/api/projects/${boardId}/members`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return [];
+    const members = await res.json();
+    return members.map((m: any) => ({
+      id: m.id,
+      userId: m.id,
+      email: '',
+      displayName: m.full_name || m.username,
+      role: (m.role === 'LEADER' ? 'admin' : m.role === 'WORKER' ? 'member' : 'viewer') as BoardMember['role'],
+      addedAt: Date.now(),
+    }));
   },
 
   inviteBoardMember: async (boardId: string, email: string, role: string): Promise<void> => {
-    // TODO
+    // email here is actually username; we need userId. Look up the user first.
+    const token = localStorage.getItem('wop_token');
+    // Try to find user by email (which in this app doubles as username)
+    const usersRes = await fetch('/api/users', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!usersRes.ok) throw new Error('Failed to look up users');
+    const users = await usersRes.json();
+    const user = users.find((u: any) => u.email === email || u.username === email);
+    if (!user) throw new Error('User not found');
+    const mappedRole = role === 'admin' ? 'LEADER' : role === 'member' ? 'WORKER' : 'VIEWER';
+    const res = await fetch(`/api/projects/${boardId}/members`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ userId: user.id, role: mappedRole })
+    });
+    if (!res.ok) throw new Error('Failed to add member');
   },
 
   removeBoardMember: async (boardId: string, memberId: string): Promise<void> => {
-    // TODO
+    const token = localStorage.getItem('wop_token');
+    const res = await fetch(`/api/projects/${boardId}/members/${memberId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to remove member');
   },
 
   updateBoardMemberRole: async (boardId: string, memberId: string, role: string): Promise<void> => {
-    // TODO
+    const token = localStorage.getItem('wop_token');
+    const mappedRole = role === 'admin' ? 'LEADER' : role === 'member' ? 'WORKER' : 'VIEWER';
+    await fetch(`/api/projects/${boardId}/members`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ userId: memberId, role: mappedRole })
+    });
   },
 
   // ── Time Logs ──

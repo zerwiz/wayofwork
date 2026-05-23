@@ -14,7 +14,7 @@ import type {
   ChatPulseMeters,
   ChatRow,
   LogRow,
-} from "../../hooks/useWayOfPiSession";
+} from "../../hooks/useWayOfWorkSession";
 import { useFileEditor } from "../../hooks/useFileEditor";
 import type { BottomPanelTab } from "../../types/technicalShell";
 import type { TreeNode, WorkspaceResponse } from "../../types/tree";

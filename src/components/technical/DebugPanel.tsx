@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useRunMenuDebugState } from "../../hooks/useRunMenuDebugState";
-import type { ChatSessionMode } from "../../hooks/useWayOfPiSession";
+import type { ChatSessionMode } from "../../hooks/useWayOfWorkSession";
 
 export function DebugPanel({ mode }: { mode: ChatSessionMode }) {
   const { debugSessionActive, debugReplSession, beginDebugSession, endDebugSession } = useRunMenuDebugState();

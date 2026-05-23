@@ -133,8 +133,9 @@ async function pollUpdates(token: string, tenantId: string): Promise<void> {
 		let maxId = lastUpdateId;
 		for (const update of data.result) {
 			if (update.update_id > maxId) maxId = update.update_id;
-			await processTelegramUpdate(update, token, tenantId);
+			await processTelegramUpdate(update, bot.token, bot.tenant_id, bot.id);
 		}
+
 		lastUpdateIds.set(token, maxId);
 	} catch {
 		// Network errors in polling are normal
@@ -149,6 +150,7 @@ export async function processTelegramUpdate(
 	update: TelegramUpdate,
 	token: string,
 	botTenantId: string,
+    botId: string,
 ): Promise<void> {
 	const msg = update.message || update.edited_message;
 	if (!msg) return;
@@ -181,7 +183,8 @@ export async function processTelegramUpdate(
 		channel: "telegram",
 		channelUserId: fromId,
 		text: fullText,
-		metadata: { botTenantId, userName, fromUsername, chatId, isEdited, mediaRef }
+		metadata: { botTenantId, userName, fromUsername, chatId, isEdited, mediaRef },
+        botId,
 	});
 
 	if (result.ok && result.response) {

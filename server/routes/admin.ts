@@ -50,7 +50,7 @@ export function registerAdminRoutes(router: Router) {
 	});
 
 	router.get("/api/admin/stats", async (_req, _params, auth) => {
-		if (!auth || auth.role !== "SUPER_ADMIN") return json({ error: "Forbidden" }, 403);
+		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
 		try {
 			const stats = {
 				tenants: (db.query("SELECT COUNT(*) as count FROM tenants").get() as any).count,
@@ -304,8 +304,7 @@ export function registerAdminRoutes(router: Router) {
 		}
 	});
 
-	router.get("/api/admin/llm/config", async (_req, _params, auth) => {
-		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
+async function getLlmConfig() {
 		try {
 			const row = db.query("SELECT value FROM server_config WHERE key = 'llm_providers'").get() as { value?: string } | undefined;
 			if (row?.value) {
@@ -339,10 +338,9 @@ export function registerAdminRoutes(router: Router) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ error: "Failed to fetch LLM config", details: message }, 500);
 		}
-	});
+	}
 
-	router.post("/api/admin/llm/config", async (req, _params, auth) => {
-		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
+async function saveLlmConfig(req: Request) {
 		let body: LlmConfig;
 		try {
 			body = await req.json();
@@ -357,8 +355,27 @@ export function registerAdminRoutes(router: Router) {
 
 		// Apply active provider to runtime
 		applyActiveProvider(body);
+return json({ ok: true });
+}
+}
 
-		return json({ ok: true });
+export function registerAdminRoutes(router: Router) {
+	router.get("/api/admin/llm-providers", async (_req, _params, auth) => {
+		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
+		return getLlmConfig();
+	});
+	router.put("/api/admin/llm-providers", async (req, _params, auth) => {
+		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
+		return saveLlmConfig(req);
+	});
+	router.get("/api/admin/llm/config", async (_req, _params, auth) => {
+		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
+		return getLlmConfig();
+	});
+
+	router.post("/api/admin/llm/config", async (req, _params, auth) => {
+		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
+		return saveLlmConfig(req);
 	});
 
 	// GET /api/admin/tenants/:id/config — per-tenant LLM config
@@ -396,3 +413,4 @@ export function registerAdminRoutes(router: Router) {
 		return json({ ok: true });
 	});
 }
+

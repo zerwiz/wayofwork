@@ -3,6 +3,6 @@
  */
 
 export * from "./useSimplePreferences";
-export * from "./useWayOfPiSession";
+export * from "./useWayOfWorkSession";
 export * from "./useUiViewsCatalog";
 export * from "./useAgents";

@@ -1,6 +1,6 @@
 # Mobile shell (`?shell=mobile`)
 
-Touch-first layouts for the current **`uiMode`** (Claw / Simple / Technical). Same **`/api`**, **`/ws`**, and **`useWayOfPiSession(surfaceId)`** as desktop — mobile only changes presentation.
+Touch-first layouts for the current **`uiMode`** (Claw / Simple / Technical). Same **`/api`**, **`/ws`**, and **`useWayOfWorkSession(surfaceId)`** as desktop — mobile only changes presentation.
 
 ## Layout
 

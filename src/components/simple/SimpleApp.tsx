@@ -8,7 +8,7 @@ import { useAgents } from "../../hooks/useAgents";
 import { useSimpleChatWorkspaceLayout } from "../../hooks/useSimpleChatWorkspaceLayout";
 import { useSimplePreferences } from "../../hooks/useSimplePreferences";
 import type { PiModelConfigPath } from "../../constants/piModelConfigPaths";
-import type { ChatRow, ChatSessionMode, LogRow } from "../../hooks/useWayOfPiSession";
+import type { ChatRow, ChatSessionMode, LogRow } from "../../hooks/useWayOfWorkSession";
 import type { ChatQueueItem } from "../../utils/chatQueueTranscript";
 import type { TreeNode } from "../../types/tree";
 import type { FilePersistEncoding } from "../../hooks/useFileEditor";
@@ -1012,7 +1012,7 @@ export function SimpleApp({
 						</div>
 
 						{rightOpen ? (
-							<div className="h-full shrink-0">
+							<div className="flex h-full shrink-0 flex-col">
 								<SimpleRightPanel
 									nodes={nodes}
 									selectedPath={selectedPath}

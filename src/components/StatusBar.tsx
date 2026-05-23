@@ -18,7 +18,7 @@ import {
 	Users,
 	Zap,
 } from "lucide-react";
-import type { ChatSessionMode } from "../hooks/useWayOfPiSession";
+import type { ChatSessionMode } from "../hooks/useWayOfWorkSession";
 import type { UiMode } from "../hooks/useUiMode";
 import type { BottomPanelTab } from "../types/technicalShell";
 import { HORIZONTAL_TOOL_DOCK_SLOTS, type HorizontalToolDockSlot } from "../utils/technicalLayoutStorage";

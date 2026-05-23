@@ -4,7 +4,7 @@
  * Open sessions are listed in **ClawSessionSidebar** to the right of the chat.
  */
 import { MessageSquare, Plus } from "lucide-react";
-import type { ChatSessionTab } from "../../hooks/useWayOfPiSession";
+import type { ChatSessionTab } from "../../hooks/useWayOfWorkSession";
 
 export function ClawSessionStrip({
 	tabs,

@@ -1,7 +1,7 @@
 import React from "react";
 import type { TreeNode } from "../../types/tree";
-import type { LogRow } from "../../hooks/useWayOfPiSession";
-import type { ChatRow } from "../../hooks/useWayOfPiSession";
+import type { LogRow } from "../../hooks/useWayOfWorkSession";
+import type { ChatRow } from "../../hooks/useWayOfWorkSession";
 import { DocumentHandlerProvider } from "./context/DocumentHandlerContext";
 import ChatPanel from "./ChatPanel";
 import FileExplorer from "./FileExplorer";

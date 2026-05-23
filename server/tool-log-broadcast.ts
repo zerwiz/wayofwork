@@ -32,3 +32,14 @@ export function broadcastToolLog(level: ToolLogLevel, source: string, msg: strin
 		}
 	}
 }
+
+export function broadcastEvent(event: string, data?: any): void {
+	const line = JSON.stringify({ type: "event", event, data });
+	for (const s of subscribers) {
+		try {
+			s.send(line);
+		} catch {
+			subscribers.delete(s);
+		}
+	}
+}

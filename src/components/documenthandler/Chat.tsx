@@ -1,6 +1,6 @@
 import { Send, Square } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import type { ChatRow } from "../../hooks/useWayOfPiSession";
+import type { ChatRow } from "../../hooks/useWayOfWorkSession";
 import "./Chat.css";
 
 interface ChatProps {

@@ -9,6 +9,7 @@ import {
 	BookOpen,
 	CalendarDays,
 	CheckCircle2,
+	ChevronDown,
 	ChevronUp,
 	Clock,
 	Edit2,
@@ -179,13 +180,17 @@ function ScheduleCard({
 	onEdit: () => void;
 	onDelete: () => void;
 }) {
+	const [expanded, setExpanded] = useState(false);
 	const muted = dark ? "text-[#858585]" : "text-[#888888]";
 	const text = dark ? "text-[#cccccc]" : "text-[#444444]";
 	const border = dark ? "border-[#2a2a2a]" : "border-[#f0f0f0]";
 
 	return (
 		<Card dark={dark}>
-			<div className="flex items-start justify-between gap-3 px-4 pt-3 pb-2">
+			<div
+				className="flex cursor-pointer items-start justify-between gap-3 px-4 pt-3 pb-2"
+				onClick={() => setExpanded(!expanded)}
+			>
 				{/* Left: name + meta */}
 				<div className="min-w-0 flex-1">
 					<div className="flex flex-wrap items-center gap-2">
@@ -197,79 +202,80 @@ function ScheduleCard({
 					) : null}
 				</div>
 				{/* Right: action buttons */}
-				<div className="flex shrink-0 items-center gap-1">
-					<button
-						type="button"
-						onClick={onToggle}
-						title={schedule.status === "enabled" ? "Disable" : "Enable"}
-						className={`rounded px-2 py-1.5 text-[10px] font-medium transition-colors ${
-							dark
-								? "text-[#858585] hover:bg-[#2a2a2a] hover:text-[#cccccc]"
-								: "text-[#888888] hover:bg-[#f5f5f5] hover:text-[#333333]"
-						}`}
-					>
-						{schedule.status === "enabled" ? "Disable" : "Enable"}
-					</button>
-					<button
-						type="button"
-						onClick={onEdit}
-						title="Edit"
-						className={`rounded p-1.5 transition-colors ${
-							dark
-								? "text-[#585858] hover:bg-[#2a2a2a] hover:text-[#cccccc]"
-								: "text-[#aaaaaa] hover:bg-[#f5f5f5] hover:text-[#555555]"
-						}`}
-					>
-						<Edit2 size={12} />
-					</button>
-					<button
-						type="button"
-						onClick={onDelete}
-						title="Delete"
-						className={`rounded p-1.5 transition-colors ${
-							dark
-								? "text-[#585858] hover:bg-[#f14c4c]/15 hover:text-[#f14c4c]"
-								: "text-[#aaaaaa] hover:bg-[#fee2e2] hover:text-[#dc2626]"
-						}`}
-					>
-						<Trash2 size={12} />
-					</button>
+				<div className={`shrink-0 ${muted}`}>
+					{expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
 				</div>
 			</div>
 
-			{/* Schedule meta row */}
-			<div className={`flex flex-wrap gap-x-4 gap-y-1 border-t px-4 py-2.5 ${border}`}>
-				<MetaItem icon={Clock} dark={dark}>
-					{schedule.triggerMode === "once" && schedule.runOnceAt ? (
-						<span className={`text-[10px] ${muted}`}>
-							<span className="font-semibold">One time</span>
-							<span className="ml-1">· {formatRunOnceLabel(schedule.runOnceAt)}</span>
-						</span>
-					) : (
-						<>
-							<span className={`font-mono text-[10px] ${muted}`}>{schedule.cron}</span>
-							<span className={`ml-1 text-[10px] ${muted}`}>· {humanCron(schedule.cron)}</span>
-						</>
-					)}
-				</MetaItem>
-				{schedule.agentName ? (
-					<MetaItem icon={CalendarDays} dark={dark}>
-						<span className={`text-[11px] ${muted}`}>
-							Agent: <span className={`font-mono text-[10px] ${dark ? "text-[#cccccc]" : "text-[#444444]"}`}>{schedule.agentName}</span>
-						</span>
-					</MetaItem>
-				) : null}
-				<MetaItem icon={Clock} dark={dark}>
-					<span className={`text-[10px] ${muted}`}>Last run: {relativeTime(schedule.lastRun)}</span>
-				</MetaItem>
-			</div>
+			{expanded && (
+				<>
+					{/* Schedule meta row */}
+					<div className={`flex flex-wrap gap-x-4 gap-y-1 border-t px-4 py-2.5 ${border}`}>
+						<MetaItem icon={Clock} dark={dark}>
+							{schedule.triggerMode === "once" && schedule.runOnceAt ? (
+								<span className={`text-[10px] ${muted}`}>
+									<span className="font-semibold">One time</span>
+									<span className="ml-1">· {formatRunOnceLabel(schedule.runOnceAt)}</span>
+								</span>
+							) : (
+								<>
+									<span className={`font-mono text-[10px] ${muted}`}>{schedule.cron}</span>
+									<span className={`ml-1 text-[10px] ${muted}`}>· {humanCron(schedule.cron)}</span>
+								</>
+							)}
+						</MetaItem>
+						{schedule.agentName ? (
+							<MetaItem icon={CalendarDays} dark={dark}>
+								<span className={`text-[11px] ${muted}`}>
+									Agent: <span className={`font-mono text-[10px] ${dark ? "text-[#cccccc]" : "text-[#444444]"}`}>{schedule.agentName}</span>
+								</span>
+							</MetaItem>
+						) : null}
+					</div>
 
-			{/* Prompt preview */}
-			{schedule.prompt ? (
-				<div className={`border-t px-4 py-2.5 ${border}`}>
-					<p className={`truncate font-mono text-[10px] italic ${muted}`}>"{schedule.prompt}"</p>
-				</div>
-			) : null}
+					{/* Expanded details */}
+					<div className={`border-t px-4 py-3 ${border}`}>
+						<p className={`text-[11px] leading-relaxed ${muted}`}>{schedule.prompt}</p>
+						<div className="mt-3 flex items-center justify-end gap-2">
+							<button
+								type="button"
+								onClick={onToggle}
+								title={schedule.status === "enabled" ? "Disable" : "Enable"}
+								className={`rounded px-2 py-1.5 text-[10px] font-medium transition-colors ${
+									dark
+										? "text-[#858585] hover:bg-[#2a2a2a] hover:text-[#cccccc]"
+										: "text-[#888888] hover:bg-[#f5f5f5] hover:text-[#333333]"
+								}`}
+							>
+								{schedule.status === "enabled" ? "Disable" : "Enable"}
+							</button>
+							<button
+								type="button"
+								onClick={onEdit}
+								className={`flex items-center gap-1.5 rounded px-2 py-1.5 text-[10px] font-semibold transition-colors ${
+									dark
+										? "bg-[#2a2a2a] text-[#cccccc] hover:bg-[#3c3c3c]"
+										: "bg-[#e5e5e5] text-[#333333] hover:bg-[#d4d4d4]"
+								}`}
+							>
+								<Edit2 size={10} /> Edit
+							</button>
+							<button
+								type="button"
+								onClick={onDelete}
+								title="Delete"
+								className={`rounded p-1.5 transition-colors ${
+									dark
+										? "text-[#585858] hover:bg-[#f14c4c]/15 hover:text-[#f14c4c]"
+										: "text-[#aaaaaa] hover:bg-[#fee2e2] hover:text-[#dc2626]"
+								}`}
+							>
+								<Trash2 size={12} />
+							</button>
+						</div>
+					</div>
+				</>
+			)}
 		</Card>
 	);
 }

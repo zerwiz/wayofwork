@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
-import type { LogRow } from "../hooks/useWayOfPiSession";
+import type { LogRow } from "../hooks/useWayOfWorkSession";
 import type { BottomPanelTab } from "../types/technicalShell";
 import {
 	isOutputPanelLog,

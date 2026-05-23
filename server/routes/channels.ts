@@ -120,7 +120,7 @@ export function registerChannelRoutes(router: Router) {
 		}
 
 		// Fire and forget — don't block the Telegram webhook
-		void processTelegramUpdate(update, bot.token, bot.tenant_id);
+		void processTelegramUpdate(update, bot.token, bot.tenant_id, bot.id);
 
 		return json({ ok: true });
 	});

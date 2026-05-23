@@ -142,7 +142,6 @@ const defaultMenuStubs = {
   helpMenu: { onHowToUse: () => {}, onViewLicense: () => {}, onAbout: () => {} } as any,
   settingsMenu: { onOpenSimpleAppSettings: () => {}, onOpenAiBrains: () => {}, onOpenProjects: () => {}, onOpenIndexingDocs: () => {} } as any,
   viewSimple: { onOpenAppearanceSettings: () => {}, onToggleFullScreen: async () => {}, onSeedViewsCatalog: async () => {}, appearanceDark: true, catalogSource: "default" as const, catalogLoading: false, catalogError: null, catalogParseWarning: null, onOpenDefaultViewsJson: () => {} } as any,
-  viewTechnical: { onOpenAppearanceSettings: () => {}, onToggleFullScreen: async () => {}, leftSidebarVisible: true, onToggleLeftSidebar: () => {}, editorLayout: "1x1", onSetEditorLayout: () => {}, zenMode: false, onToggleZenMode: () => {}, onEnterZen: () => {}, onExitZen: () => {}, statusBarVisible: true, onToggleStatusBar: () => {}, menuBarVisible: true, onToggleMenuBar: () => {}, breadcrumbsVisible: true, onToggleBreadcrumbs: () => {}, wordWrap: true, onToggleWordWrap: () => {}, centeredEditorLayout: false, onToggleCenteredEditorLayout: () => {}, zoomLevel: 100, onZoomIn: () => {}, onZoomOut: () => {}, onZoomReset: () => {}, onResetZoom: () => {}, onApplyLayoutPreset: () => {}, onNormalView: () => {}, onFlipLayout: () => {}, uiZoomPercent: 100 } as any,
 };
 
 export default function App() {

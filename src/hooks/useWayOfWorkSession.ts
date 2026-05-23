@@ -1,5 +1,5 @@
 /**
- * useWayOfPiSession Hook
+ * useWayOfWorkSession Hook
  *
  * @description Manages session state including chat tabs, streaming status, and LLM connections
  * @returns Object with session state and action functions
@@ -93,7 +93,7 @@ export interface WorkspaceRow {
 	type: string;
 }
 
-export interface UseWayOfPiSessionReturn {
+export interface UseWayOfWorkSessionReturn {
 	rows: ChatRow[];
 	streaming: boolean;
 	connected: boolean;
@@ -145,7 +145,7 @@ export interface UseWayOfPiSessionReturn {
 	renameChatTab: (tabId: string, name: string) => void;
 }
 
-export function useWayOfPiSession(): UseWayOfPiSessionReturn {
+export function useWayOfWorkSession(surfaceId: string): UseWayOfWorkSessionReturn {
 	const [ws, setWs] = React.useState<WebSocket | null>(null);
 	const wsRef = React.useRef<WebSocket | null>(null);
 	const connectingRef = React.useRef<boolean>(false);
@@ -167,7 +167,7 @@ export function useWayOfPiSession(): UseWayOfPiSessionReturn {
 		{},
 	);
 
-	const [tokenMeter, setTokenMeter] = React.useState<UseWayOfPiSessionReturn["tokenMeter"]>({
+	const [tokenMeter, setTokenMeter] = React.useState<UseWayOfWorkSessionReturn["tokenMeter"]>({
 		tokensDown: "0",
 		tokensUp: "0",
 		tokensTitle: "",
@@ -200,7 +200,8 @@ export function useWayOfPiSession(): UseWayOfPiSessionReturn {
 		const token = localStorage.getItem("wop_token");
 		const wsUrl =
 			(import.meta as any).env?.VITE_WAYOFPI_WS_URL || `/ws`;
-		const newWs = new WebSocket(token ? `${wsUrl}?token=${encodeURIComponent(token)}` : wsUrl);
+		const urlWithSurface = `${wsUrl}?surface=${encodeURIComponent(surfaceId)}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+		const newWs = new WebSocket(urlWithSurface);
 		wsRef.current = newWs;
 
 		newWs.onopen = () => {
@@ -345,7 +346,7 @@ export function useWayOfPiSession(): UseWayOfPiSessionReturn {
 	}, [ws, error, initSession]);
 
 	// @description Send chat message to server
-	const sendChat: UseWayOfPiSessionReturn["sendChat"] = async (
+	const sendChat: UseWayOfWorkSessionReturn["sendChat"] = async (
 		agentId,
 		message,
 		turnId,
@@ -406,7 +407,7 @@ export function useWayOfPiSession(): UseWayOfPiSessionReturn {
 	};
 
 	// @description Dispatch turn to active agent
-	const dispatchTurnAgent: UseWayOfPiSessionReturn["dispatchTurnAgent"] =
+	const dispatchTurnAgent: UseWayOfWorkSessionReturn["dispatchTurnAgent"] =
 		async (turn: string) => {
 			const payload = { type: "dispatch" };
 			return new Promise((resolve) => {
@@ -419,7 +420,7 @@ export function useWayOfPiSession(): UseWayOfPiSessionReturn {
 		};
 
 	// @description Select chat tab by ID
-	const selectChatTab: UseWayOfPiSessionReturn["selectChatTab"] = (tabId) => {
+	const selectChatTab: UseWayOfWorkSessionReturn["selectChatTab"] = (tabId) => {
 		if (tabId) {
 			setActiveChatTabId(tabId);
 		} else {
@@ -429,7 +430,7 @@ export function useWayOfPiSession(): UseWayOfPiSessionReturn {
 	};
 
 	// @description Clear active chat tab
-	const closeChatTab: UseWayOfPiSessionReturn["closeChatTab"] = (tabId) => {
+	const closeChatTab: UseWayOfWorkSessionReturn["closeChatTab"] = (tabId) => {
 		const newTabs = chatTabs.filter((t) => t.id !== tabId);
 		setChatTabs(newTabs);
 

@@ -21,6 +21,7 @@ import { NSR_MANDATORY_FOLDERS, NSR_FOLDER_DISPLAY_NAMES } from '../types/nsrCom
 import NSRFolderBadge from '../components/development/NSRFolderBadge';
 import NSRComplianceBadge from '../components/development/NSRComplianceBadge';
 import { useToast } from '../contexts/ToastContext';
+import { useKanbanEvents } from '../hooks/useKanbanEvents';
 import { BOARD_TEMPLATES, getTemplatesByCategory, type TemplateCategory } from '../services/boardTemplates';
 import CardView from '../components/kanban/CardView';
 import { BoardSettingsModal } from '../components/kanban/BoardSettingsModal';
@@ -62,6 +63,7 @@ import {
   FolderKanban,
   GitBranch,
   MessageSquare,
+  RefreshCw,
   // Archive, // TODO: Use for archive functionality
 } from 'lucide-react';
 import type { BoardViewType } from '../types/kanban';
@@ -141,6 +143,54 @@ export default function Kanban() {
   const [_showConnectFileModal, _setShowConnectFileModal] = useState(false);
   const [_fileToConnect, _setFileToConnect] = useState<DriveFile | null>(null);
   const { showToast } = useToast();
+
+  const loadAllBoards = useCallback(async () => {
+    try {
+      const boards = await kanbanService.getAllBoards();
+      setAllBoards(boards);
+    } catch (error) {
+      console.error('Failed to load boards:', error);
+    }
+  }, []);
+
+  const loadBoard = useCallback(async () => {
+    if (!currentBoardId) {
+      setBoard(null);
+      setCards(new Map());
+      return;
+    }
+
+    try {
+      const loadedBoard = await kanbanService.getBoard(currentBoardId);
+      if (loadedBoard) {
+        setBoard(loadedBoard);
+        const allCards = await kanbanService.getAllCardsForBoard(currentBoardId);
+        const cardMap = new Map<string, BoardCard>();
+        allCards.forEach((card) => {
+          cardMap.set(card.id, card);
+        });
+        setCards(cardMap);
+      } else {
+        // Board not found, reset selection
+        setCurrentBoardId(null);
+        loadAllBoards();
+      }
+    } catch (error) {
+      console.error('Failed to load board:', error);
+      showToast({
+        type: 'error',
+        message: 'Failed to load Kanban board',
+        duration: 3000,
+      });
+    }
+  }, [currentBoardId, loadAllBoards, showToast]);
+
+  useKanbanEvents(loadAllBoards, (boardId) => {
+    if (boardId === currentBoardId) {
+      loadBoard();
+    }
+  });
+
   const columnMenuRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const cardMenuRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const boardListMenuRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -178,15 +228,6 @@ export default function Kanban() {
       loadDriveFiles();
     }
   }, [viewType, currentBoardId, driveCurrentFolder]);
-
-  const loadAllBoards = async () => {
-    try {
-      const boards = await kanbanService.getAllBoards();
-      setAllBoards(boards);
-    } catch (error) {
-      console.error('Failed to load boards:', error);
-    }
-  };
 
   useEffect(() => {
     // Close menus when clicking outside
@@ -231,38 +272,6 @@ export default function Kanban() {
       setAvailableWorkflowTracks(workflowTracks);
     })();
   }, []);
-
-  const loadBoard = async () => {
-    if (!currentBoardId) {
-      setBoard(null);
-      setCards(new Map());
-      return;
-    }
-
-    try {
-      const loadedBoard = await kanbanService.getBoard(currentBoardId);
-      if (loadedBoard) {
-        setBoard(loadedBoard);
-        const allCards = await kanbanService.getAllCardsForBoard(currentBoardId);
-        const cardMap = new Map<string, BoardCard>();
-        allCards.forEach((card) => {
-          cardMap.set(card.id, card);
-        });
-        setCards(cardMap);
-      } else {
-        // Board not found, reset selection
-        setCurrentBoardId(null);
-        loadAllBoards();
-      }
-    } catch (error) {
-      console.error('Failed to load board:', error);
-      showToast({
-        type: 'error',
-        message: 'Failed to load Kanban board',
-        duration: 3000,
-      });
-    }
-  };
 
   const loadDriveFiles = async () => {
     try {
@@ -1157,6 +1166,15 @@ export default function Kanban() {
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Create Board</span>
+              </button>
+              
+              {/* Refresh Button */}
+              <button
+                onClick={loadAllBoards}
+                className="p-2 bg-[#333333] rounded-lg text-white hover:bg-[#444444] transition-colors"
+                title="Refresh Boards"
+              >
+                <RefreshCw className="w-4 h-4" />
               </button>
 
               {/* Chat Agent Button */}

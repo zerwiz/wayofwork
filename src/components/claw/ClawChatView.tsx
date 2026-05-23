@@ -15,7 +15,7 @@
 import { FilePlus, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMaxWidthMediaQuery } from "../../hooks/useMaxWidthMediaQuery";
-import type { ChatSessionTab, ChatSessionMode, ChatRow } from "../../hooks/useWayOfPiSession";
+import type { ChatSessionTab, ChatSessionMode, ChatRow } from "../../hooks/useWayOfWorkSession";
 import type { AgentMeta } from "../../hooks/useAgents";
 import type { ChatQueueItem } from "../../utils/chatQueueTranscript";
 import type { TreeNode } from "../../types/tree";

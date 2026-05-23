@@ -5,7 +5,7 @@ import type { ChatQueueItem } from "../../utils/chatQueueTranscript";
 import { ChatQueueModal } from "../ChatQueueModal";
 import type { AgentMeta } from "../../hooks/useAgents";
 import { workspaceAgentDisplayName } from "../../utils/workspaceAgentDisplay";
-import type { ChatRow, ChatSessionMode } from "../../hooks/useWayOfPiSession";
+import type { ChatRow, ChatSessionMode } from "../../hooks/useWayOfWorkSession";
 import {
 	buildChatMessageWithAttachment,
 	MAX_CHAT_ATTACHMENT_CHARS,

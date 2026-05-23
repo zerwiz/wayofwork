@@ -11,194 +11,104 @@ When working on tickets below, you **MUST** activate the relevant custom skill t
 
 **CRITICAL RULE:** Whenever you complete a ticket or a significant phase of a ticket, you **MUST ALWAYS** update `CHANGELOG.md` with a summary of the changes made before finishing your turn.
 
+> **Note:** Individual ticket files (`thoughts/shared/tickets/WOW-*.md`) are design/spec documents. Their checklists were not retroactively updated after implementation. TODO.md is the authoritative live status tracker.
+
 ## ✅ Done
-- **Human-in-the-Loop (WOW-010)**: Implemented "Godkännandekö" with visual Diff Table and registered `suggest_change` tool for AI agents.
-- **Time Verification Agent (WOW-011)**: Fully implemented variance analysis and morning/evening dispatch schedules.
-- **Per-User Channels (WOW-007)**: Account linking and user-context message routing functional for Telegram/WhatsApp.
-- **Economics Shield (WOW-004/016)**: Enforced across all APIs (Project, Portal, Client) to protect financial data from non-admins.
-- **Modular Server (WOW-006 Phase 3-4)**: Extracted 2000+ lines from `server/index.ts` into modular handlers and `ws-handler.ts`.
-- **Global Rebrand: Ollama → Wo AI**: Renamed internal functions, environment variables (WOP_AI_HOST/MODEL), and UI labels across `SimpleModelsView`, `HowToUseModal`, `HostDoctorModal`, and `MenuBar` for a unified "Way of Work AI" identity.
+
+### Core Infrastructure
+- **WOW-005**: Plan mode kept (cancelled).
+- **WOW-006**: `server/index.ts` refactored from 1846 → 236 lines. All route groups extracted.
+- **WOW-012**: Isolated Chat per Surface — WebSocket isolation, JSONL per surface, auto-select agent (Claw→claw, Docs→docs, Kanban→kanban, Simple→Orchestrator), double-bubble fix, symlink + docs agent.
+- **WOW-013**: Orchestrator & GitHub — Save Version / Version History, daily backup (30-day prune), workspace-storage skill, channel handler routes through Orchestrator with `dispatch_agent`, surface-specific agents.
+
+### Authentication & Security
+- **Auth**: Real JWT auth with PIN + password login. Role in JWT payload. `WOP_AUTH_SECRET` required in production.
+- **WOW-016 (Phases 3,5,6,7,8,9)**: Per-user channel session persistence, time tracking privacy, audit logs (`audit_logs` table), agent↔skill mapping & Orchestrator dispatch, daily planning workflow, user information tracking.
+- **WOW-010**: Human-in-the-Loop — `pending_changes` table, API (create/list/detail/approve/reject), Admin Console "Godkännandekö" tab with diff-view.
+
+### Communication Channels
+- **WOW-015**: Telegram webhook (multi-bot, media, polling fallback), WhatsApp inbound (verify + receive + time-bot wiring), Email (SMTP + inbound forwarding), outbound tools (telegram_send, whatsapp_send, email_send), message audit trail.
+- **WOW-007**: Per-User Channels — account linking (user_channel_links), user-context message routing, WhatsApp time workbot, Kanban notifications.
+
+### Agents & Skills
+- **WOW-011**: Time Verification & Scheduling Agent — variance analysis, morning dispatch (06:30), evening reconciliation.
+- **WOW-018**: Agent Ecosystem — skyddsombud, maskinchef, kalkylator agents; incident-reporting, logistics, cost-estimation skills; multi-agent handoff in dispatch-agent skill.
+- **WOW-008**: Pricing Engine — Prislistor-tab in Admin Console, project-pricing + time-calculation skills, agent READ access to price lists.
+- **WOW-009**: Offer & Invoice Agent — full backend API (543 lines), Admin Console UI tab, document generation, send via TG/WA.
+- Agent-Skill mapping documented, orchestrator agent created, dispatch-agent skill created.
+
+### Multi-Tenancy & AI
+- **WOW-003**: Multi-Tenancy AI Models — `tenant_configs` table for per-tenant LLM overrides, `resolveWoAiModelDefault` checks tenant config, admin API for managing per-tenant LLM settings, critical bug fix (tickets-api.ts tenant_id).
+- **Global Rebrand**: Ollama → Wo AI (env vars, UI labels, functions). Way of Pi → Way of Work. Pi Purge (`.wayofpi/` → `.index/`).
+
+### TA-Planner
+- **WOW-017**: TA-Planner — `ta_plans` table, CRUD API + Trafikverket proxy, UI Planning Wizard, Validation Engine (`ta-validation.ts`), TDOK 2024:0043 Sketch Library.
+
+### Notification System
+- **WOW-019**: Notification System — `notifications` table, `notifyUser()` persists + sends TG/WA, GET/PATCH/DELETE API, NotificationToast, NotificationInbox in Settings, MenuBar badge wired to live unreadCount, integrations (pending changes, audit logger, kanban, weather alerts, ID06 expiry), construction triggers service.
+
+### Bug Report System
+- **WOW-020**: Bug Report & Feature Request System — `bug_reports` table, 4 API endpoints (submit, admin list, admin detail, admin PATCH, user list), status workflow (pending→in-review→fixed→closed), screenshot upload, system info capture, BugReportModal, BugReportsAdmin dashboard, Admin Dashboard tab.
+- **WOW-021**: Kanban Service Fixes — Implemented backend support and service methods for custom column management.
+
+### Platform
 - **TypeScript build**: All errors fixed — green build.
-- **Rebranding**: "Way of Pi" → "Way of Work" across source files, tickets, agent definitions.
-- **Pi Purge**: Removed all `.wayofpi/` directories (repo root + workspace), renamed to `.index/`. Removed `.pi/` scan roots. Updated all server code references to `.wayofpi/` → `.index/`, `.github-credentials.json`, `.ui-views.json`, `.claw-webhook.json`. Hardcoded Pi path in `workspace-state.ts` fixed. `init-db.ts` DB path fixed.
-- **Auth**: Real JWT auth with PIN + password login. Role in JWT payload.
+- **Auth**: Real JWT auth with PIN + password login.
 - **Demo users**: Seeded Admin/Demo/Client/Super (PIN 1234).
-- **Wo Agent**: `@wayofmono/wo-agent` v1.0.2 installed from npm.
-- **Security**: JWT secret required in production (`WOP_AUTH_SECRET`). No dev-mode bypass.
-- **DB**: Renamed from `wayofpi.sqlite` → `wayofwork.sqlite`.
-- **start.sh**: Cleaned up, no dev-mode flags.
-- **.env.example**: Rebranded, production-ready defaults.
-- **Plan mode**: Kept (WOW-005 cancelled).
-- **WOW-012**: Workspace `.wo/` symlink created → agents & skills found by server.
-- **WOW-012**: Docs agent created (`.wo/agents/docs.md`).
-- **WOW-012 (UX)**: Consolidated Claw toolbar. Merged session strip into top bar, integrated chat tabs, and added "New"/"Workspace" buttons.
-- **Help Center**: Updated `HowToUseModal.tsx` and settings views with rebranded "Way of Work" terminology and `.wo/` paths.
-- **WOW-008**: Price list CRUD UI in Admin Console (Prislistor-tab).
-- **WOW-008**: Skills `project-pricing`, `time-calculation` created.
-- **WOW-009**: Offers & Invoices backend API (543 lines) + agents/skills created.
-- **WOW-014**: Created — bilingual SV/EN support ticket.
-- **WOW-015**: Created — communication architecture ticket (Telegram, WhatsApp, Email).
-- [x] **WOW-016**: Created — CRITICAL access control, user isolation, daily workflow.
-- **Agent-Skill mapping**: Documented in WOW-016. Missing skills identified for claw, docs, kanban.
-- **Workspace structure**: `workspace/agent/sessions/`, `workspace/plans/` created. `.wo/README.md` added.
-- **`.gitignore`**: Fixed to track repo-root `.wo/` but ignore workspace symlink + secrets. Removed `.wo/` blanket ignore.
-- **WOW-003**: Multi-Tenancy AI Models — per-tenant LLM config via `tenant_configs` table, critical bug fix in tickets-api.ts, `resolveWoAiModelDefault` checks `tenant_configs` first.
+- **Wo Agent**: `@wayofmono/wo-agent` installed.
+- **DB**: `wayofwork.sqlite`, auto-create tables.
+- **start.sh / .env.example**: Production-ready.
+- **Help Center**: Updated HowToUseModal and settings with rebranded terminology.
 
-## Remaining Tickets
-
-**PRODUCTION READY NO MOCK DATA**
+## 🔴 Remaining (Confirmed Incomplete)
 
 ### WOW-001 — Fix routing/imports (P3+P5)
-- [ ] Runtime paths audit
-- [ ] Dead code & routing cleanup
+- [ ] **P5: Dead code & routing cleanup** — decide fate of excluded menu files, add missing server endpoints (`PUT /api/portal/me`, `POST /api/portal/change-pin`), fix `/api/admin/stats` role gating for ADMIN, decide fate of "technical" uiMode, clean up Dashboard.tsx, audit orphaned server routes.
+- [ ] **Acceptance**: build passes (zero tsc errors), all client routes render correct components, start.sh launches without errors, login flow lands on correct page per role.
 
-### WOW-002 — Local Hosting for Remote Access
-- [ ] Enable ngrok/cloudflared integration
-- [ ] Document access setup
+### WOW-002 — Local Hosting for Remote Access (⛔ NOT STARTED)
+- [ ] Verify Tunnel Gate (`WOP_TUNNEL_GATE_HOST_MARKERS`)
+- [ ] Configure Basic Auth (tunnel-gate.v1.json)
+- [ ] LAN Access Verification (`guessLanIPv4`)
+- [ ] Port Management (Vite + Bun consistent)
+- [ ] Electron Integration
+- [ ] Manual testing: access from mobile on same Wi-Fi, access from external network via ngrok
 
-### WOW-004 — Production Readiness (DONE)
-- [x] Launch-blocking items
-- [ ] Real data migration from test data
+### WOW-004 — Production Readiness (Partial)
+- [x] Launch-blocking items (done per CHANGELOG)
+- [ ] **Real data migration from test data** — still pending
 - [x] API completion for client portal
 
-### WOW-006 — Refactor server/index.ts
-- [x] Phase 3: WebSocket handler (`server/ws-handler.ts`) extracted.
-- [x] Phase 4: Route groups extracted: admin, claw, system, dev, channels.
-- [x] Phase 5: Final cleanup. Target: `server/index.ts` < 500 lines. **Done — 236 lines.**
-
-### WOW-007 — Per-User Channels & WhatsApp Time (DONE)
-- [x] Phase 0: Admin channel management UI
-- [x] Phase 1: User-channel link table (DB table exists, API implemented)
-- [x] Phase 2: Route channel messages to user context
-- [x] Phase 3: WhatsApp time workbot (NLP time parsing)
-- [x] Phase 4: WhatsApp kanban notifications
-
-### WOW-008 — Pricing Engine (agent verification)
-- [x] Verify `projektledare` agent can read price lists and use skills
-- [x] Wire agent → pricing API integration
-  - Agent READ access to price lists implemented
-  - Cost estimation workflows functional
-  - Production-ready pricing tools for estimators
-
-### WOW-009 — Offer & Invoice Agent (frontend UI)
-- [x] Admin Console tab for offers/invoices
-- [x] Document generation/send workflows in UI
-
-### WOW-010 — Human-in-the-Loop (DONE)
-- [x] `pending_changes` table exists, API endpoints implemented (POST create, GET list/detail, POST approve/reject)
-- [x] Backend logic for applying approved changes to `price_lists`, `offers`, `tasks`, and `projects`
-- [x] **⏳ Admin Console "Godkännandekö" tab with diff-view** (Implemented)
-- [x] AI can only create pending_changes (not write directly) — enforced in agent prompts
-- [x] All agents: price lists, planning, schedules use approval queue
-
-### WOW-011 — Time Verification & Scheduling Agent (DONE)
-- [x] Agent reads time reports + kanban plan
-- [x] Variance reports and schedule proposals
-- [x] Telegram morning dispatch (06:30)
-
-### WOW-012 — Isolated Chat per Surface
-- [x] symlink + docs agent (done)
-- [x] WebSocket state isolation per surface
-- [x] JSONL per surface: `wo-chat-<surface>-<sessionKey>.jsonl`
-- [x] Auto-select agent: Claw→claw, Docs→docs, Kanban→kanban, Simple→Orchestrator
-- [x] Generic auto-select in `SimpleChatView` (implemented in server websocket.open)
-- [x] Agent cleanup on surface navigation (handled by session isolation)
-- [x] Fix double-bubble at thinking (assistant_turn_start / assistant_delta merge)
-
-### WOW-013 — Orchestrator & GitHub for Construction
-- [x] Phase 1: GitHub simplification (Save Version / Version History buttons)
-- [x] Phase 2: Automated daily backup (`backup/YYYY-MM-DD` branches, 30-day prune)
-- [x] Phase 3: Agent skill `workspace-storage` for doc save/restore/history
-- [x] Phase 4: Orchestrator rework — channel handler routes through orchestrator with `dispatch_agent` tool
-- [x] Phase 5: Surface-specific agents (Claw→claw, Docs→docs, Kanban→kanban, Simple→Orchestrator)
-
-### WOW-014 — Bilingual Support (SV/EN)
-- [x] Phase 1: i18n infrastructure (locales JSON, useTranslation hook, user language setting)
-- [/] Phase 2: UI translation (In progress: ActivityBar, SimpleNavRail localized)
+### WOW-014 — Bilingual Support (SV/EN) (Partial)
+- [x] Phase 1: i18n infrastructure (locales JSON, useTranslation hook, user language setting, server detection)
+- [/] Phase 2: UI translation (ActivityBar, SimpleNavRail localized; more pages remain)
 - [ ] Phase 3: Agent language awareness (greeting, responses follow user language)
 - [ ] Phase 4: Swedish legal content handling (always in Swedish regardless of UI language)
 
-### WOW-015 — Communication Architecture
-- [x] Phase 1: Unified inbound router (`server/channel-router.ts`)
-- [x] Phase 2: Telegram webhook (replace polling, multi-bot, media handling)
-- [x] Phase 3: WhatsApp inbound (webhook, wire up whatsapp-time-bot)
-- [x] Phase 4: Email (SMTP + inbound forwarding)
-- [x] Phase 5: Outbound notification tools (telegram_send, whatsapp_send)
-- [x] Phase 6: Complete message audit trail
-
-### WOW-016 — [CRITICAL] Access Control, User Isolation & Daily Workflow
-- [x] Phase 1: Project membership system (`project_members` table)
-- [x] Phase 2: Role-based data isolation (economics shield, worker isolation)
-- [x] Phase 3: Per-user channel session persistence
-- [x] Phase 4: Multi-bot support (Telegram + WhatsApp per tenant)
-- [x] Phase 5: Time tracking privacy & bot isolation
-- [x] Phase 6: Information access audit (`audit_logs` table)
-- [x] Phase 7: Agent↔Skill mapping & Orchestrator dispatch
-- [x] Phase 8: Daily planning workflow (morning dispatch → evening reports)
-- [x] Phase 9: User information tracking
-
-### WOW-017 — TA-Planner System Implementation
-- [x] Database Schema: `ta_plans` table added
-- [x] Backend API: `server/routes/ta-planner.ts` (CRUD + Trafikverket proxy)
-- [x] Frontend UI: `src/pages/TAPlannerPage.tsx` (Planning Wizard)
-- [x] Validation Engine: `src/utils/ta-validation.ts`
-- [x] Sketch Library: TDOK 2024:0043 integration
-
-### WOW-018 — Agent Ecosystem Expansion
-- [x] Create specialized agents: `skyddsombud`, `maskinchef`, `kalkylator`
-- [x] Create cross-cutting skills: `incident-reporting`, `logistics`, `cost-estimation`
-- [x] Enhance Orchestrator with multi-agent handoff logic
-- [x] Update Orchestrator dispatch mapping
-
-### WOW-019 — Notification System (🟢 DONE - 2026-05-23)
-- [x] Backend: notification API endpoints (GET /api/notifications, PATCH /read, DELETE)
-- [x] Backend: `notifyUser()` persists to DB + sends to Telegram/WhatsApp
-- [x] Frontend: NotificationToast component (bottom-right toast, 5s auto-dismiss)
-- [x] Frontend: NotificationInbox in Settings (list, filter, mark read, delete)
-- [x] Frontend: MenuBar badge wired to `unreadCount` from NotificationContext
-- [x] Frontend: NotificationContext syncs with server API (30s poll)
-- [x] Integration: Pending Changes approve/reject → notify submitter
-- [x] Integration: Security audit events → notify user
-- [x] Integration: Kanban card updates → notify assignee (was already wired)
-- [x] Integration: Weather alerts (open-meteo, hourly check, >5mm rain or >15m/s wind)
-- [x] Integration: ID06 expiry check (14-day warning, per project member)
-- [x] Construction triggers service (`server/construction-triggers.ts`)
-
-### WOW-020 — Bug Report & Feature Request System (🟢 NEW - 2026-05-22)
-- [ ] Create bug report form component (modal)
-- [ ] Create SUPER ADMIN dashboard (read-only from public reports)
-- [ ] Implement status tracking workflow (pending → in-review → fixed → closed)
-- [ ] Database schema (`bug_reports` table)
-- [ ] API endpoints for submissions and admin actions
-- [ ] System info capture (browser, OS, etc.)
-- [ ] Screenshot/video attachment support
-- [ ] Duplicate tracking
+### WOW-016 — [CRITICAL] Access Control (Phases 1-2 Frontend) (Partial)
+- [ ] Phase 1 Frontend: BoardMembers component, project list role-gating, task list role-gating
+- [ ] Phase 2 Frontend: Client Dashboard economics tabs accessible only to admin roles
+- [ ] Database Schema: verify indexes, fix any drift
 
 ### Other
 - [ ] **kanbanService.ts**: Complete TODO stubs (`deleteBoard`, `createColumn`, `deleteColumn`)
-- [ ] **Multi-Tenancy Audit**: Verify Tenant A → Tenant B isolation
+- [ ] **Multi-Tenancy Audit**: Verify Tenant A → Tenant B data isolation in all endpoints
 - [ ] **Agent Integration Test**: Verify Wo Agent works with real DB endpoints
-- [x] **Fix agent skill assignments**: claw (add skills), docs (add swedish-building-laws), kanban (add workers), fakturering (remove overloaded), projektledare (refactor)
-- [x] **Create orchestrator agent**: `.wo/agents/orchestrator.md` with `dispatch-agent` skill
-- [x] **Create dispatch-agent skill**: `.wo/skills/dispatch-agent/SKILL.md`
+- [ ] **WOW-008**: Agent wiring verification — confirm projektledare reads price lists end-to-end
+- [ ] **WOW-009**: Verify offer/invoice send via TG/WA works end-to-end
 
 ## Priority Order
 
-1. **WOW-016** — Access Control, User Isolation & Daily Workflow (CRITICAL, blocks all user-facing features)
-2. **WOW-004** — Production Readiness (launch blocker)
-3. **WOW-006** — Server refactoring (maintainability)
-4. **WOW-010 (UI)** — Admin Console "Godkännandekö" tab (CRITICAL for agent compliance)
-5. **WOW-017** — TA-Planner System Implementation (High)
-6. **WOW-015** — Communication Architecture (core infra)
-7. **WOW-007** — Per-User Channels (core infra)
-8. **WOW-009** — Offers & Invoices (frontend UI)
-9. **WOW-011** — Time Verification (blocked on WOW-010 UI)
-10. **WOW-018** — Agent Ecosystem Expansion (Medium, enhances multi-agent capability)
-11. **WOW-014** — Bilingual Support (prepare for Sweden launch)
-12. **WOW-020** — Bug Report System (NEW - user feedback)
-13. **WOW-013** — Orchestrator & GitHub for Construction (needs WOW-012)
-14. **WOW-001/002/008** — Polish & infrastructure
-15. **WOW-019** — Notification System (Moved to end per user request)
+1. **WOW-004** — Real data migration (launch blocker)
+2. **WOW-014 Phases 3 & 4** — Agent language awareness + Swedish legal content (Sweden launch)
+3. **WOW-002** — Remote hosting (ngrok/cloudflared) for mobile access
+4. **WOW-001 P5** — Routing cleanup & polish
+5. **WOW-016 Frontend** — Phase 1-2 frontend access control wiring
+6. **Multi-Tenancy Audit** — Verify isolation
+7. **Agent Integration Test** — End-to-end agent verification
+8. **kanbanService.ts stubs** — Minor cleanup
+
+---
 
 ## ✅ Implementation Notes for New Tickets
 
@@ -217,5 +127,5 @@ When working on tickets below, you **MUST** activate the relevant custom skill t
 
 ---
 
-**Generated**: 2026-05-22  
-**Last edited**: 2026-05-22 (added WOW-019, WOW-020)
+**Generated**: 2026-05-23  
+**Last edited**: 2026-05-23 (comprehensive audit: reconciled 21 ticket files vs TODO.md)

@@ -3,7 +3,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageSquare, Pencil, X } from "lucide-react";
-import type { ChatSessionTab } from "../../hooks/useWayOfPiSession";
+import type { ChatSessionTab } from "../../hooks/useWayOfWorkSession";
 
 export function ClawSessionSidebar({
 	tabs,

@@ -7,7 +7,7 @@ import { useAgents } from "./hooks/useAgents";
 import { useSimplePreferences } from "./hooks/useSimplePreferences";
 import { useWorkspaceStaticAnalysis } from "./hooks/useWorkspaceStaticAnalysis";
 import { useServerConfig } from "./hooks/useServerConfig";
-import { useWayOfPiSession } from "./hooks/useWayOfPiSession";
+import { useWayOfWorkSession } from "./hooks/useWayOfWorkSession";
 import { SimpleApp } from "./components/simple/SimpleApp";
 import { ClawApp } from "./components/claw/ClawApp";
 import { StatusBar } from "./components/StatusBar";
@@ -24,7 +24,7 @@ export function App() {
   const { data: config } = useServerConfig();
   const workspaceStaticAnalysis = useWorkspaceStaticAnalysis(true);
 
-  const session = useWayOfPiSession(mode);
+  const session = useWayOfWorkSession(mode);
   const modelLabel = config?.chatEngine || "No server";
 
   return (

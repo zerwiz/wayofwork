@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight, Clock, Columns2, Folder, PanelTop } from "lucide-react";
 import { useState } from "react";
 import type { SimpleChatWorkspaceLayout } from "../../utils/simpleWorkspaceLayoutStorage";
-import type { LogRow } from "../../hooks/useWayOfPiSession";
+import type { LogRow } from "../../hooks/useWayOfWorkSession";
 import type { TreeNode } from "../../types/tree";
 import { SimpleFileTree } from "./SimpleFileTree";
 
@@ -70,7 +70,7 @@ export function SimpleRightPanel({
 		presentation === "sheet" ? "w-full min-w-0 max-w-none shrink-0 border-t" : "w-80 shrink-0 border-l";
 
 	return (
-		<aside className={`z-10 flex flex-col shadow-sm ${widthClass} ${aside}`}>
+		<aside className={`z-10 flex h-full flex-col shadow-sm ${widthClass} ${aside}`}>
 			<div className={`flex min-h-0 flex-1 flex-col border-b ${sectionBorder}`}>
 				<div className="flex shrink-0 items-center justify-between gap-2 p-5 pb-4">
 					<h2 className={`flex min-w-0 items-center gap-2 text-[13px] font-extrabold uppercase tracking-wider ${title}`}>
@@ -125,7 +125,7 @@ export function SimpleRightPanel({
 			<div
 				className={`flex flex-col border-t ${sectionBorder} ${
 					happeningOpen
-						? `min-h-0 flex-1 ${appearanceDark ? "bg-[#1e1e1e]" : "bg-[#f3f3f3]"}`
+						? `min-h-0 max-h-[40%] ${appearanceDark ? "bg-[#1e1e1e]" : "bg-[#f3f3f3]"}`
 						: `shrink-0 ${appearanceDark ? "bg-[#1e1e1e]" : "bg-[#f3f3f3]"}`
 				}`}
 			>

@@ -25,10 +25,8 @@
   "include": ["src", "shared"],
   "exclude": [
     "src/modals",
-    "src/pages/Dashboard.tsx",
     "src/components/ui/Overview.tsx",
-    "src/ReferenceApp.tsx",
-    "src/App copy.tsx",
+    "src/ReferenceApp",
     "src/components/menus/FileMenu.tsx",
     "src/components/terminal/TerminalMenu.tsx"
   ]

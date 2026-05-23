@@ -180,9 +180,10 @@ const server = Bun.serve<ServerWsData>({
 					chatAbort: null,
 					cumPromptTokens: 0,
 					cumCompletionTokens: 0,
-					wopSessionKey: url.searchParams.get("wopSessionKey") || null,
-					surface: url.searchParams.get("surface") || null,
-					tenantId: auth.tenantId,
+				wopSessionKey: url.searchParams.get("wopSessionKey") || null,
+				surface: url.searchParams.get("surface") || null,
+				lang: url.searchParams.get("lang") || undefined,
+				tenantId: auth.tenantId,
 					userId: auth.userId,
 				} satisfies ChatWsData,
 			});
@@ -220,13 +221,18 @@ void applyAutoSync((result) => {
 
 startClawScheduler();
 
-// Start Telegram — set up webhooks for all bots, fall back to polling for failures
+// Start Telegram — set up webhooks when public HTTPS URL is available, otherwise poll
 void (async () => {
 	const { setupTelegramWebhooks, startPollingFallback } = await import("./telegram-bot");
 	const publicUrl = process.env.WOP_PUBLIC_URL || `http://127.0.0.1:${PORT}`;
-	const failedBotIds = await setupTelegramWebhooks(publicUrl);
-	if (failedBotIds.length > 0) {
-		startPollingFallback(failedBotIds);
+	if (!publicUrl.startsWith("https://")) {
+		console.log("[telegram-bot] No HTTPS public URL — using polling");
+		startPollingFallback();
+	} else {
+		const failedBotIds = await setupTelegramWebhooks(publicUrl);
+		if (failedBotIds.length > 0) {
+			startPollingFallback(failedBotIds);
+		}
 	}
 })();
 

@@ -144,10 +144,18 @@ export function registerProjectRoutes(router: Router) {
 				SET name = COALESCE(?, name), 
 				    description = COALESCE(?, description), 
 				    budget_allocated = COALESCE(?, budget_allocated), 
-				    status = COALESCE(?, status)
-				WHERE id = ? AND tenant_id = ?
-			`).run(body.name, body.description, body.budget_allocated, body.status, id, auth.tenantId);
-			
+				    status = COALESCE(?, status),
+				    settings_json = COALESCE(?, settings_json)
+				    WHERE id = ? AND tenant_id = ?
+				    `).run(
+				    body.name, 
+				    body.description, 
+				    body.budget_allocated, 
+				    body.status, 
+				    (body.settings_json || body.settings) ? JSON.stringify(body.settings_json || body.settings) : null, 
+				    id, 
+				    auth.tenantId
+				    );
 			const project = db.query("SELECT * FROM projects WHERE id = ?").get(id);
 			return json(project);
 		} catch (e) {

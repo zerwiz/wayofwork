@@ -152,4 +152,9 @@ Uses existing `sendTelegramMessage` function from `telegram-bot.ts`. Requires:
 **Created**: 2026-05-22
 **Priority**: High
 **Estimated Effort**: XL
-**Status**: Done — backend API + skills + agent created, needs frontend UI
+**Status**: Implementation Feedback — users can't write JSON. Items need form-based editor.
+
+### Remaining Work
+- [ ] Replace JSON textarea in `OffersInvoicesTab` with a proper item table editor — add/remove/edit rows for name, quantity, unit, unit_price, with auto-calculated totals
+- [ ] Price list integration: allow picking items from existing price lists instead of manual entry
+- [ ] Template offers: save/load common offer templates

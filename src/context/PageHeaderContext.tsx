@@ -7,7 +7,7 @@ import type {
 } from "../types/workspaceEditor";
 import type { ChatDockRegion, ViewMenuSimpleOptions, ViewMenuTechnicalOptions } from "../types/technicalShell";
 import type { ServerConfig } from "../hooks/useServerConfig";
-import type { ChatSessionMode } from "../hooks/useWayOfPiSession";
+import type { ChatSessionMode } from "../hooks/useWayOfWorkSession";
 import type { useLlmModels } from "../hooks/useLlmModels";
 
 export interface PageHeaderHandlers {

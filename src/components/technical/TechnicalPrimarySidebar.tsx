@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /**
- * Technical shell: primary (left) sidebar frame — panel body only (toggle lives in the menu bar next to WAY OF PI).
+ * Technical shell: primary (left) sidebar frame — panel body only (toggle lives in the menu bar next to WAY OF WORK).
  */
 export function TechnicalPrimarySidebar({
 	widthPx,

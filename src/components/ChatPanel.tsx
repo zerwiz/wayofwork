@@ -21,10 +21,10 @@ import {
 	overlayPulseMembersWithActiveChat,
 	useAgentPulseDoneFlash,
 } from "./AgentTeamPulseGrid";
-import type { ChatPulseMeters } from "../hooks/useWayOfPiSession";
+import type { ChatPulseMeters } from "../hooks/useWayOfWorkSession";
 import type { ChatQueueItem } from "../utils/chatQueueTranscript";
 import { ChatQueueModal } from "./ChatQueueModal";
-import type { ChatRow, ChatSessionMode, ChatSessionTab } from "../hooks/useWayOfPiSession";
+import type { ChatRow, ChatSessionMode, ChatSessionTab } from "../hooks/useWayOfWorkSession";
 // UiMode typed as string
 import { chatErrorSuggestsModelFix } from "../utils/chatErrorModelHint";
 import {

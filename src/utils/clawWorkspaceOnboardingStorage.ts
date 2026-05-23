@@ -4,7 +4,7 @@
  * for that same workspace path until they clear site data.
  */
 
-const LS_KEY = "wayofpi.claw.onboardingDismissedRoots.v1";
+const LS_KEY = "wayofwork.claw.onboardingDismissedRoots.v1";
 
 function parseRoots(raw: string | null): string[] {
 	if (!raw) return [];

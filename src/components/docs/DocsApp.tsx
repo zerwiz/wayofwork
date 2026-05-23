@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, useEffect, useRef, type CSSProperties } from "react";
 import { FolderOpen, MessageSquare, Eye, FileText, FileCheck, FileWarning, FileClock, CheckCircle, AlertCircle, Clock, Send } from "lucide-react";
 import type { TreeNode } from "../../types/tree";
-import type { ChatRow, ChatSessionMode, LogRow } from "../../hooks/useWayOfPiSession";
+import type { ChatRow, ChatSessionMode, LogRow } from "../../hooks/useWayOfWorkSession";
 import { FileExplorer } from "../documenthandler/FileExplorer";
 import { DocumentBrowser } from "./DocumentBrowser";
 import { apiGet } from "../../api/client";

@@ -1,6 +1,6 @@
-import type { ChatSessionMode } from "../../hooks/useWayOfPiSession";
+import type { ChatSessionMode } from "../../hooks/useWayOfWorkSession";
 import type { AgentMeta, AgentTeamMap } from "../../hooks/useAgents";
-import type { ChatPulseMeters, ChatRow, ChatTab } from "../../hooks/useWayOfPiSession";
+import type { ChatPulseMeters, ChatRow, ChatTab } from "../../hooks/useWayOfWorkSession";
 // UiMode typed as string
 import type { ChatDockRegion } from "../../utils/technicalLayoutStorage";
 import { ChatPanel } from "../ChatPanel";

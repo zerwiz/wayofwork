@@ -1,6 +1,8 @@
 # `.wo/` — Agents & Skills
 
-Canonical source for Way of Work agent definitions and skill files. The workspace directory (`workspace/.wo`) is a symlink to this directory, making agents and skills discoverable by the server.
+**AUTHORITATIVE SOURCE:** This directory (`/.wo/`) is the canonical source for all Way of Work agent definitions and skill files.
+
+The directory at `workspace/.wo/` is a symbolic link to this directory (`/.wo/`). This symlink is created automatically for convenience, allowing agents and skills to be discoverable by the server when operating within the `workspace/` context, but all modifications **MUST** be performed in this root directory.
 
 ## Structure
 

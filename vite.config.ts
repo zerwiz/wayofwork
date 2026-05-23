@@ -14,8 +14,8 @@ export default defineConfig({
     strictPort: false,
     host: '0.0.0.0',
     allowedHosts: [
-      'unvocable-oligopoly-lorraine.ngrok-free.dev',
       ...(process.env.WOP_NGROK_DOMAIN ? [process.env.WOP_NGROK_DOMAIN] : []),
+      ...(process.env.WOP_PUBLIC_URL ? [new URL(process.env.WOP_PUBLIC_URL).hostname] : []),
     ],
     proxy: {
       '/api': {

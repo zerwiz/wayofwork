@@ -2,7 +2,7 @@ import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { apiPostJson } from "../api/client";
 import type { AgentMeta } from "../hooks/useAgents";
-import type { ChatPulseMeters, ChatRow, LogRow } from "../hooks/useWayOfPiSession";
+import type { ChatPulseMeters, ChatRow, LogRow } from "../hooks/useWayOfWorkSession";
 import { useFileEditor } from "../hooks/useFileEditor";
 import type { BottomPanelTab } from "../types/technicalShell";
 import type { TreeNode, WorkspaceResponse } from "../types/tree";

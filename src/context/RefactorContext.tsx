@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useMemo, useCallback, useRe
 import { useUiMode } from '../hooks/useUiMode';
 import { useServerConfig } from '../hooks/useServerConfig';
 import { useWorkspaceTree } from '../hooks/useWorkspaceTree';
-import { useWayOfPiSession } from '../hooks/useWayOfPiSession';
+import { useWayOfWorkSession } from '../hooks/useWayOfWorkSession';
 import { useSimplePreferences } from '../hooks/useSimplePreferences';
 import { useAgents } from '../hooks/useAgents';
 import { useUiViewsCatalog } from '../hooks/useUiViewsCatalog';
@@ -115,7 +115,7 @@ interface RefactorContextValue {
   // Global Helpers/Data (from other hooks)
   tree: ReturnType<typeof useWorkspaceTree>;
   server: ReturnType<typeof useServerConfig>;
-  session: ReturnType<typeof useWayOfPiSession>;
+  session: ReturnType<typeof useWayOfWorkSession>;
   preferences: ReturnType<typeof useSimplePreferences>;
   agents: ReturnType<typeof useAgents>;
   viewsCatalog: ReturnType<typeof useUiViewsCatalog>;
@@ -207,7 +207,7 @@ export const RefactorProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // External Hooks
   const tree = useWorkspaceTree();
   const server = useServerConfig();
-  const session = useWayOfPiSession();
+  const session = useWayOfWorkSession("claw");
   const preferences = useSimplePreferences();
   const agents = useAgents();
   const viewsCatalog = useUiViewsCatalog();

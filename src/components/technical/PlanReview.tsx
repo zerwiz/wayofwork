@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiGet } from "../../api/client";
-import type { ChatSessionMode } from "../../hooks/useWayOfPiSession";
+import type { ChatSessionMode } from "../../hooks/useWayOfWorkSession";
 
 export function PlanReview({ mode }: { mode: ChatSessionMode }) {
   const [planText, setPlanText] = useState("");

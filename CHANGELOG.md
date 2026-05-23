@@ -1,6 +1,76 @@
 # Changelog
 All notable changes to Way of Work
 
+## [2.3.15] - 2026-05-23
+
+### Added
+- **WOW-021: Intelligent Kanban Automation**
+  - Enhanced Kanban agent to autonomously generate project structures (boards and cards) based on natural language project descriptions.
+  - Kanban agent can now interpret project scopes (like water service replacements) and automatically initialize the board setup.
+
+## [2.3.14] - 2026-05-23
+
+### Added
+- **Language Switcher:** Added SWE/ENG language switcher button to the global header (MenuBar) for quick language toggling.
+
+## [2.3.13] - 2026-05-23
+
+### Fixed
+- **WOW-021: Kanban Service Fixes**
+  - Fully implemented `createColumn` and `deleteColumn` in `kanbanService.ts` to support custom column management.
+  - Updated project update backend route to allow persistence of custom board settings (`settings_json`).
+  - Updated `getAllBoards` in `kanbanService.ts` to dynamically load custom columns from project settings.
+
+## [2.3.12] - 2026-05-23
+
+### Added
+- **WOW-023: Document and Validate `.wo` Directory Symlink**
+  - Investigated and confirmed the `.wo` entry in `workspace/` is a symbolic link to the project root `.wo` directory. Initialized ticket to document this structure.
+- **LLM Provider Alias Routes:** Added `GET` and `PUT /api/admin/llm-providers` alias routes in the admin API for better frontend compatibility.
+
+### Fixed
+- **Sidebar Layout:** Resolved vertical alignment issue where the 'What's Happening' section was incorrectly floating in the middle of the sidebar.
+- **Unauthorized Configuration Access:** Removed incorrect authentication requirement for `GET /api/config`, making it public as intended.
+- **Admin Console Scrolling:** Enabled proper vertical scrolling for the Admin Dashboard content area.
+- **Agent Surface Assignment:** Fixed issue where the incorrect agent was being assigned to the Claw UI by properly passing surface IDs through the WebSocket connection.
+- **Help Modal:** Updated documentation to refer to 'Way of Work' instead of 'Pi'.
+- **Schedule UI:** Refactored schedule list to be expandable, showing full details (including edit button) only when clicked.
+
+## [2.3.11] - 2026-05-23
+
+### Added
+- **WOW-021: Kanban Service Fixes**
+  - Initialized ticket with tasks to complete `deleteBoard`, `createColumn`, and `deleteColumn` stubs in `kanbanService.ts`.
+- **WOW-022: General Updates and Fixes**
+  - Initialized ticket to track outstanding tasks from `TODO.md` including multi-tenancy audit, agent integration tests, and workflow verifications.
+
+## [2.3.10] - 2026-05-23
+
+### Added
+- **WOW-014 Phases 3-4: Agent Language Awareness**
+  - `language` column added to `users` table (default `sv`)
+  - `?lang=` WebSocket query parameter parsed into `ChatWsData.lang`
+  - Language instruction injected into all system prompts via `composeLeadSystem()` — orchestrator, agents, and planner prompts include an explicit language directive
+  - Swedish construction laws (PBL, BBR, AMA) noted in default language prompt
+  - Users without language preference default to Swedish with legal context
+- **WOW-004: Real Data Migration**
+  - Demo seed data: 3 construction projects, 6 tasks, project members, 6 time entries (3 days)
+  - `project_members` table with `UNIQUE(project_id, user_id)` constraint
+  - Seed runs only when no projects exist (idempotent for existing databases)
+- **WOW-016 Frontend: Kanban Member CRUD**
+  - `kanbanService.getAllBoards()` now fetches real member IDs from `/api/projects/:id/members`
+  - `getBoardMembers()` wired to real API with role mapping (LEADER→admin, WORKER→member)
+  - `inviteBoardMember()` looks up user by email/username, maps roles, POSTs to API
+  - `removeBoardMember()` and `updateBoardMemberRole()` wired to DELETE and POST endpoints
+- **WOW-002: Remote Hosting Cleanup**
+  - `vite.config.ts` hardcoded `ngrok-free.dev` domain replaced with `WOP_PUBLIC_URL` env var
+  - `.env.example` expanded with ngrok/tunnel/Basic Auth gate configuration docs
+
+### Fixed
+- **Critical DB Schema**: `notifications` and `project_members` tables were missing from `db.ts` CREATE TABLE statements — added with proper schema, foreign keys, and constraints
+- **Orphaned files removed**: `src/pages/Dashboard.tsx` and `src/App copy.tsx` deleted, tsconfig exclude list cleaned
+- **Hardcoded ngrok domain** removed from `vite.config.ts` — now driven by `WOP_NGROK_DOMAIN` and `WOP_PUBLIC_URL` env vars
+
 ## [2.3.9] - 2026-05-23
 
 ### Added
@@ -11,6 +81,16 @@ All notable changes to Way of Work
   - New `resolveWoAiProvider()` resolves per-tenant provider from config or env
   - Admin API `GET/POST /api/admin/tenants/:id/config` for managing per-tenant LLM settings
   - Critical fix: `server/tickets-api.ts:41` — `time_sessions.tenant_id` was mapped to `userId` instead of `tenantId`
+- **WOW-020: Bug Report & Feature Request System**
+  - Full `bug_reports` table with status, severity, environment, screenshots, duplicate tracking
+  - `POST /api/bug-reports` — user submission with system info capture (browser, OS, URL, resolution)
+  - `PATCH /api/admin/bug-reports/:id` — status tracking (pending→in-review→fixed→closed), assignment, duplicate linking, labels
+  - `GET /api/admin/bug-reports/:id` — single report detail with parsed JSON fields
+  - `GET /api/bug-reports` — user's own reports
+  - `BugReportModal.tsx` — full form with category/severity/reproduction-rate, steps-to-reproduce editor, screenshot upload (base64, multiple)
+  - `BugReportsAdmin.tsx` — admin dashboard with search, status filter, expandable cards, status change buttons, detail view
+  - Admin Dashboard "Bug Reports" tab
+  - Fixed username resolution (queries users table instead of hardcoded "user")
 - **WOW-019: Notification System**
   - Server API: `GET /api/notifications`, `PATCH /api/notifications/:id/read`, `PATCH /api/notifications/read-all`, `DELETE /api/notifications/:id`
   - `notifyUser()` persists to SQLite + sends via Telegram/WhatsApp
@@ -59,9 +139,10 @@ All notable changes to Way of Work
   - Orchestrator has full dispatch_agent tool — can route to fakturering, ata, docs, claw, etc.
   - Uses `runOrchestratorToolLoop` instead of simple SDK runtime for tool-enabled chat
   - Privacy rules and channel context preserved in system prompt
-- **WOW-013 Phase 5: Docs surface auto-selects `docs` agent**
-  - Added useEffect in DocsApp to call `setChatAgent("docs")` on mount
-  - Docs chat now automatically connects to the `docs` agent (like claw/kanban)
+- **WOW-020: Bug Report & Feature Request System**
+  - Implemented database schema (`bug_reports` table) and API endpoints for feedback submission and admin review.
+  - Created reusable `BugReportModal` component for user submissions.
+  - Enabled automatic system environment capture (browser, OS, resolution) for all bug reports.
 - **WOW-009: Offer & Invoice Agent — Admin Console UI**
   - New "Offers & Invoices" tab in AdminDashboard
   - Create/edit/delete offers and invoices with full CRUD UI

@@ -11,6 +11,8 @@
       "agentName": "schemaplanerare",
       "prompt": "God morgon! Det är dags för morgonens planering. Granska alla aktiva projekt och kanban-styrelser. Sammanställ dagens uppgifter för varje arbetare baserat på prioritet och deadlines. Skicka personliga meddelanden till varje arbetare via deras länkade kanaler (använd telegram_send eller whatsapp_send). Inkludera projekt, kortnamn och planerad tid. Skicka även en kort sammanfattning till admin.",
       "status": "enabled",
+      "lastRun": null,
+      "lastResult": null,
       "createdAt": "2026-05-22T14:00:00.000Z"
     },
     {
@@ -23,6 +25,8 @@
       "agentName": "schemaplanerare",
       "prompt": "God kväll! Dags att stämma av dagen. Hämta dagens alla tidrapporter och jämför dem mot planeringen på kanban-korten. Identifiera avvikelser över 20%. Skapa en sammanfattande avvikelserapport för admin. Föreslå även morgondagens schema baserat på vad som inte hanns med idag.",
       "status": "enabled",
+      "lastRun": null,
+      "lastResult": null,
       "createdAt": "2026-05-22T14:00:00.000Z"
     },
     {
@@ -35,6 +39,8 @@
       "agentName": "claw",
       "prompt": "Dags för daglig backup till GitHub. Använd git-verktyg för att: 1. Staga alla ändringar. 2. Committa med meddelandet 'Automated daily backup'. 3. Skapa en ny branch med namnet 'backup/YYYY-MM-DD' (ersätt med dagens datum). 4. Pusha branchen till origin.",
       "status": "enabled",
+      "lastRun": null,
+      "lastResult": null,
       "createdAt": "2026-05-22T14:00:00.000Z"
     }
   ]

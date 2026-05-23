@@ -148,7 +148,7 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#1e1e1e]">
         <div className="w-full max-w-md rounded-lg border border-[#3c3c3c] bg-[#252526] p-8">
           <div className="mb-6 text-center">
-            <h1 className="text-2xl font-bold text-[#cccccc]">WAY OF PI</h1>
+            <h1 className="text-2xl font-bold text-[#cccccc]">WAY OF WORK</h1>
             <p className="mt-1 text-sm text-[#858585]">Worker Portal</p>
           </div>
 

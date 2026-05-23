@@ -262,7 +262,7 @@ export function SimpleSettingsView({
 						<TerminalSettingsSection config={serverConfig} appearanceDark={appearanceDark} onConfigRefresh={onConfigRefresh} />
 					</div>
 
-					<div className={`rounded-2xl border p-6 shadow-sm ${card}`}>
+					{/* <div className={`rounded-2xl border p-6 shadow-sm ${card}`}>
 						<h3 className={`font-bold ${heading}`}>Technical layout</h3>
 						<p className={`mt-1 text-sm ${sub}`}>
 							Switch to the IDE-style UI (same as the Simple / Technical toggle in the top bar).
@@ -274,7 +274,7 @@ export function SimpleSettingsView({
 						>
 							Open Technical UI
 						</button>
-					</div>
+					</div> */}
 				</div>
 			</div>
 		</div>

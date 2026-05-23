@@ -1,0 +1,9 @@
+{"type":"session","kind":"wo-web","id":"channel-telegram-7505723327","workspace":"/home/zerwiz/CodeP/wayofwork/workspace","createdAt":"2026-05-23T13:28:35.603Z","engine":"wo-bun-chat"}
+{"type":"message","message":{"role":"user","content":"Hej","createdAt":"2026-05-23T13:28:35.604Z"}}
+{"type":"message","message":{"role":"user","content":"Hej","createdAt":"2026-05-23T13:28:36.253Z"}}
+{"type":"message","message":{"role":"user","content":"Hej","createdAt":"2026-05-23T13:28:39.272Z"}}
+{"type":"message","message":{"role":"user","content":"Hej","createdAt":"2026-05-23T13:28:42.280Z"}}
+{"type":"message","message":{"role":"assistant","content":"Hej Josef! Vad händer idag?","createdAt":"2026-05-23T13:28:44.768Z"}}
+{"type":"message","message":{"role":"assistant","content":"Hej Josef! \n\nJag är Orchestratorn för Way of Work — din huvudsakliga samordnare för plattformen. Jag hjälper dig med att följa upp uppgifter, skapa dokument, hantera projekt och koppla till de specialister som finns tillgängliga (t.ex. kostnadskalkylator, fakturering, skyddsombud etc.).\n\nVad kan jag göra för dig idag?","createdAt":"2026-05-23T13:28:53.059Z"}}
+{"type":"message","message":{"role":"assistant","content":"Hej Josef! Här är jag. Hur kan jag hjälpa dig idag?","createdAt":"2026-05-23T13:29:00.057Z"}}
+{"type":"message","message":{"role":"assistant","content":"Hej Josef! Hur kan jag hjälpa dig idag?\n\nDu kan be om hjälp med:\n- Projekthantering och schemaläggning\n- Kostnadsberäkningar och offertarbete\n- Dokumenthantering och arkivhantering\n- Rättlig rådfrågning (AFS, maskinchefstillsyn etc.)\n- Eller vad else","createdAt":"2026-05-23T13:29:07.823Z"}}

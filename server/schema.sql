@@ -1,4 +1,4 @@
--- Way of Pi: Multi-Tenant SQLite Schema (Phase 1)
+-- Way of Work: Multi-Tenant SQLite Schema (Phase 1)
 -- Run with: bun sqlite3 data/wayofpi.sqlite < schema.sql
 
 -- Enable WAL mode for concurrent reads
@@ -214,29 +214,27 @@ CREATE TABLE IF NOT EXISTS project_members (
 CREATE INDEX IF NOT EXISTS idx_project_members_user ON project_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_project_members_tenant ON project_members(tenant_id);
 
+
 -- ============================================
--- 12. TA_PLANS (Traffic Arrangement Plans)
+-- 13. RESOURCE_PERMISSIONS (Access Control)
 -- ============================================
-CREATE TABLE IF NOT EXISTS ta_plans (
-    id TEXT PRIMARY KEY,
-    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
-    title TEXT NOT NULL,
-    road_number TEXT,
-    speed_limit INTEGER,
-    traffic_volume_adt INTEGER,
-    work_type TEXT,                       -- 'fixed', 'moving', 'intermittent'
-    sketch_id TEXT,                        -- Reference to TDOK 2024:0043 sketch
-    risk_assessment_json TEXT,            -- Generated risk assessment data
-    validation_status TEXT,                -- 'valid', 'invalid', 'warning'
-    status TEXT DEFAULT 'draft',          -- 'draft', 'pending_approval', 'approved', 'submitted'
-    created_by TEXT REFERENCES users(id),
+CREATE TABLE IF NOT EXISTS resource_permissions (
+    resource_id TEXT PRIMARY KEY,        -- e.g., "board_123", "file_abc"
+    resource_type TEXT NOT NULL,         -- 'kanban_board', 'workspace_file', 'document'
+    owner_id TEXT NOT NULL REFERENCES users(id),
+    visibility TEXT NOT NULL DEFAULT 'private', -- 'private', 'shared', 'tenant'
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
 );
 
-CREATE INDEX IF NOT EXISTS idx_ta_plans_tenant ON ta_plans(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_ta_plans_project ON ta_plans(project_id);
+CREATE TABLE IF NOT EXISTS resource_shares (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    resource_id TEXT NOT NULL REFERENCES resource_permissions(resource_id) ON DELETE CASCADE,
+    shared_with_id TEXT NOT NULL REFERENCES users(id),
+    permission TEXT NOT NULL DEFAULT 'read', -- 'read', 'write'
+    created_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(resource_id, shared_with_id)
+);
 
 -- ============================================
 -- SAMPLE DATA (Development Only - Remove in Production)

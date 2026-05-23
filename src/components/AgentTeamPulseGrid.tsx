@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { AgentMeta } from "../hooks/useAgents";
-import type { ChatPulseMeters } from "../hooks/useWayOfPiSession";
+import type { ChatPulseMeters } from "../hooks/useWayOfWorkSession";
 import { workspaceAgentDisplayName } from "../utils/workspaceAgentDisplay";
 
 function fmtTok(n: number): string {

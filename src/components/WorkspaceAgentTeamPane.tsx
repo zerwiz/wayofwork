@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { AgentMeta } from "../hooks/useAgents";
-import type { ChatPulseMeters, ChatRow } from "../hooks/useWayOfPiSession";
+import type { ChatPulseMeters, ChatRow } from "../hooks/useWayOfWorkSession";
 import { workspaceAgentDisplayName } from "../utils/workspaceAgentDisplay";
 import {
 	AgentTeamPulseGrid,

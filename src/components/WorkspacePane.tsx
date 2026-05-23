@@ -25,7 +25,7 @@ import type { AgentMeta } from "../hooks/useAgents";
 import type { FilePersistEncoding } from "../hooks/useFileEditor";
 import type { FilePreview } from "../types/workspaceFile";
 import { filePreviewSupportsSourceToggle } from "../utils/workspaceFilePreview";
-import type { ChatPulseMeters, ChatRow, LogRow } from "../hooks/useWayOfPiSession";
+import type { ChatPulseMeters, ChatRow, LogRow } from "../hooks/useWayOfWorkSession";
 import type { BottomPanelTab } from "../types/technicalShell";
 import type { WorkspaceEditorRef } from "../types/workspaceEditor";
 import {

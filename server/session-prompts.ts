@@ -116,23 +116,14 @@ const AUTHORITATIVE_RUNTIME_NAMED_AGENT_NOTE = `**Authoritative Runtime:** This 
 export interface LeadSystemInput {
 	mode: ChatSessionMode;
 	envSystemPrompt?: string;
-	/** Body from workspace agent \`.md\` (after frontmatter), or null. */
 	agentBody: string | null;
-	/** Lowercase \`name:\` from frontmatter — avoids duplicating \`planner.md\` when Plan mode + planner agent. */
 	agentNameLower: string | null;
-	/** Comma-separated skills from agent frontmatter (e.g. "kanban,ata,workers"). */
 	agentSkills?: string | null;
-	/**
-	 * Body from \`planner.md\` (workspace scan order), when Plan mode applies and the active agent is not already \`planner\`.
-	 * Pass \`null\` to use {@link PLAN_SESSION_SYSTEM_FALLBACK}.
-	 */
 	plannerAgentBody: string | null;
-	/** Workspace orchestrator may use standard server tools (read/grep/…) — suppressed when authoritative runtime owns the turn. */
 	orchestratorToolsEnabled?: boolean;
-	/** **Authoritative Runtime** executes tools for this session (all personas). */
 	authoritativeRuntime?: boolean;
-	/** Optional local workspace index summary (Settings → Indexing & Docs). */
 	workspaceIndexBoost?: string | null;
+	lang?: string;
 }
 
 export async function composeLeadSystem(input: LeadSystemInput): Promise<string | null> {
@@ -180,6 +171,14 @@ export async function composeLeadSystem(input: LeadSystemInput): Promise<string 
 	}
 	const boost = input.workspaceIndexBoost?.trim();
 	if (boost) parts.push(boost);
+	const lang = input.lang?.trim();
+	if (lang && lang !== "sv") {
+		parts.push(`**Language:** The user prefers to communicate in **${lang}**. Please respond in ${lang} unless the user writes in another language.`);
+	} else if (lang === "sv") {
+		parts.push(`**Language:** Respond in Swedish (sv) by default unless the user writes in another language. Swedish construction laws (PBL, BBR, AMA) apply.`);
+	} else {
+		parts.push(`**Language:** Default to Swedish (sv) — respond in Swedish unless the user writes in another language.`);
+	}
 	if (parts.length === 0) return null;
 	return parts.join("\n\n---\n\n");
 }

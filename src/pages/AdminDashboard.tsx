@@ -11,6 +11,7 @@ import {
   Clock,
   ArrowRight
 } from "lucide-react";
+import BugReportsAdmin from "../components/admin/BugReportsAdmin";
 
 // ... rest of the interfaces ...
 
@@ -38,7 +39,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
   const [clients, setClients] = useState<Worker[]>([]);
   const [stats, setStats] = useState<AdminStats>({ workers: 0, clients: 0, projects: 0, tasks: 0, time_entries: 0, priceLists: 0, pendingChanges: 0 });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"workers" | "clients" | "channels" | "llm" | "pricing" | "approvals" | "offers">("workers");
+  const [activeTab, setActiveTab] = useState<"workers" | "clients" | "channels" | "llm" | "pricing" | "approvals" | "offers" | "bugs">("workers");
   const [showAddWorker, setShowAddWorker] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
   const [newWorker, setNewWorker] = useState({ username: "", full_name: "", pin: "1234" });
@@ -204,9 +205,9 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
   }
 
   return (
-    <div className="h-full bg-[#1e1e1e] text-[#cccccc]">
+    <div className="h-full flex flex-col bg-[#1e1e1e] text-[#cccccc]">
       {/* Header */}
-      <div className="bg-[#252526] border-b border-[#3c3c3c] px-6 py-4">
+      <div className="bg-[#252526] border-b border-[#3c3c3c] px-6 py-4 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div>
@@ -217,7 +218,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
         </div>
       </div>
 
-      <div className="p-6">
+      <div className="p-6 flex-1 overflow-y-auto">
         {/* Stats Cards */}
         <div className="grid grid-cols-6 gap-4 mb-8">
           {[
@@ -311,6 +312,16 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
             }`}
           >
             LLM Providers
+          </button>
+          <button
+            onClick={() => setActiveTab("bugs")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "bugs"
+                ? "border-b-2 border-[#ea580c] text-[#ea580c]"
+                : "text-[#858585] hover:text-[#cccccc]"
+            }`}
+          >
+            Bug Reports
           </button>
         </div>
 
@@ -790,6 +801,10 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
 
         {activeTab === "offers" && (
           <OffersInvoicesTab />
+        )}
+
+        {activeTab === "bugs" && (
+          <BugReportsAdmin />
         )}
       </div>
     </div>
@@ -1517,6 +1532,7 @@ function OffersInvoicesTab() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ title: "", client_id: "", project_id: "", items_json: "", valid_until: "", notes: "", due_date: "" });
+  const [items, setItems] = useState<{ name: string; description: string; quantity: number; unit: string; unit_price: number; total: number }[]>([]);
   const [sending, setSending] = useState<string | null>(null);
   const [users, setUsers] = useState<any[]>([]);
 
@@ -1546,6 +1562,9 @@ function OffersInvoicesTab() {
     if (item) {
       setEditing(item);
       const items = typeof item.items_json === "string" ? item.items_json : JSON.stringify(item.items_json || []);
+      let parsedItems: any[] = [];
+      try { parsedItems = JSON.parse(items); } catch {}
+      setItems(parsedItems.map((i: any) => ({ name: i.name || "", description: i.description || "", quantity: i.quantity || 1, unit: i.unit || "st", unit_price: i.unit_price || 0, total: 0 })));
       setForm({
         title: item.title || "",
         client_id: item.client_id || "",
@@ -1557,6 +1576,7 @@ function OffersInvoicesTab() {
       });
     } else {
       setEditing(null);
+      setItems([]);
       setForm({ title: "", client_id: "", project_id: "", items_json: "[]", valid_until: "", notes: "", due_date: "" });
     }
     setShowForm(true);
@@ -1571,7 +1591,7 @@ function OffersInvoicesTab() {
       title: form.title,
       client_id: form.client_id || undefined,
       project_id: form.project_id || undefined,
-      items_json: form.items_json,
+      items_json: JSON.stringify(items.length > 0 ? items.map(i => ({ name: i.name, description: i.description, quantity: i.quantity, unit: i.unit, unit_price: i.unit_price, total: 0 })) : []),
       notes: form.notes || undefined,
     };
     if (tab === "offers") {
@@ -1631,24 +1651,9 @@ function OffersInvoicesTab() {
     try {
       const items = typeof itemsJson === "string" ? JSON.parse(itemsJson) : itemsJson;
       if (!Array.isArray(items)) return "0 items";
-      return `${items.length} items`;
+      const total = items.reduce((s: number, i: any) => s + (i.quantity || 0) * (i.unit_price || 0), 0);
+      return `${items.length} items — ${total.toLocaleString("sv-SE")} kr`;
     } catch { return "0 items"; }
-  };
-
-  const sampleItems = (title: string, count: number) => {
-    const items = [];
-    const units = ["st", "h", "kg", "m"];
-    for (let i = 1; i <= count; i++) {
-      items.push({
-        name: `Work item ${i}`,
-        description: "",
-        quantity: 1 + Math.floor(Math.random() * 10),
-        unit: units[i % units.length],
-        unit_price: 500 + Math.floor(Math.random() * 5000),
-        total: 0,
-      });
-    }
-    return items;
   };
 
   if (loading) {
@@ -1766,11 +1771,66 @@ function OffersInvoicesTab() {
                 }} className="w-full bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm" />
               </div>
               <div className="col-span-2">
-                <label className="block text-[#999] text-xs mb-1">Items (JSON)</label>
-                <textarea value={form.items_json} onChange={e => setForm({ ...form, items_json: e.target.value })} rows={6} className="w-full bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm font-mono text-[10px]" placeholder='[{"name":"Work","quantity":1,"unit":"st","unit_price":5000}]' />
-                <div className="flex gap-2 mt-1">
-                  <button onClick={() => setForm({ ...form, items_json: JSON.stringify(sampleItems("Consulting", 2), null, 2) })} className="text-[10px] text-[#ea580c] hover:underline">Sample 2 items</button>
-                  <button onClick={() => setForm({ ...form, items_json: JSON.stringify(sampleItems("Material", 4), null, 2) })} className="text-[10px] text-[#ea580c] hover:underline">Sample 4 items</button>
+                <label className="block text-[#999] text-xs mb-1">Items</label>
+                <div className="bg-[#1e1e1e] border border-[#3c3c3c] rounded overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-[#3c3c3c] bg-[#2d2d2d]">
+                      <tr className="text-left text-[#999] text-[10px]">
+                        <th className="p-2">Name</th>
+                        <th className="p-2 w-16">Qty</th>
+                        <th className="p-2 w-14">Unit</th>
+                        <th className="p-2 w-24">Unit price</th>
+                        <th className="p-2 w-20">Total</th>
+                        <th className="p-2 w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="p-3 text-center text-[#585858] text-xs">No items. Click "Add item" below.</td>
+                        </tr>
+                      ) : items.map((item, idx) => (
+                        <tr key={idx} className="border-b border-[#3c3c3c]">
+                          <td className="p-1.5">
+                            <input value={item.name} onChange={e => { const copy = [...items]; copy[idx] = { ...copy[idx], name: e.target.value }; setItems(copy); }} className="w-full bg-transparent border border-transparent hover:border-[#3c3c3c] focus:border-[#ea580c] rounded px-2 py-1 text-xs outline-none" placeholder="Description" />
+                          </td>
+                          <td className="p-1.5">
+                            <input type="number" min="0" step="1" value={item.quantity} onChange={e => { const copy = [...items]; copy[idx] = { ...copy[idx], quantity: Number(e.target.value) || 0 }; setItems(copy); }} className="w-full bg-transparent border border-transparent hover:border-[#3c3c3c] focus:border-[#ea580c] rounded px-2 py-1 text-xs outline-none text-right" />
+                          </td>
+                          <td className="p-1.5">
+                            <select value={item.unit} onChange={e => { const copy = [...items]; copy[idx] = { ...copy[idx], unit: e.target.value }; setItems(copy); }} className="w-full bg-transparent border border-transparent hover:border-[#3c3c3c] focus:border-[#ea580c] rounded px-2 py-1 text-xs outline-none">
+                              <option value="st">st</option>
+                              <option value="h">h</option>
+                              <option value="m">m</option>
+                              <option value="m2">m²</option>
+                              <option value="kg">kg</option>
+                              <option value="pkt">pkt</option>
+                              <option value="rl">rl</option>
+                            </select>
+                          </td>
+                          <td className="p-1.5">
+                            <input type="number" min="0" step="1" value={item.unit_price} onChange={e => { const copy = [...items]; copy[idx] = { ...copy[idx], unit_price: Number(e.target.value) || 0 }; setItems(copy); }} className="w-full bg-transparent border border-transparent hover:border-[#3c3c3c] focus:border-[#ea580c] rounded px-2 py-1 text-xs outline-none text-right" />
+                          </td>
+                          <td className="p-1.5 text-right text-[#ccc] font-mono text-xs">{(item.quantity * item.unit_price).toLocaleString("sv-SE")} kr</td>
+                          <td className="p-1.5">
+                            <button onClick={() => setItems(items.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300 text-xs px-1" title="Remove item">&times;</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="border-t border-[#3c3c3c] bg-[#2d2d2d]">
+                      <tr>
+                        <td colSpan={4} className="p-2 text-right text-[#999] text-xs font-medium">Total</td>
+                        <td className="p-2 text-right text-white font-mono text-sm font-semibold">{items.reduce((sum, i) => sum + i.quantity * i.unit_price, 0).toLocaleString("sv-SE")} kr</td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <div className="flex gap-2 mt-1.5">
+                  <button onClick={() => setItems([...items, { name: "", description: "", quantity: 1, unit: "st", unit_price: 0, total: 0 }])} className="text-[11px] text-[#ea580c] hover:underline">+ Add item</button>
+                  <button onClick={() => setItems([...items, { name: "Arbete", description: "", quantity: 1, unit: "h", unit_price: 750, total: 0 }, { name: "Material", description: "", quantity: 1, unit: "st", unit_price: 2500, total: 0 }])} className="text-[11px] text-[#858585] hover:text-[#ccc]">Sample 2</button>
+                  <button onClick={() => setItems([...items, { name: "Schaktning", description: "", quantity: 8, unit: "h", unit_price: 950, total: 0 }, { name: "Stenmaterial 0-32", description: "", quantity: 12, unit: "ton", unit_price: 320, total: 0 }, { name: "Packning", description: "", quantity: 4, unit: "h", unit_price: 850, total: 0 }, { name: "Transport", description: "", quantity: 1, unit: "st", unit_price: 3500, total: 0 }])} className="text-[11px] text-[#858585] hover:text-[#ccc]">Sample 4</button>
                 </div>
               </div>
               <div className="col-span-2">

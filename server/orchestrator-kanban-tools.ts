@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import { db } from "./db";
 import { getPrimaryWorkspacePath } from "./workspace-state";
 import { notifyUser } from "./notifications";
+import { broadcastEvent } from "./tool-log-broadcast";
 
 const DEFAULT_COLUMNS = [
 	{ id: "todo", name: "To Do" },
@@ -45,6 +46,9 @@ export async function kanbanCreateBoard(args: {
 			`INSERT INTO projects (id, tenant_id, name, description, status, created_by)
 			 VALUES (?, ?, ?, ?, 'active', ?)`,
 		).run(id, args.tenantId, args.name.trim(), args.description?.trim() || null, args.userId);
+		
+		broadcastEvent("kanban_boards_changed", { action: "created", boardId: id });
+		
 		return `kanban_create_board: ok — created board "${args.name.trim()}" (id: \`${id}\`).`;
 	} catch (e) {
 		const m = e instanceof Error ? e.message : String(e);
@@ -100,6 +104,9 @@ export async function kanbanDeleteBoard(args: {
 			args.tenantId,
 		);
 		db.query("UPDATE tasks SET project_id = NULL WHERE project_id = ?").run(args.boardId);
+		
+		broadcastEvent("kanban_boards_changed", { action: "deleted", boardId: args.boardId });
+		
 		return `kanban_delete_board: ok — deleted board \`${args.boardId}\` and unlinked its cards.`;
 	} catch (e) {
 		const m = e instanceof Error ? e.message : String(e);
@@ -201,6 +208,9 @@ export async function kanbanCreateCard(args: {
 			args.estimatedHours ?? null,
 			args.userId,
 		);
+
+		broadcastEvent("kanban_cards_changed", { action: "created", boardId: args.boardId, cardId: id });
+
 		return `kanban_create_card: ok — created card "${args.title.trim()}" (id: \`${id}\`) in column "${args.columnId || "todo"}" on board \`${args.boardId}\`.`;
 	} catch (e) {
 		const m = e instanceof Error ? e.message : String(e);
@@ -296,6 +306,8 @@ export async function kanbanUpdateCard(args: {
 			}).catch(() => {});
 		}
 
+		broadcastEvent("kanban_cards_changed", { action: "updated", boardId: existing.project_id, cardId: args.cardId });
+
 		return `kanban_update_card: ok — updated card \`${args.cardId}\`.`;
 	} catch (e) {
 		const m = e instanceof Error ? e.message : String(e);
@@ -309,10 +321,20 @@ export async function kanbanDeleteCard(args: {
 }): Promise<string> {
 	if (!args.cardId) return "kanban_delete_card: **cardId** is required.";
 	try {
+		const existing = db
+			.query("SELECT project_id FROM tasks WHERE id = ? AND tenant_id = ?")
+			.get(args.cardId, args.tenantId) as any;
+		
 		const result = db
 			.query("DELETE FROM tasks WHERE id = ? AND tenant_id = ?")
 			.run(args.cardId, args.tenantId);
+		
 		if (result.changes === 0) return `kanban_delete_card: card \`${args.cardId}\` not found.`;
+		
+		if (existing) {
+			broadcastEvent("kanban_cards_changed", { action: "deleted", boardId: existing.project_id, cardId: args.cardId });
+		}
+		
 		return `kanban_delete_card: ok — deleted card \`${args.cardId}\`.`;
 	} catch (e) {
 		const m = e instanceof Error ? e.message : String(e);
@@ -337,6 +359,8 @@ export async function kanbanMoveCard(args: {
 			args.cardId,
 			args.tenantId,
 		);
+
+		broadcastEvent("kanban_cards_changed", { action: "moved", boardId: existing.project_id, cardId: args.cardId });
 
 		// Notify assignee
 		if (existing.assigned_to) {

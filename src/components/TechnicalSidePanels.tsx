@@ -6,7 +6,7 @@ import { GithubManageSettingsCard } from "./GithubManageSettingsCard";
 import type { ServerConfig } from "../hooks/useServerConfig";
 import { useWebManifest } from "../hooks/useWebManifest";
 import { TerminalSettingsSection } from "./TerminalSettingsSection";
-import type { ChatSessionMode } from "../hooks/useWayOfPiSession";
+import type { ChatSessionMode } from "../hooks/useWayOfWorkSession";
 import type { FileGetResponse } from "../types/workspaceFile";
 import type { TreeNode, WorkspaceFolderInfo, WorkspaceGitState } from "../types/tree";
 import { flattenDirectGitStatusPaths, flattenTreeFiles } from "../utils/flattenTree";

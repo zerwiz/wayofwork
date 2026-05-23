@@ -7,6 +7,7 @@ export interface InboundMessage {
 	channelUserId: string; // phone number, telegram id, or email address
 	text: string;
 	metadata?: any;
+    botId?: string; // Add this
 }
 
 export interface InboundResult {
@@ -22,15 +23,21 @@ export interface InboundResult {
 export async function routeInboundMessage(msg: InboundMessage): Promise<InboundResult> {
 	try {
 		// 1. Resolve user and tenant from channel link
-		const link = db.query(`
+        let query = `
 			SELECT l.tenant_id, l.user_id, u.full_name, u.role,
 			       bt.label as bot_label
 			FROM user_channel_links l
 			JOIN users u ON l.user_id = u.id AND l.tenant_id = u.tenant_id
 			LEFT JOIN bot_telegram_accounts bt ON l.channel_bot_id = bt.id AND l.tenant_id = bt.tenant_id AND l.channel = 'telegram'
 			WHERE l.channel = ? AND l.channel_user_id = ? AND l.active = 1
-			LIMIT 1
-		`).get(msg.channel, msg.channelUserId) as { tenant_id: string; user_id: string; full_name: string | null; role: string; bot_label: string | null } | undefined;
+		`;
+        const params: any[] = [msg.channel, msg.channelUserId];
+        if (msg.botId) {
+            query += " AND l.channel_bot_id = ?";
+            params.push(msg.botId);
+        }
+        query += " LIMIT 1";
+		const link = db.query(query).get(...params) as { tenant_id: string; user_id: string; full_name: string | null; role: string; bot_label: string | null } | undefined;
 
 		// 1b. Fallback for WhatsApp (different bot table)
 		let botLabel = link?.bot_label;

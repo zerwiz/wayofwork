@@ -1,6 +1,6 @@
 import { AlertCircle, Bot, Braces, FileCode2, MessageSquare, ScrollText, TerminalSquare, Users, X } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
-import type { LogRow } from "../hooks/useWayOfPiSession";
+import type { LogRow } from "../hooks/useWayOfWorkSession";
 import type { BottomPanelTab } from "../types/technicalShell";
 import {
 	PANEL_BAND_CHROME,
