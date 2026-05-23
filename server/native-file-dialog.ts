@@ -22,14 +22,14 @@ function linuxPickFile(): NativePickResult {
 		}
 		return { cancelled: true };
 	}
-	if (z.error.code !== "ENOENT") {
+	if ((z.error as any).code !== "ENOENT") {
 		return { error: z.error.message };
 	}
 	const k = spawnSync("kdialog", ["--getopenfilename", homedir()], {
 		encoding: "utf-8",
 		windowsHide: true,
 	});
-	if (k.error?.code === "ENOENT") {
+	if ((k.error as any)?.code === "ENOENT") {
 		return {
 			error:
 				"No native file dialog (install zenity or kdialog, or type the path in the prompt).",
@@ -55,14 +55,14 @@ function linuxPickFolder(): NativePickResult {
 		}
 		return { cancelled: true };
 	}
-	if (z.error.code !== "ENOENT") {
+	if ((z.error as any).code !== "ENOENT") {
 		return { error: z.error.message };
 	}
 	const k = spawnSync("kdialog", ["--getexistingdirectory", homedir()], {
 		encoding: "utf-8",
 		windowsHide: true,
 	});
-	if (k.error?.code === "ENOENT") {
+	if ((k.error as any)?.code === "ENOENT") {
 		return {
 			error:
 				"No native folder dialog (install zenity or kdialog, or type the path in the prompt).",
@@ -81,7 +81,7 @@ function darwinPickFile(): NativePickResult {
 		["-e", 'POSIX path of (choose file with prompt "Open file")'],
 		{ encoding: "utf-8", windowsHide: true },
 	);
-	if (r.error?.code === "ENOENT") {
+	if ((r.error as any)?.code === "ENOENT") {
 		return { error: "osascript not found" };
 	}
 	if (r.status === 0 && r.stdout) {
@@ -97,7 +97,7 @@ function darwinPickFolder(): NativePickResult {
 		["-e", 'POSIX path of (choose folder with prompt "Open folder")'],
 		{ encoding: "utf-8", windowsHide: true },
 	);
-	if (r.error?.code === "ENOENT") {
+	if ((r.error as any)?.code === "ENOENT") {
 		return { error: "osascript not found" };
 	}
 	if (r.status === 0 && r.stdout) {
@@ -119,7 +119,7 @@ function winPickFile(): NativePickResult {
 		["-NoProfile", "-Sta", "-WindowStyle", "Hidden", "-Command", ps],
 		{ encoding: "utf-8", windowsHide: true },
 	);
-	if (r.error?.code === "ENOENT") {
+	if ((r.error as any)?.code === "ENOENT") {
 		return { error: "powershell.exe not found" };
 	}
 	if (r.status === 0 && r.stdout) {
@@ -141,7 +141,7 @@ function winPickFolder(): NativePickResult {
 		["-NoProfile", "-Sta", "-WindowStyle", "Hidden", "-Command", ps],
 		{ encoding: "utf-8", windowsHide: true },
 	);
-	if (r.error?.code === "ENOENT") {
+	if ((r.error as any)?.code === "ENOENT") {
 		return { error: "powershell.exe not found" };
 	}
 	if (r.status === 0 && r.stdout) {

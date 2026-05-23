@@ -8,7 +8,7 @@ import { existsSync, realpathSync } from "node:fs";
 import { mkdir, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, normalize, relative, resolve, sep } from "node:path";
 
-import { buildCodeWorkspacePayload } from "../shared/code-workspace-file.ts";
+import { buildCodeWorkspacePayload } from "../shared/code-workspace-file";
 
 export interface WorkspaceFolderEntry {
 	label: string;

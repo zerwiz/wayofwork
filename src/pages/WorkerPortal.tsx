@@ -27,10 +27,9 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
     const token = localStorage.getItem("wop_token");
     if (!token) return false;
     try {
-      // Handle demo token (no dots) vs JWT (has dots)
       const tokenStr = token.includes('.') ? atob(token.split('.')[1]) : atob(token);
       const payload = JSON.parse(tokenStr);
-      return payload.role === "WORKER" || payload.role === "LEADER" || payload.role === "ADMIN";
+      return ["WORKER", "LEADER", "ADMIN", "SUPER_ADMIN"].includes(payload.role);
     } catch {
       return false;
     }
@@ -47,7 +46,6 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  
   // Profile data
   const [profileEmail, setProfileEmail] = useState("");
   const [profilePhone, setProfilePhone] = useState("");
@@ -55,74 +53,59 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
   const [profileJobTitle, setProfileJobTitle] = useState("");
   const [profileId, setProfileId] = useState("");
 
-  // Demo data (shown when API is not available)
-  const DEMO_TASKS: WorkerTask[] = [
-    {
-      id: "task-001",
-      title: "Review CAD drawings for A-102",
-      hours: 3,
-      status: "in_progress",
-      progressPct: 65,
-    },
-    {
-      id: "task-002",
-      title: "Update documentation for Portal API",
-      hours: 2,
-      status: "not_started",
-    },
-    {
-      id: "task-003",
-      title: "Fix login flow in Worker Portal",
-      hours: 4,
-      status: "in_progress",
-      progressPct: 40,
-    },
-  ];
-
-  const DEMO_FILES: WorkerFile[] = [
-    {
-      id: "file-001",
-      name: "A-102_CAD_draft.pdf",
-      size: "2.3 MB",
-      type: "pdf",
-      updatedAt: "2024-01-15 14:30",
-    },
-    {
-      id: "file-002",
-      name: "Project_specs.docx",
-      size: "456 KB",
-      type: "doc",
-      updatedAt: "2024-01-14 09:15",
-    },
-  ];
-
   useEffect(() => {
+
     loadPortalData();
   }, []);
 
   async function loadPortalData() {
     try {
       setLoading(true);
-      // Load demo data in case of demo credentials or API error
-      loadDemoData();
-      // TODO: Fetch from /api/portal/me, /api/portal/tasks, /api/portal/files
+      const token = localStorage.getItem("wop_token");
+      const h = { Authorization: `Bearer ${token}` };
+
+      const [meRes, tasksRes, filesRes] = await Promise.all([
+        fetch("/api/portal/me", { headers: h }),
+        fetch("/api/portal/tasks", { headers: h }),
+        fetch("/api/portal/files", { headers: h })
+      ]);
+
+      if (meRes.ok) {
+        const me = await meRes.json();
+        setWorkerName(me.full_name || me.username);
+        setProfileId(me.id);
+        setProfileEmail(me.email || "");
+        setProfilePhone(me.phone || "");
+        setProfileRole(me.role);
+        setProfileJobTitle(me.job_title || "");
+      }
+
+      if (tasksRes.ok) {
+        const t = await tasksRes.json();
+        setTasks(t.map((task: any) => ({
+          id: task.id,
+          title: task.title,
+          hours: task.estimated_hours || 0,
+          status: task.status === "complete" ? "complete" : task.status === "in_progress" ? "in_progress" : "not_started",
+          progressPct: task.actual_hours && task.estimated_hours ? Math.round((task.actual_hours / task.estimated_hours) * 100) : undefined
+        })));
+      }
+
+      if (filesRes.ok) {
+        const f = await filesRes.json();
+        setFiles(f.map((file: any) => ({
+          id: file.id,
+          name: file.file_path.split("/").pop() || file.file_path,
+          size: file.file_size ? `${(file.file_size / 1024 / 1024).toFixed(1)} MB` : "?",
+          type: file.cad_type || "doc",
+          updatedAt: new Date(file.created_at).toLocaleDateString()
+        })));
+      }
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "Failed to load data");
     } finally {
       setLoading(false);
     }
-  }
-
-  function loadDemoData() {
-    // Demo data (shown when API is not available)
-    setWorkerName("Demo Worker");
-    setTasks([...DEMO_TASKS]);
-    setFiles([...DEMO_FILES]);
-    setProfileId("demo-worker");
-    setProfileEmail("demo@wayofwork.dev");
-    setProfilePhone("+46-555-0123");
-    setProfileRole("WORKER");
-    setProfileJobTitle("Worker");
   }
 
   const handleLogin = async () => {
@@ -219,7 +202,7 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
                   <div>
                     The Way of Work backend API isn't available. This is expected in demo mode.
                     <br />
-                    Use <strong className="text-[#f0f0f0]">Worker ID: "Demo"</strong> and <strong className="text-[#f0f0f0]">PIN: "1234"</strong> to test.
+                    Use <strong className="text-[#f0f0f0]">Worker ID: "anna"</strong> and <strong className="text-[#f0f0f0]">PIN: "1234"</strong> to test.
                   </div>
                 ) : (
                   "Login failed with invalid credentials. Please check your Worker ID and PIN."
@@ -228,7 +211,7 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
             </div>
           ) : (
             <p className="mt-4 text-center text-xs text-[#585858]">
-              Demo: Use PIN "1234"
+              Demo: Worker ID "anna", "bjorn" etc. PIN "1234"
             </p>
           )}
           <button

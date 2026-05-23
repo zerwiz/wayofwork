@@ -1,4 +1,7 @@
-# Skill: cost-estimation
+---
+name: cost-estimation
+description: Advanced methodologies for creating detailed project budgets, cost estimates (kalkyler), and analyzing profit margins
+---
 
 <description>
 Advanced methodologies for creating detailed project budgets, cost estimates (kalkyler), and analyzing profit margins.

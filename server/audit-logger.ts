@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { notifyUser } from "./notifications";
 
 export interface AuditLogOptions {
 	tenantId: string;
@@ -33,7 +34,19 @@ export function auditLog(opts: AuditLogOptions): void {
 			opts.userAgent || null,
 			opts.details ? JSON.stringify(opts.details) : null
 		);
-	} catch (e) {
-		console.error("[audit-logger] Failed to log audit entry:", e);
+	// Send notification for security-critical actions
+	if (opts.action.startsWith("security.") || opts.resourceType === "auth") {
+		notifyUser({
+			tenantId: opts.tenantId,
+			userId: opts.userId,
+			type: "security",
+			severity: "warning",
+			title: `Säkerhetshändelse: ${opts.action}`,
+			message: opts.summary || `${opts.action} on ${opts.resourceType}`,
+			link: "/admin/audit-logs",
+		}).catch(() => {});
 	}
+  } catch (e) {
+    console.error("[audit-logger] Failed to log audit entry:", e);
+  }
 }

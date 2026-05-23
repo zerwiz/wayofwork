@@ -1,4 +1,7 @@
-# Skill: incident-reporting
+---
+name: incident-reporting
+description: Formal incident report guidelines for Swedish Arbetsmiljöverket compliance — Tillbud, Olycka, and Allvarligt
+---
 
 <description>
 Guidelines for creating formal incident reports (Tillbud/Olycka) in compliance with the Swedish Work Environment Authority (Arbetsmiljöverket).

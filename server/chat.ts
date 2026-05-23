@@ -1,5 +1,5 @@
 import { parseStreamUsage, type StreamTokenUsage } from "./chat-usage";
-import { resolveOllamaHost, resolveOllamaModelDefault } from "./pi-ollama-env";
+import { resolveWoAiHost, resolveWoAiModelDefault } from "./wo-ai-env";
 
 export type ChatRole = "system" | "user" | "assistant" | "tool";
 
@@ -195,9 +195,10 @@ export async function streamChatCompletion(
 		};
 	}
 
-	/* ollama OpenAI-compatible — host/model defaults align with Pi `.env` + `agent/settings.json` (see pi-ollama-env). */
-	const host = (runtime?.ollamaHost || resolveOllamaHost()).replace(/\/$/, "");
-	const model = runtime?.ollamaModel?.trim() || resolveOllamaModelDefault();
+	/* ollama OpenAI-compatible — host/model defaults align with Wo AI `.env` + `agent/settings.json` (see wo-ai-env). */
+	const host = (runtime?.ollamaHost || resolveWoAiHost()).replace(/\/$/, "");
+	const model = runtime?.ollamaModel?.trim() || resolveWoAiModelDefault();
+
 	onLog("INFO", "ollama", `${host} model=${model}`);
 	const url = `${host}/v1/chat/completions`;
 	const apiMessages = messagesToOpenAIFormat(messages);

@@ -6,7 +6,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, normalize } from "node:path";
 
-import type { ClawWhatsAppStatusV1 } from "../shared/claw-whatsapp-status.ts";
+import type { ClawWhatsAppStatusV1 } from "../shared/claw-whatsapp-status";
 import { getClawDotDirAbs, getClawHostRepoRoot } from "./claw-workspace-root";
 import { listWorkspaceFolders } from "./workspace-state";
 

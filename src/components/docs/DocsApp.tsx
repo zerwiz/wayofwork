@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useEffect, type CSSProperties } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef, type CSSProperties } from "react";
 import { FolderOpen, MessageSquare, Eye, FileText, FileCheck, FileWarning, FileClock, CheckCircle, AlertCircle, Clock, Send } from "lucide-react";
 import type { TreeNode } from "../../types/tree";
 import type { ChatRow, ChatSessionMode, LogRow } from "../../hooks/useWayOfPiSession";
@@ -87,6 +87,14 @@ export function DocsApp({
 	const [showDocBrowser, setShowDocBrowser] = useState(false);
 	const [selectedContent, setSelectedContent] = useState<string | null>(null);
 	const [contentLoading, setContentLoading] = useState(false);
+	const docsAgentRef = useRef(false);
+
+	useEffect(() => {
+		if (connected && !docsAgentRef.current) {
+			onChatAgentChange("docs");
+			docsAgentRef.current = true;
+		}
+	}, [connected, onChatAgentChange]);
 
 	// Resizing state
 	const [chatWidth, setChatWidth] = useState(400);

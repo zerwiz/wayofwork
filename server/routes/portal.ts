@@ -1,8 +1,47 @@
+import { stat, readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { json } from "../utils";
 import { db } from "../db";
+import { auditLog } from "../audit-logger";
+import { getPrimaryWorkspacePath } from "../workspace-state";
 import type { Router } from "../router";
 
 export function registerPortalRoutes(router: Router) {
+	router.get("/api/portal/download/:fileId", async (_req, params, auth) => {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const fileId = params.fileId;
+		if (!fileId) return json({ error: "File ID required" }, 400);
+		try {
+			const file = db.query("SELECT * FROM workspace_files WHERE id = ? AND tenant_id = ?")
+				.get(fileId, auth.tenantId) as any;
+			if (!file) return json({ error: "File not found" }, 404);
+			const workspaceRoot = getPrimaryWorkspacePath(auth.tenantId);
+			const safePath = resolve(workspaceRoot, file.file_path);
+			if (!safePath.startsWith(workspaceRoot)) return json({ error: "Invalid file path" }, 403);
+			const fileInfo = await stat(safePath);
+			if (!fileInfo.isFile()) return json({ error: "File not found on disk" }, 404);
+			db.query("UPDATE workspace_files SET download_count = download_count + 1 WHERE id = ?").run(fileId);
+			auditLog({
+				tenantId: auth.tenantId,
+				userId: auth.userId,
+				action: "FILE_DOWNLOAD",
+				resourceType: "file",
+				resourceId: fileId,
+				details: { path: file.file_path }
+			});
+			const fileContent = await readFile(safePath);
+			return new Response(fileContent, {
+				headers: {
+					"Content-Type": file.mime_type || "application/octet-stream",
+					"Content-Disposition": `attachment; filename="${file.file_path.split("/").pop()}"`,
+					"Content-Length": fileInfo.size.toString(),
+				}
+			});
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to download file", details: message }, 500);
+		}
+	});
 	router.get("/api/portal/me", async (_req, _params, auth) => {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
 		const user = db.query("SELECT id, username, role, tenant_id FROM users WHERE id = ?").get(auth.userId) as any;
@@ -54,8 +93,9 @@ export function registerPortalRoutes(router: Router) {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
 		try {
 			const isLeader = auth.role === "LEADER" || auth.role === "ADMIN" || auth.role === "SUPER_ADMIN";
+			let tasks: any[];
 			if (isLeader) {
-				const tasks = db.query(`
+				tasks = db.query(`
 					SELECT t.*, u.username as assigned_name, p.name as project_name
 					FROM tasks t
 					LEFT JOIN users u ON t.assigned_to = u.id
@@ -63,17 +103,26 @@ export function registerPortalRoutes(router: Router) {
 					WHERE t.tenant_id = ?
 					ORDER BY t.due_date ASC, t.created_at DESC
 				`).all(auth.tenantId) as any[];
-				return json(tasks || []);
 			} else {
-				const tasks = db.query(`
+				tasks = db.query(`
 					SELECT t.*, p.name as project_name
 					FROM tasks t
 					LEFT JOIN projects p ON t.project_id = p.id
 					WHERE t.tenant_id = ? AND t.assigned_to = ?
 					ORDER BY t.due_date ASC, t.created_at DESC
 				`).all(auth.tenantId, auth.userId) as any[];
-				return json(tasks || []);
 			}
+
+			// Economics shield (WOW-016): hide estimated_hours from workers and leaders
+			const isSuper = auth.role === "ADMIN" || auth.role === "SUPER_ADMIN";
+			if (!isSuper) {
+				tasks = tasks.map(t => {
+					const { estimated_hours, ...rest } = t;
+					return rest;
+				});
+			}
+
+			return json(tasks || []);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ error: "Failed to fetch tasks", details: message }, 500);

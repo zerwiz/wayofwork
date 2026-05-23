@@ -3,8 +3,8 @@
  * **`executeClawAutomation`** → **`runPiChatTurn`** (**`agent-runtime`**, same as Chat).
  * Enable with **`WOP_CLAW_SCHEDULER=1`** (or **`true`** / **`on`**).
  */
-import { cronMatchesInstant } from "../shared/claw-schedule-cron.ts";
-import type { ClawSchedule } from "../shared/claw-schedules-types.ts";
+import { cronMatchesInstant } from "../shared/claw-schedule-cron";
+import type { ClawSchedule } from "../shared/claw-schedules-types";
 import { executeClawAutomation } from "./claw-schedule-executor";
 import {
 	patchClawScheduleRun,
@@ -80,7 +80,7 @@ async function tick(): Promise<void> {
 		await patchClawScheduleRun(s.id, {
 			lastRun: iso,
 			lastResult: r.ok ? "success" : "error",
-			lastError: r.ok ? null : r.error,
+			lastError: r.ok ? null : (r as any).error,
 		});
 	}
 }

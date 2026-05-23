@@ -15,6 +15,7 @@ db.run(`
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     slug TEXT UNIQUE,
+    subscription_tier TEXT DEFAULT 'free',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
@@ -720,5 +721,54 @@ try {
     applyActiveProvider(raw);
   }
 } catch { /* non-fatal */ }
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS bug_reports (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    username TEXT,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    description TEXT NOT NULL,
+    expected_behavior TEXT,
+    actual_behavior TEXT,
+    steps_to_reproduce TEXT,
+    environment TEXT,
+    screenshots TEXT,
+    video_url TEXT,
+    reproduction_rate TEXT DEFAULT 'often',
+    is_security_issue INTEGER DEFAULT 0,
+    is_duplicate_of TEXT,
+    status TEXT DEFAULT 'pending',
+    assigned_to TEXT,
+    status_reason TEXT,
+    comments TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    acknowledged_at TEXT,
+    status_changed_at TEXT,
+    fixed_in_version TEXT,
+    closed_by TEXT,
+    closed_at TEXT,
+    notifications_count INTEGER DEFAULT 0,
+    upvotes INTEGER DEFAULT 0,
+    labels TEXT,
+    tenant_id TEXT NOT NULL,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS tenant_configs (
+    tenant_id TEXT NOT NULL,
+    config_key TEXT NOT NULL,
+    config_value TEXT NOT NULL,
+    updated_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (tenant_id, config_key),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+  )
+`);
 
 export { db };

@@ -14,6 +14,7 @@ interface Tenant {
 interface SystemStats {
   tenants: number;
   users: number;
+  clients: number;
   projects: number;
   tasks: number;
   time_entries: number;
@@ -40,7 +41,7 @@ interface User {
 export default function SuperAdminDashboard({ uiMode, setUiMode }: { uiMode: string; setUiMode: (m: string) => void }) {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [stats, setStats] = useState<SystemStats>({ tenants: 0, users: 0, projects: 0, tasks: 0, time_entries: 0 });
+  const [stats, setStats] = useState<SystemStats>({ tenants: 0, users: 0, clients: 0, projects: 0, tasks: 0, time_entries: 0 });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"tenants" | "users" | "stats">("tenants");
   const [showCreateTenant, setShowCreateTenant] = useState(false);
@@ -155,12 +156,11 @@ export default function SuperAdminDashboard({ uiMode, setUiMode }: { uiMode: str
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-6 gap-4 p-6">
         {[
           { label: "Tenants", value: stats.tenants, color: "border-[#ea580c]" },
           { label: "Users", value: stats.users, color: "border-blue-500" },
-          { label: "Clients", value: (stats as any).clients || 0, color: "border-[#ea580c]" },
+          { label: "Clients", value: stats.clients || 0, color: "border-[#ea580c]" },
           { label: "Projects", value: stats.projects, color: "border-green-500" },
           { label: "Tasks", value: stats.tasks, color: "border-yellow-500" },
           { label: "Time Entries", value: stats.time_entries, color: "border-purple-500" },

@@ -11,8 +11,8 @@ import type {
 	ClawScheduleRunEntry,
 	ClawScheduleRunsFile,
 	ClawSchedulesDefinitionsFile,
-} from "../shared/claw-schedules-types.ts";
-import { CLAW_SCHEDULES_FILE_VERSION } from "../shared/claw-schedules-types.ts";
+} from "../shared/claw-schedules-types";
+import { CLAW_SCHEDULES_FILE_VERSION } from "../shared/claw-schedules-types";
 import { getClawDotDirAbs } from "./claw-workspace-root";
 
 function scheduleDir(): string {

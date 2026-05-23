@@ -225,7 +225,7 @@ export default function ClientDashboard({ uiMode, setUiMode, appHeader }: { uiMo
             </button>
           </div>
           <p className="mt-4 text-center text-xs text-[#585858]">
-            Demo: Client ID "Demo", PIN "1234"
+            Demo: Client ID "byggab" or "demo-client", PIN "1234"
           </p>
           <button
             onClick={() => window.location.pathname = "/"}

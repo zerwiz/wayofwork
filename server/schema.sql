@@ -280,7 +280,45 @@ VALUES
     ('task_1', 'tenant_demo', 'proj_1', 'Pour Foundation', 'user_worker1', 'in_progress', 40),
     ('task_2', 'tenant_demo', 'proj_1', 'Install Rebar', 'user_worker2', 'draft', 20);
 
--- Insert Sample Time Entries
-INSERT OR IGNORE INTO time_entries (id, tenant_id, user_id, project_id, task_id, date, hours, status)
-VALUES
-    ('time_1', 'tenant_demo', 'user_worker1', 'proj_1', 'task_1', '2026-05-05', 4.5, 'pending');
+CREATE TABLE IF NOT EXISTS bug_reports (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  username TEXT,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL,
+  severity TEXT NOT NULL,
+  description TEXT NOT NULL,
+  expected_behavior TEXT,
+  actual_behavior TEXT,
+  steps_to_reproduce TEXT,
+  environment TEXT,
+  screenshots TEXT,
+  video_url TEXT,
+  reproduction_rate TEXT DEFAULT 'often',
+  is_security_issue INTEGER DEFAULT 0,
+  is_duplicate_of TEXT,
+  status TEXT DEFAULT 'pending',
+  assigned_to TEXT,
+  status_reason TEXT,
+  comments TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  acknowledged_at TEXT,
+  status_changed_at TEXT,
+  fixed_in_version TEXT,
+  closed_by TEXT,
+  closed_at TEXT,
+  notifications_count INTEGER DEFAULT 0,
+  upvotes INTEGER DEFAULT 0,
+  labels TEXT,
+  tenant_id TEXT NOT NULL,
+  FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE INDEX idx_bug_user_id ON bug_reports(user_id);
+CREATE INDEX idx_bug_status ON bug_reports(status);
+CREATE INDEX idx_bug_category ON bug_reports(category);
+CREATE INDEX idx_bug_severity ON bug_reports(severity);
+CREATE INDEX idx_bug_assigned ON bug_reports(assigned_to) WHERE assigned_to IS NOT NULL;
+CREATE INDEX idx_bug_created ON bug_reports(created_at DESC);

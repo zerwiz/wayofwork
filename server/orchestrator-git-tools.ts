@@ -269,7 +269,7 @@ export async function orchestratorToolGitAdd(args: { paths?: string[]; all?: boo
 	const all = args.all === true;
 	const pathsIn = Array.isArray(args.paths) ? args.paths : [];
 	if (!all && pathsIn.length === 0) {
-		return "git_add: pass **all**: true to stage everything, or **paths**: [\"src/foo.ts\", …] relative to the workspace.";
+		return 'git_add: pass **all**: true to stage everything, or **paths**: ["src/foo", …] relative to the workspace.';
 	}
 	const rest: string[] = ["add", "--"];
 	if (all) {

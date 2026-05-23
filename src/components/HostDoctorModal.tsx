@@ -98,30 +98,30 @@ function normalizeChecks(d: HostDoctorDiagnostics | null): DoctorCheck[] {
 /** When the server omits **`checks[]`** (older builds), derive a short list from the JSON blob. */
 function inferFallbackChecks(d: HostDoctorDiagnostics): DoctorCheck[] {
 	const out: DoctorCheck[] = [];
-	const prov = String(d.llm?.provider ?? d.env?.WOP_LLM_PROVIDER ?? "ollama").toLowerCase();
-	const ollama = d.llm?.ollama;
-	if (prov === "ollama" && ollama && typeof ollama === "object") {
+	const prov = String(d.llm?.provider ?? d.env?.WOP_LLM_PROVIDER ?? "wo-ai").toLowerCase();
+	const ollama = d.llm?.woAi || d.llm?.ollama;
+	if ((prov === "wo-ai" || prov === "ollama") && ollama && typeof ollama === "object") {
 		if (ollama.skipped === true) {
 			out.push({
-				id: "ollama",
-				title: "Ollama API",
+				id: "wo_ai",
+				title: "Wo AI (local) API",
 				status: "skip",
 				summary: String(ollama.reason ?? "skipped"),
 			});
 		} else if (ollama.ok === false) {
 			out.push({
-				id: "ollama",
-				title: "Ollama API",
+				id: "wo_ai",
+				title: "Wo AI (local) API",
 				status: "error",
 				summary: String(ollama.error ?? "unreachable"),
-				hint: "Start Ollama or fix OLLAMA_BASE_URL / host resolution.",
+				hint: "Start the Wo AI daemon (Ollama) or fix WOP_AI_BASE_URL / host resolution.",
 			});
 		} else if (ollama.ok === true) {
 			const om = ollama as Record<string, unknown>;
 			const n = typeof om.modelCount === "number" ? om.modelCount : 0;
 			out.push({
-				id: "ollama",
-				title: "Ollama API",
+				id: "wo_ai",
+				title: "Wo AI (local) API",
 				status: "ok",
 				summary: `${n} model tag(s) listed`,
 				hint: "Tags endpoint only — see default model row when present.",
@@ -130,15 +130,15 @@ function inferFallbackChecks(d: HostDoctorDiagnostics): DoctorCheck[] {
 			const present = om.configuredModelPresent === true;
 			if (configured) {
 				out.push({
-					id: "ollama_default_model",
-					title: "Default Ollama model (server)",
+					id: "wo_ai_default_model",
+					title: "Default Wo AI model (server)",
 					status: present ? "ok" : "error",
 					summary: present
 						? `Resolved id “${configured}” matches a local pull.`
-						: `Resolved id “${configured}” is not in the local ollama list.`,
+						: `Resolved id “${configured}” is not in the local Wo AI list.`,
 					hint: present
 						? undefined
-						: "Set OLLAMA_MODEL or `agent/settings.json` defaultModel to an id from `ollama list`, or `ollama pull …`.",
+						: "Set WOP_AI_MODEL or `agent/settings.json` defaultModel to an id from `ollama list`, or `ollama pull …`.",
 				});
 			}
 		}
@@ -155,13 +155,13 @@ function inferFallbackChecks(d: HostDoctorDiagnostics): DoctorCheck[] {
 			});
 		}
 	}
-	if (prov !== "ollama" && prov !== "openrouter") {
+	if (prov !== "wo-ai" && prov !== "ollama" && prov !== "openrouter") {
 		out.push({
 			id: "llm_provider",
 			title: "LLM provider",
 			status: "warn",
 			summary: `WOP_LLM_PROVIDER=${prov}`,
-			hint: "Web chat expects ollama or openrouter.",
+			hint: "Web chat expects wo-ai or openrouter.",
 		});
 	}
 	const pi = d.piBinary as

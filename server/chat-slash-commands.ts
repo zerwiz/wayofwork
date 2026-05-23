@@ -5,7 +5,7 @@
 
 import { getAgentBodyByName, loadWorkspaceAgents } from "./agents";
 import { fetchOllamaTags, isValidOllamaModelId, isValidOpenRouterModelId } from "./llm-models";
-import { resolveOllamaHost, resolveOllamaModelDefault } from "./pi-ollama-env";
+import { resolveWoAiHost, resolveWoAiModelDefault } from "./wo-ai-env";
 import type { ChatSessionMode } from "./session-prompts";
 
 export type ChatSlashMutation = {
@@ -49,14 +49,14 @@ const PLAN_INTERVIEW_ASSISTANT_REPLY = [
 ].join("\n");
 
 const WEB_CHAT_COMMANDS = [
-	"`/help` — this list (add `all` for Pi TUI pointer).",
-	"`/models` — list Ollama models (or OpenRouter note + current id).",
+	"`/help` — this list (add `all` for command reference pointer).",
+	"`/models` — list Wo AI models (or OpenRouter note + current id).",
 	"`/model <id>` — set session model (same as the model picker; validated).",
 	"`/plan` / `/build` — switch session system prompt (same as the toolbar: Plan = planner + `plans/PLAN-*.md`; Build = Orchestrator when no agent + `WOP_SYSTEM_PROMPT` if set).",
 	"`/plan-interview` — structured headings to fill before a big plan.",
 	"`/agent` — list workspace agents; `/agent <name>` or `/system <name>` — persona (merged system prompt).",
-	"`/clear` — clear this tab’s transcript (Pi-style; session file rewritten).",
-	"`/reload` — what reload does in Pi vs this shell (informational).",
+	"`/clear` — clear this tab’s transcript (session file rewritten).",
+	"`/reload` — re-scanned agents and skills from `.wo/agents/` and `.wo/skills/`.",
 ].join("\n");
 
 function parseSlashLine(trimmed: string): { cmd: string; rest: string } | null {
@@ -71,7 +71,7 @@ function parseSlashLine(trimmed: string): { cmd: string; rest: string } | null {
 }
 
 async function formatModelsList(provider: string): Promise<string> {
-	const envDefaultOllama = resolveOllamaModelDefault();
+	const envDefaultOllama = resolveWoAiModelDefault();
 	const envDefaultOpenrouter = process.env.OPENROUTER_MODEL || "openrouter/auto";
 	const p = provider.toLowerCase();
 	if (p === "openrouter") {
@@ -84,19 +84,19 @@ async function formatModelsList(provider: string): Promise<string> {
 			"Listing all OpenRouter models requires an API catalog call — use the **AI Brains** / model picker in the shell, or see https://openrouter.ai/models",
 		].join("\n");
 	}
-	if (p !== "ollama") {
-		return `Current **WOP_LLM_PROVIDER** is \`${provider}\` — web chat only lists models for **ollama** or **openrouter**.`;
+	if (p !== "wo-ai" && p !== "ollama") {
+		return `Current **WOP_LLM_PROVIDER** is \`${provider}\` — web chat only lists models for **wo-ai** or **openrouter**.`;
 	}
-	const host = resolveOllamaHost();
+	const host = resolveWoAiHost();
 	const tags = await fetchOllamaTags(host);
 	if (!tags.ok) {
-		return [`Could not reach Ollama at \`${host}\`: ${tags.error}`, "", `Env default: \`${envDefaultOllama}\``].join("\n");
+		return [`Could not reach Wo AI at \`${host}\`: ${(tags as any).error}`, "", `Env default: \`${envDefaultOllama}\``].join("\n");
 	}
 	const names = tags.models.map((m) => m.name).filter(Boolean);
 	if (names.length === 0) {
-		return [`No models reported by Ollama at \`${host}\`.`, "", `Env default: \`${envDefaultOllama}\``].join("\n");
+		return [`No models reported by Wo AI at \`${host}\`.`, "", `Env default: \`${envDefaultOllama}\``].join("\n");
 	}
-	const lines = ["**Ollama models** (`ollama list` / tags):", "", ...names.map((n) => `- \`${n}\``), "", `Env default: \`${envDefaultOllama}\``];
+	const lines = ["**Wo AI models** (`ollama list` / tags):", "", ...names.map((n) => `- \`${n}\``), "", `Env default: \`${envDefaultOllama}\``];
 	return lines.join("\n");
 }
 
@@ -178,18 +178,18 @@ export async function evalChatSlashCommand(
 					mutation: { setModelId: id },
 				};
 			}
-			if (p !== "ollama") {
+			if (p !== "wo-ai" && p !== "ollama") {
 				return {
 					handled: true,
-					assistantText: `Cannot set model while **WOP_LLM_PROVIDER** is \`${env.provider}\` (only ollama / openrouter supported in web chat).`,
+					assistantText: `Cannot set model while **WOP_LLM_PROVIDER** is \`${env.provider}\` (only wo-ai / openrouter supported in web chat).`,
 				};
 			}
 			if (!isValidOllamaModelId(id)) {
-				return { handled: true, assistantText: `Invalid Ollama model id: \`${id}\`` };
+				return { handled: true, assistantText: `Invalid Wo AI model id: \`${id}\`` };
 			}
 			return {
 				handled: true,
-				assistantText: `Session model set to **Ollama** \`${id}\`.`,
+				assistantText: `Session model set to **Wo AI** \`${id}\`.`,
 				mutation: { setModelId: id },
 			};
 		}

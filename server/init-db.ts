@@ -31,4 +31,4 @@ console.log("Tables created successfully");
 
 // Verify tables
 const tables = db.query("SELECT name FROM sqlite_master WHERE type='table'").all();
-console.log("Tables:", tables.map(t => t.name).join(", "));
+console.log("Tables:", tables.map((t: any) => t.name).join(", "));

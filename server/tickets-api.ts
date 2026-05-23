@@ -1,6 +1,7 @@
 import { db } from "./db";
 import type { Ticket, TimeBlock, TimeSession, PriceList } from "../shared/ticket-types";
 import { auditLog } from "./audit-logger";
+import { type AuthInfo } from "./auth";
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -8,19 +9,12 @@ function json(data: unknown, status = 200) {
     headers: { "Content-Type": "application/json" },
   });
 }
-
 function uuid() {
   return crypto.randomUUID();
 }
 
 function now() {
   return new Date().toISOString();
-}
-
-export interface AuthInfo {
-  userId: string;
-  tenantId: string;
-  role: string;
 }
 
 function extractId(path: string, prefix: string): string | null {
@@ -44,7 +38,7 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
     const id = uuid();
     db.run(
       "INSERT INTO time_sessions (id, tenant_id, user_id, project_id, check_in, notes, location_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [id, userId, userId, body?.project_id ?? null, now(), body?.notes ?? null, body?.location_json ?? null]
+      [id, tenantId, userId, body?.project_id ?? null, now(), body?.notes ?? null, body?.location_json ?? null]
     );
     return json({ ok: true, id });
   }
@@ -102,7 +96,7 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
     db.run(
       `INSERT INTO tickets (id, tenant_id, project_id, title, description, category, status, priority, created_by, materials_json, photos_json, cost_estimate)
        VALUES (?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?)`,
-      [id, tenantId, b?.project_id ?? null, b?.title, b?.description ?? null, b?.category ?? "tillägg", b?.priority ?? "medium", userId, b?.materials_json ?? "[]", b?.photos_json ?? "[]", costEstimate]
+      [id, tenantId, b?.project_id ?? null, b?.title, b?.description ?? null, b?.category ?? "tillägg", b?.priority ?? "medium", userId, JSON.stringify(b?.materials_json ?? []), JSON.stringify(b?.photos_json ?? []), costEstimate]
     );
     const ticket = db.query("SELECT * FROM tickets WHERE id = ?").get(id) as any;
     if (role === "WORKER" || role === "user" || role === "LEADER") {
@@ -131,7 +125,7 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
     if (!existing) return json({ error: "Not found" }, 404);
     db.run(
       `UPDATE tickets SET title = ?, description = ?, category = ?, priority = ?, project_id = ?, materials_json = ?, photos_json = ?, updated_at = ? WHERE id = ?`,
-      [b?.title ?? existing.title, b?.description ?? existing.description, b?.category ?? existing.category, b?.priority ?? existing.priority, b?.project_id ?? existing.project_id, b?.materials_json ?? existing.materials_json, b?.photos_json ?? existing.photos_json, now(), ticketGetMatch[1]]
+      [b?.title ?? existing.title, b?.description ?? existing.description, b?.category ?? existing.category, b?.priority ?? existing.priority, b?.project_id ?? existing.project_id, JSON.stringify(b?.materials_json ?? existing.materials_json), JSON.stringify(b?.photos_json ?? existing.photos_json), now(), ticketGetMatch[1]]
     );
     const updated = db.query("SELECT * FROM tickets WHERE id = ?").get(ticketGetMatch[1]);
     return json(updated);
@@ -289,23 +283,28 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
 
   // GET /api/price-lists
   if (p === "/api/price-lists" && method === "GET") {
-    if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
-      auditLog({
-        tenantId,
-        userId,
-        action: "ACCESS_DENIED",
-        resourceType: "price_list",
-        summary: "Non-admin attempted to access price lists"
-      });
-      return json({ error: "Forbidden" }, 403);
+    // ALLOW ALL AUTHENTICATED USERS to READ price lists (agents need this)
+    // Admin-only: admin role for CREATE/UPDATE/DELETE operations
+    
+    let isAdmin = false;
+    if (role === "ADMIN" || role === "SUPER_ADMIN") {
+      isAdmin = true;
     }
+    
+    // Log for tracking
+    const action = isAdmin ? "VIEW_ECONOMICS" : "READ_PRICE_LISTS";
+    const summary = isAdmin
+      ? "Admin viewed price lists"
+      : `Agent/${role} read price lists for estimation`;
+    
     auditLog({
       tenantId,
       userId,
-      action: "VIEW_ECONOMICS",
+      action,
       resourceType: "price_list",
-      summary: "Admin viewed price lists"
+      summary
     });
+    
     const lists = db.query("SELECT * FROM price_lists WHERE tenant_id = ? AND active = 1 ORDER BY name").all(tenantId);
     return json(lists);
   }
@@ -316,7 +315,7 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
     const b = await readBody<Partial<PriceList>>();
     const id = uuid();
     db.run("INSERT INTO price_lists (id, tenant_id, name, items_json) VALUES (?, ?, ?, ?)",
-      [id, tenantId, b?.name, b?.items_json ?? "[]"]);
+      [id, tenantId, b?.name, JSON.stringify(b?.items_json ?? [])]);
     const list = db.query("SELECT * FROM price_lists WHERE id = ?").get(id);
     return json(list, 201);
   }
@@ -329,7 +328,7 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
     const existing = db.query("SELECT * FROM price_lists WHERE id = ? AND tenant_id = ?").get(plMatch[1], tenantId) as PriceList | undefined;
     if (!existing) return json({ error: "Not found" }, 404);
     db.run("UPDATE price_lists SET name = ?, items_json = ?, active = ?, valid_from = ?, valid_to = ? WHERE id = ?",
-      [b?.name ?? existing.name, b?.items_json ?? existing.items_json, b?.active !== undefined ? (b.active ? 1 : 0) : existing.active ? 1 : 0, b?.valid_from ?? existing.valid_from, b?.valid_to ?? existing.valid_to, plMatch[1]]);
+      [b?.name ?? existing.name, JSON.stringify(b?.items_json ?? existing.items_json), b?.active !== undefined ? (b.active ? 1 : 0) : existing.active ? 1 : 0, b?.valid_from ?? existing.valid_from, b?.valid_to ?? existing.valid_to, plMatch[1]]);
     return json({ ok: true });
   }
 
@@ -381,9 +380,9 @@ export async function handleTicketApi(p: string, method: string, auth: AuthInfo 
   // GET /api/reports/ticket-status
   if (p === "/api/reports/ticket-status" && method === "GET") {
     const counts = db.query(
-      "SELECT status, COUNT(*) as count FROM tickets WHERE tenant_id = ? GROUP BY status", [tenantId]
-    ).all() as Array<{ status: string; count: number }>;
-    const total = db.query("SELECT COUNT(*) as total FROM tickets WHERE tenant_id = ?", [tenantId]).get() as { total: number };
+      "SELECT status, COUNT(*) as count FROM tickets WHERE tenant_id = ? GROUP BY status"
+    ).all(tenantId) as Array<{ status: string; count: number }>;
+    const total = db.query("SELECT COUNT(*) as total FROM tickets WHERE tenant_id = ?").get(tenantId) as { total: number };
     return json({ counts, total: total.total });
   }
 

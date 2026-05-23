@@ -4,6 +4,7 @@
     "cancel": "Avbryt",
     "delete": "Ta bort",
     "edit": "Redigera",
+    "refresh": "Uppdatera",
     "close": "Stäng",
     "loading": "Laddar...",
     "error": "Ett fel uppstod",
@@ -42,5 +43,23 @@
     "taplanner": "TA-Planer",
     "help": "Hjälp",
     "settings": "Inställningar"
+  },
+  "approvals": {
+    "title": "Godkännandekö",
+    "pending": "väntande",
+    "history": "Historik",
+    "approve": "Godkänn",
+    "reject": "Avvisa",
+    "confirm": "Bekräfta",
+    "cancel": "Avbryt",
+    "reason_placeholder": "Anledning till avvisning...",
+    "no_pending": "Inga väntande godkännanden",
+    "current": "Nuvarande",
+    "proposed": "Föreslagen",
+    "diff": "Diff",
+    "hide": "Dölj",
+    "suggested_by": "Föreslagen av",
+    "assigned_to_me": "Tilldelad mig",
+    "assigned_to_other": "Tilldelad annan admin"
   }
 }

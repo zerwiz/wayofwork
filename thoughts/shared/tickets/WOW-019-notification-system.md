@@ -8,11 +8,19 @@
 
 ## 📋 Description
 Implement an in-app notification system for:
-1. **Change Requests** — Admin approvals for AI-created tasks, offers, project changes
+1. **Change Requests (WOW-010)** — Admin approvals for AI-created tasks, offers, project changes
 2. **System Events** — New price list valid, project status changes, deadlines
-3. **User Mentions** — @username in offers/updates
+3. **User Mentions** — @username in offers/updates or web chat
 4. **Alerts** — Pin validation failed, API limits reached, connection issues
-5. **Announcements** — Admin broadcasts, maintenance notices
+5. **Security & Audit (WOW-016)** — Admin notified of "ACCESS_DENIED" events (worker trying to access other projects)
+6. **Git Operations (WOW-013)** — Daily backup success/failure, version save confirmations
+7. **AI Agent Tasks (WOW-016)** — Notification when "Morning Dispatch" or "Evening Reconciliation" is complete
+8. **TA-Planning (WOW-017)** — TA-Plan validation results, approval from Trafikverket (proxy)
+9. **Weather & Safety** — Extreme weather alerts (affecting TA-plans or site work), safety inspection reminders
+10. **Procurement (WOW-018)** — Low stock alerts for common materials, delivery confirmations
+11. **ID06 & Compliance** — Expiry alerts for worker certifications or company licenses
+12. **Chat Handoff** — Notification when one agent dispatches a task to another and it completes
+13. **Announcements** — Admin broadcasts, maintenance notices
 
 ---
 
@@ -20,6 +28,7 @@ Implement an in-app notification system for:
 - Keep users informed of urgent/approved/rejected changes
 - Reduce reliance on email for time-sensitive updates
 - Provide real-time feedback for AI operations
+- Provide a clear **Notification Indicator** (badge) in both Technical and Simple UIs
 - Enable filtering/grouping by type
 - Support desktop & mobile views
 
@@ -35,7 +44,7 @@ Implement an in-app notification system for:
 // Structure:
 {
   id: "notif-001",
-  type: "approval" | "deadline" | "mention" | "alert" | "announcement",
+  type: "approval" | "deadline" | "mention" | "alert" | "announcement" | "security" | "weather",
   severity: "info" | "success" | "warning" | "error",
   title: "Anpassning av Uppgift #1234",
   message: "AI-föreslagen uppgiftskategori... godkänd",
@@ -124,12 +133,16 @@ notifyUser(creatorId, {
 ### Phase 1: MVP (localStorage)
 - [ ] localStorage storage
 - [ ] Toast notifications on creation
-- [ ] Badge count in Navigation
+- [ ] **Badge count in Navigation** (MenuBar and SimpleNavRail indicator)
 - [ ] Inbox view in Settings
 - [ ] Filter by type/severity
 - [ ] Mark as read functionality
 - [ ] Admin API endpoint
 - [ ] Integration with pending-changes
+- [ ] **Integration with Audit Logger** (log security violations as high-severity notifications)
+- [ ] **Integration with Git Backend** (log backup results)
+- [ ] **Integration with Weather Service** (extreme weather triggers)
+- [ ] **Integration with ID06/Supply Agents** (certification and material alerts)
 
 ### Phase 2: Real-time (WebSocket)
 - [ ] WebSocket push notifications
@@ -330,6 +343,7 @@ Ticket renumbered from 000 → 019. Related bug report system will be WOW-020 fo
 |---------|------|-------------------------|--------|
 | 1.0 | 2026-01-16 | Initial spec | Developer |
 | 1.1 | 2026-01-16 | Renumbered to 019 | System |
+| 1.2 | 2026-05-22 | Expanded categories and UI indicator | AI |
 
 ---
 

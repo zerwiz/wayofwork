@@ -375,7 +375,8 @@ export async function syncWorkspaceIndexDoc(id: string): Promise<WorkspaceIndexD
 		e.status = "ok";
 		e.fetchedAt = new Date().toISOString();
 		e.excerptChars = text.length;
-		e.title = parsed.hostname + parsed.pathname;
+		const urlObj = new URL(e.url);
+		e.title = urlObj.hostname + urlObj.pathname;
 		e.error = undefined;
 		docs.entries[i] = e;
 		await writeDocs(docs);

@@ -252,3 +252,13 @@ export async function getAgentBodyByName(agentName: string, tenantId: string = "
 	}
 	return null;
 }
+
+export async function resolveAgentSkillsFromName(agentName: string, tenantId: string): Promise<string | null> {
+	try {
+		const { agents } = await loadWorkspaceAgents(tenantId);
+		const hit = agents.find((a) => a.name.toLowerCase() === agentName.trim().toLowerCase());
+		return hit?.skills ?? null;
+	} catch {
+		return null;
+	}
+}

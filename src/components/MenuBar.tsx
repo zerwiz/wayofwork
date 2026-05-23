@@ -13,6 +13,7 @@ import {
 	Box,
 } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useNotifications } from "../contexts/NotificationContext";
 import type { PiModelConfigPath } from "../constants/piModelConfigPaths";
 import { PI_MODEL_CONFIG_ENTRIES } from "../constants/piModelConfigPaths";
 import type { ServerConfig } from "../hooks/useServerConfig";
@@ -183,6 +184,7 @@ export function MenuBar({
 	/** Simple UI: View → Appearance + workspace views catalog (`.ui-views.json`). */
 	viewSimple?: ViewMenuSimpleOptions | null;
 }) {
+	const { unreadCount } = useNotifications();
 	/** Shared chrome for Technical and Simple layouts (WAY OF PI, mode toggle, menus, search, model). */
 	const menuLabels = [
 		"File",
@@ -2763,8 +2765,7 @@ WAY OF WORK
 												<button
 													type="button"
 													className={menuBtnClass()}
-													title="Opens GET /api/diagnostics in a new tab — workspace roots, WOP_* env, Ollama reachability, Pi binary probe."
-													onClick={() => {
+													title="Opens GET /api/diagnostics in a new tab — workspace roots, WOP_* env, Wo AI reachability, Wo Agent binary probe."													onClick={() => {
 														helpMenu.onOpenHostDoctor();
 														closeMenus();
 													}}
@@ -2835,6 +2836,19 @@ WAY OF WORK
 													}}
 												>
 													View License
+												</button>
+											</li>
+											<li className="my-1 border-t border-[#3c3c3c]" role="separator" />
+											<li>
+												<button
+													type="button"
+													className={menuBtnClass()}
+													onClick={() => {
+														helpMenu.onReportBug();
+														closeMenus();
+													}}
+												>
+													Report a Bug…
 												</button>
 											</li>
 											<li className="my-1 border-t border-[#3c3c3c]" role="separator" />
@@ -3403,6 +3417,19 @@ WAY OF WORK
 					<span className="ml-1 hidden font-mono text-[#858585] lg:inline">⌘K</span>
 				</button>
 
+				<button
+					type="button"
+					className="relative flex h-7 w-7 items-center justify-center rounded-lg text-[#858585] hover:bg-[#3c3c3c] hover:text-[#cccccc] transition-colors"
+					title="Notifications"
+				>
+					<CircleDot size={18} strokeWidth={2} />
+					{unreadCount > 0 ? (
+						<span className="absolute right-0.5 top-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-[#ea580c] text-[8px] font-bold text-white shadow-sm ring-1 ring-[#323233]">
+							{unreadCount > 9 ? "9+" : unreadCount}
+						</span>
+					) : null}
+				</button>
+
 				<div className="relative" ref={modelRef}>
 					<button
 						type="button"
@@ -3463,11 +3490,11 @@ WAY OF WORK
 								) : (
 									<div className="py-4 text-center">
 										<p className="text-[12px] text-[#858585]">
-											{llmModels?.loading ? "Checking Ollama models…" : "No models found."}
+											{llmModels?.loading ? "Checking Wo AI models…" : "No models found."}
 										</p>
 										{!llmModels?.loading && llmModels?.data?.provider === 'ollama' && (
 											<p className="mt-1 text-[10px] text-[#858585]">
-												Ensure Ollama is running on {llmModels.data.ollamaHost}
+												Ensure the Wo AI daemon (Ollama) is running on {llmModels.data.ollamaHost}
 											</p>
 										)}
 									</div>

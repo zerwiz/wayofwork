@@ -3,7 +3,7 @@ import type { json } from "./utils";
 type Handler = (
 	req: Request,
 	params: Record<string, string>,
-	auth: { userId: string; tenantId: string; role: string } | null,
+	auth: { userId: string; tenantId: string; role?: string } | null,
 ) => Response | Promise<Response>;
 
 type Route = {
@@ -49,7 +49,7 @@ export class Router {
 	async handle(
 		url: URL,
 		req: Request,
-		auth: { userId: string; tenantId: string; role: string } | null,
+		auth: { userId: string; tenantId: string; role?: string } | null,
 	): Promise<Response | null> {
 		const p =
 			url.pathname.replace(/\/{2,}/g, "/").replace(/\/+$/, "") || "/";

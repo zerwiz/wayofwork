@@ -1,12 +1,14 @@
 /**
- * Claw Bot Bridge — routes external channel messages (Telegram, WhatsApp) through
- * the Claw AI chat engine and returns responses.
+ * Bot Bridge — routes external channel messages (Telegram, WhatsApp) through
+ * the Orchestrator chat engine and returns responses.
  *
  * Each bot channel has its own poller / webhook that calls into this module.
+ * The Orchestrator decides intent and dispatches to specialized sub-agents
+ * (fakturering, ata, docs, claw, etc.) via the dispatch_agent tool.
  */
-import { runSdkChatTurn } from "./sdk-runtime";
+import { runOrchestratorToolLoop } from "./chat-orchestrator-tools";
+import { composeLeadSystem } from "./session-prompts";
 import { getPrimaryWorkspacePath } from "./workspace-state";
-import { getAgentBodyByName } from "./agents";
 import { appendWoSessionMessage, loadWoSessionMessages } from "./wo-session-jsonl";
 import type { ChatMessage } from "./chat";
 
@@ -28,13 +30,13 @@ export interface BotBridgeResult {
 }
 
 /**
- * Process a user message through the Claw AI and return the response text.
- * Uses the Wo SDK runtime for the full AI experience (tools, agents, etc.).
+ * Process a user message through the Orchestrator and return the response text.
+ * The Orchestrator has access to the dispatch_agent tool and can route to
+ * specialized sub-agents (fakturering, ata, docs, claw, etc.) as needed.
  */
 export async function processBotMessage(
 	opts: BotBridgeOpts,
 ): Promise<BotBridgeResult> {
-	const cwd = getPrimaryWorkspacePath(opts.tenantId);
 	const sessionKey = `channel-${opts.channel}-${opts.channelUserId}`;
 
 	// Persist the user message first
@@ -52,10 +54,23 @@ export async function processBotMessage(
 		history = history.slice(0, -1);
 	}
 
-	const agentBody = await getAgentBodyByName("claw", opts.tenantId);
+	// Build orchestrator system prompt (agentBody=null → ORCHESTRATOR_WEB_SHELL_SYSTEM)
+	const baseSystem = await composeLeadSystem({
+		mode: "build",
+		agentBody: null,
+		agentNameLower: null,
+		agentSkills: null,
+		plannerAgentBody: null,
+		orchestratorToolsEnabled: true,
+		authoritativeRuntime: false,
+		workspaceIndexBoost: null,
+	});
+
+	// Add channel-specific context
 	const systemPrompt = [
-		agentBody ?? `You are **Claw**, an AI assistant running in Way of Work.`,
-		`You are chatting with **${opts.userName}** via **${opts.channel}**.`,
+		baseSystem,
+		"",
+		`**Channel Context:** You are chatting with **${opts.userName}** via **${opts.channel}**.`,
 		`**Tenant:** ${opts.tenantId}`,
 		`**User:** ${opts.userId} (${opts.userName})`,
 		"",
@@ -74,12 +89,16 @@ export async function processBotMessage(
 	let fullResponse = "";
 
 	try {
-		const r = await runSdkChatTurn({
-			cwd,
+		const r = await runOrchestratorToolLoop(
 			messages,
-			onDelta: (s) => { fullResponse += s; },
-			onLog: () => {},
-		});
+			(s) => { fullResponse += s; },
+			(_level, _source, _msg) => {},
+			undefined, // use env defaults for model config
+			{
+				tenantId: opts.tenantId,
+				userId: opts.userId,
+			},
+		);
 
 		if (r.result.ok) {
 			const response = fullResponse.trim();
@@ -88,10 +107,10 @@ export async function processBotMessage(
 			}
 			return { ok: true, response };
 		}
-		if ("aborted" in r.result && r.result.aborted) {
+		if ("aborted" in r.result && (r.result as any).aborted) {
 			return { ok: false, response: "", error: "Response aborted" };
 		}
-		return { ok: false, response: "", error: r.result.error ?? "Unknown error" };
+		return { ok: false, response: "", error: (r.result as any).error ?? "Unknown error" };
 	} catch (e) {
 		const message = e instanceof Error ? e.message : String(e);
 		return { ok: false, response: "", error: message };

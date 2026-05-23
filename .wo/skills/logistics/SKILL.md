@@ -1,4 +1,7 @@
-# Skill: logistics
+---
+name: logistics
+description: Guidelines for managing heavy machinery, tool rentals, and material deliveries in Swedish construction projects
+---
 
 <description>
 Guidelines for managing heavy machinery, tool rentals, and material deliveries in Swedish construction projects.

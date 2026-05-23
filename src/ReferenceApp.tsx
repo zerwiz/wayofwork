@@ -2235,6 +2235,7 @@ description:
   const [installDebuggersModalOpen, setInstallDebuggersModalOpen] =
     useState(false);
   const [mitLicenseModalOpen, setMitLicenseModalOpen] = useState(false);
+  const [bugReportModalOpen, setBugReportModalOpen] = useState(false);
   const [restartServerModalOpen, setRestartServerModalOpen] = useState(false);
   const [howToUseModalOpen, setHowToUseModalOpen] = useState(false);
   const [howToUseInitialSection, setHowToUseInitialSection] =
@@ -2354,6 +2355,7 @@ description:
         window.open(WOP_SUPPORT_HOME_URL, "_blank", "noopener,noreferrer");
       },
       onViewLicense: () => setMitLicenseModalOpen(true),
+      onReportBug: () => setBugReportModalOpen(true),
       canToggleDeveloperTools: Boolean(shell?.toggleDevtools),
       onToggleDeveloperTools: () => {
         void shell?.toggleDevtools?.();

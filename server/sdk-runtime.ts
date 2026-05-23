@@ -14,6 +14,7 @@ import { createAgentSession } from "@wayofmono/wo-agent";
 import type { ChatRuntimeModel, StreamChatResult } from "./chat";
 import type { StreamTokenUsage } from "./chat-usage";
 import { createWebFetchTool } from "./web-tools";
+import { resolveWoAiHost, resolveWoAiModelDefault } from "./wo-ai-env";
 
 /**
  * Options mirroring `RunPiChatTurnOpts` so callers can switch between
@@ -28,6 +29,8 @@ export interface RunSdkChatTurnOpts {
   onLog: (level: "INFO" | "WARN" | "ERROR", source: string, msg: string) => void;
   signal?: AbortSignal;
   runtime?: ChatRuntimeModel;
+  tenantId?: string;
+  userId?: string;
 }
 
 /**
@@ -55,10 +58,11 @@ export async function runSdkChatTurn(
   opts.onLog("INFO", "wo-sdk", "Creating agent session via Wo SDK…");
 
   try {
-    const provider = (process.env.WOP_LLM_PROVIDER || "ollama").toLowerCase();
-    const modelId = process.env.LLM_MODEL || (provider === "ollama" ? "qwen3.5:9b" : provider === "openrouter" ? "anthropic/claude-3.5-sonnet" : "gpt-4o");
-    let baseUrl = process.env.LLM_HOST || "";
-    if (provider === "ollama" && baseUrl) {
+    const provider = (process.env.WOP_LLM_PROVIDER || "wo-ai").toLowerCase();
+    const modelId = opts.runtime?.ollamaModel || resolveWoAiModelDefault(opts.tenantId);
+    const host = opts.runtime?.ollamaHost || resolveWoAiHost();
+    let baseUrl = host;
+    if ((provider === "wo-ai" || provider === "ollama") && baseUrl) {
       baseUrl = baseUrl.replace(/\/+$/, "") + "/v1";
     }
 
@@ -66,13 +70,13 @@ export async function runSdkChatTurn(
       id: modelId,
       name: modelId,
       api: "openai-completions" as const,
-      provider,
+      provider: provider === "wo-ai" ? "ollama" : provider,
       baseUrl: baseUrl || "",
       reasoning: false,
       input: ["text", "image"] as ("text" | "image")[],
       cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-      contextWindow: provider === "ollama" ? 4096 : 200000,
-      maxTokens: provider === "ollama" ? 2048 : 4096,
+      contextWindow: (provider === "wo-ai" || provider === "ollama") ? 4096 : 200000,
+      maxTokens: (provider === "wo-ai" || provider === "ollama") ? 2048 : 4096,
     };
 
     const { session } = await createAgentSession({

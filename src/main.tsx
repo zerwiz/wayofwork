@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import App from "./App";
 import { LoginPage, WelcomePage } from "./pages";
+import { NotificationProvider } from "./contexts/NotificationContext";
+import { NotificationToast } from "./components/NotificationToast";
 import "./index.css";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -73,7 +75,7 @@ root.render(
           <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<RootRedirect />} />
-          <Route path="/*" element={<RequireAuth><App /></RequireAuth>} />
+          <Route path="/*" element={<RequireAuth><NotificationProvider><App /><NotificationToast /></NotificationProvider></RequireAuth>} />
         </Routes>
       </ErrorBoundary>
     </BrowserRouter>

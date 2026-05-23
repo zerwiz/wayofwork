@@ -11,7 +11,7 @@ import { join } from "node:path";
 import type { ChatMessage } from "./chat";
 import { getAgentBodyByName } from "./agents";
 import { getClawWorkspaceBundleDirAbs } from "./claw-workspace-root";
-import { getPiStackForSurface, runPiChatTurn, shouldUsePiJsonChat } from "./agent-runtime";
+import { getWoStackForSurface, runWoChatTurn, authoritativeRuntimeEnabled } from "./agent-runtime";
 import { appendClawMissionEvent } from "./claw-mission-events";
 import { getPrimaryWorkspacePath } from "./workspace-state";
 
@@ -52,7 +52,7 @@ export async function executeClawAutomation(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
 	const tenantId = payload.tenantId ?? "default";
 	const cwd = getPrimaryWorkspacePath(tenantId);
-	if (!shouldUsePiJsonChat()) {
+	if (!authoritativeRuntimeEnabled()) {
 		const err = "Skipped — this server is not in the mode required for this automatic run.";
 		void appendClawMissionEvent({
 			at: new Date().toISOString(),
@@ -92,10 +92,10 @@ export async function executeClawAutomation(
 
 	let full = "";
 	const started = Date.now();
-	const r = await runPiChatTurn({
+	const r = await runWoChatTurn({
 		cwd,
 		messages,
-		piStack: getPiStackForSurface("claw"),
+		woStack: getWoStackForSurface("claw"),
 		onDelta: (s) => {
 			full += s;
 		},

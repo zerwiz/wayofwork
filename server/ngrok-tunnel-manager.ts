@@ -26,9 +26,8 @@ export function isNgrokBundledInstallAllowed(): boolean {
 
 async function readProcText(proc: Bun.Subprocess): Promise<{ stdout: string; stderr: string; exitCode: number | null }> {
 	const [stdout, stderr, exitCode] = await Promise.all([
-		new Response(proc.stdout).text().catch(() => ""),
-		new Response(proc.stderr).text().catch(() => ""),
-		proc.exited,
+		new Response(proc.stdout as any).text().catch(() => ""),
+		new Response(proc.stderr as any).text().catch(() => ""),		proc.exited,
 	]);
 	return { stdout, stderr, exitCode };
 }

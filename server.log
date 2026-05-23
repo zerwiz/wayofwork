@@ -1,4 +1,4 @@
---- Starting Way of Work Server at Fri May 22 04:12:52 PM EEST 2026 ---
+--- Starting Way of Work Server at Sat May 23 01:35:59 PM EEST 2026 ---
 ============================================
   Way of Work Server
 ============================================
@@ -14,5 +14,80 @@
 
 ==> Building app (tsc -b && vite build)...
 $ tsc -b && vite build
-src/pages/AuditTrailPage.tsx(144,19): error TS2588: Cannot assign to 'proposed' because it is a constant.
-src/pages/AuditTrailPage.tsx(146,19): error TS2588: Cannot assign to 'current' because it is a constant.
+vite v6.4.2 building for production...
+transforming...
+✓ 3861 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) /home/zerwiz/CodeP/wayofwork/src/api/client.ts is dynamically imported by /home/zerwiz/CodeP/wayofwork/src/hooks/useClawWorkspace.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawWorkspace.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawWorkspace.ts but also statically imported by /home/zerwiz/CodeP/wayofwork/src/components/GitExplorerStatusBadge.tsx, /home/zerwiz/CodeP/wayofwork/src/components/HostDoctorModal.tsx, /home/zerwiz/CodeP/wayofwork/src/components/IndexingDocsModal.tsx, /home/zerwiz/CodeP/wayofwork/src/components/RestartServerModal.tsx, /home/zerwiz/CodeP/wayofwork/src/components/TeamsGuiEditorModal.tsx, /home/zerwiz/CodeP/wayofwork/src/components/claw/ClawApp.tsx, /home/zerwiz/CodeP/wayofwork/src/components/claw/ClawChannelsView.tsx, /home/zerwiz/CodeP/wayofwork/src/components/docs/DocsApp.tsx, /home/zerwiz/CodeP/wayofwork/src/components/simple/SimpleTeamView.tsx, /home/zerwiz/CodeP/wayofwork/src/components/technical/TerminalSettingsSection.tsx, /home/zerwiz/CodeP/wayofwork/src/contexts/NotificationContext.tsx, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawAutomationStatus.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawHostFileTree.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawMissionEvents.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawSchedules.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawTelegramStatus.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useClawWhatsAppStatus.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useCommandItems.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useFileEditor.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useGithubConnection.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useLlmModels.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/usePlanHandoffSelection.ts, /home/zerwiz/CodeP/wayofwork/src/hooks/useWorkspaceActions.ts, /home/zerwiz/CodeP/wayofwork/src/pages/ClientDashboard.tsx, /home/zerwiz/CodeP/wayofwork/src/utils/planModeWorkspace.ts, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/index.html                                           0.58 kB │ gzip:   0.34 kB
+dist/assets/index-CvwUo9tp.css                          155.08 kB │ gzip:  24.85 kB
+dist/assets/channel-CpPiM9H4.js                           0.11 kB │ gzip:   0.13 kB
+dist/assets/init-Gi6I4Gst.js                              0.15 kB │ gzip:   0.13 kB
+dist/assets/chunk-QZHKN3VN-CGXtqlqd.js                    0.19 kB │ gzip:   0.16 kB
+dist/assets/chunk-55IACEB6-DzrzcOIn.js                    0.23 kB │ gzip:   0.21 kB
+dist/assets/chunk-4BX2VUAB-bZD69zOi.js                    0.30 kB │ gzip:   0.20 kB
+dist/assets/chunk-FMBD7UC4-C-UYXuCa.js                    0.37 kB │ gzip:   0.27 kB
+dist/assets/stateDiagram-v2-BHNVJYJU-BUS9hxkd.js          0.40 kB │ gzip:   0.29 kB
+dist/assets/classDiagram-4FO5ZUOK-D6GlmWhM.js             0.47 kB │ gzip:   0.32 kB
+dist/assets/classDiagram-v2-Q7XG4LA2-D6GlmWhM.js          0.47 kB │ gzip:   0.32 kB
+dist/assets/chunk-2J33WTMH-BpVWLtX-.js                    0.53 kB │ gzip:   0.38 kB
+dist/assets/infoDiagram-5YYISTIA-CZmK0rk5.js              0.59 kB │ gzip:   0.41 kB
+dist/assets/ordinal-Cboi1Yqb.js                           1.19 kB │ gzip:   0.57 kB
+dist/assets/chunk-ND2GUHAM-bsebaYIz.js                    1.89 kB │ gzip:   0.83 kB
+dist/assets/diagram-5GNKFQAL-DKuoyrNZ.js                  2.77 kB │ gzip:   1.38 kB
+dist/assets/arc-CAd_cRUN.js                               3.43 kB │ gzip:   1.48 kB
+dist/assets/diagram-LMA3HP47-wHtiCIny.js                  4.25 kB │ gzip:   1.86 kB
+dist/assets/defaultLocale-CrowFXzY.js                     4.69 kB │ gzip:   2.18 kB
+dist/assets/pieDiagram-4H26LBE5-DgsEcuAa.js               5.33 kB │ gzip:   2.37 kB
+dist/assets/linear-BfUo36JU.js                            5.66 kB │ gzip:   2.31 kB
+dist/assets/diagram-2AECGRRQ-DXAcgETQ.js                  5.98 kB │ gzip:   2.52 kB
+dist/assets/stateDiagram-AJRCARHV-DzlzYEpO.js            10.36 kB │ gzip:   3.62 kB
+dist/assets/diagram-KO2AKTUF-CJW65qvS.js                 10.83 kB │ gzip:   4.18 kB
+dist/assets/dagre-BM42HDAG--22qGifA.js                   11.39 kB │ gzip:   4.21 kB
+dist/assets/diagram-OG6HWLK6-CjnN-dhO.js                 15.93 kB │ gzip:   5.70 kB
+dist/assets/ishikawaDiagram-YF4QCWOH-DNDfiZYo.js         17.57 kB │ gzip:   6.68 kB
+dist/assets/kanban-definition-UN3LZRKU-DSQTdDLS.js       20.71 kB │ gzip:   7.30 kB
+dist/assets/mindmap-definition-RKZ34NQL-DooQBbnm.js      23.37 kB │ gzip:   7.90 kB
+dist/assets/sankeyDiagram-5OEKKPKP-CIawNmb-.js           23.40 kB │ gzip:   8.59 kB
+dist/assets/journeyDiagram-JHISSGLW-Dt672nUT.js          23.58 kB │ gzip:   8.36 kB
+dist/assets/graph-BEmEBUp_.js                            23.95 kB │ gzip:   8.32 kB
+dist/assets/wardleyDiagram-YWT4CUSO-DzrtU_08.js          26.11 kB │ gzip:   6.94 kB
+dist/assets/erDiagram-TEJ5UH35-C1hkkaB-.js               26.99 kB │ gzip:   9.39 kB
+dist/assets/gitGraphDiagram-PVQCEYII-CXNF7IEd.js         29.95 kB │ gzip:   8.89 kB
+dist/assets/requirementDiagram-4Y6WPE33-Dcrk2K3X.js      31.22 kB │ gzip:   9.82 kB
+dist/assets/timeline-definition-PNZ67QCA-QpVGJzOv.js     31.35 kB │ gzip:  10.43 kB
+dist/assets/quadrantDiagram-W4KKPZXB-C88k7rqE.js         34.51 kB │ gzip:  10.14 kB
+dist/assets/layout-Bw0msyOw.js                           35.83 kB │ gzip:  12.87 kB
+dist/assets/chunk-AQP2D5EJ-tVXSlP27.js                   37.58 kB │ gzip:  12.24 kB
+dist/assets/xychartDiagram-2RQKCTM6-BJ-IF9oh.js          40.40 kB │ gzip:  11.57 kB
+dist/assets/vennDiagram-CIIHVFJN-230jLlaj.js             41.84 kB │ gzip:  15.59 kB
+dist/assets/chunk-727SXJPM-CLoqVzw0.js                   49.11 kB │ gzip:  15.77 kB
+dist/assets/flowDiagram-I6XJVG4X-DWmAfyVD.js             61.20 kB │ gzip:  19.53 kB
+dist/assets/ganttDiagram-6RSMTGT7-ElwY_5a2.js            69.58 kB │ gzip:  23.49 kB
+dist/assets/c4Diagram-AAUBKEIU-iM-c7BA2.js               69.98 kB │ gzip:  19.66 kB
+dist/assets/blockDiagram-GPEHLZMM-B-q06t0P.js            74.92 kB │ gzip:  21.57 kB
+dist/assets/cose-bilkent-S5V4N54A-BJYFvlfc.js            81.72 kB │ gzip:  22.48 kB
+dist/assets/sequenceDiagram-3UESZ5HK-C6Gv-Fbs.js        117.33 kB │ gzip:  31.19 kB
+dist/assets/architectureDiagram-3BPJPVTR-6G4kdhxJ.js    149.77 kB │ gzip:  42.33 kB
+dist/assets/katex-C5jXJg4s.js                           261.33 kB │ gzip:  77.57 kB
+dist/assets/cytoscape.esm-D_LviqZs.js                   442.60 kB │ gzip: 141.99 kB
+dist/assets/mermaid.core-hF9oy7yk.js                    591.92 kB │ gzip: 138.29 kB
+dist/assets/wardley-L42UT6IY-DJWgXfwc.js                615.46 kB │ gzip: 148.57 kB
+dist/assets/index-CPSUTOfW.js                         1,470.45 kB │ gzip: 378.08 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.80s
+==> Starting Bun server...
+==> Waiting for server at http://127.0.0.1:3333/api/health...
+Way of Work server http://127.0.0.1:3333 workspace=/home/zerwiz/CodeP/wayofwork/workspace chatEngine=sdk piDrivesChat=false manifest=/api/manifest
+[telegram-bot] Webhook failed for bot tgb_1779381852674_mc2jh2i: Bad Request: bad webhook: An HTTPS URL must be provided for webhook — falling back to polling
+[telegram-bot] Starting polling fallback
+==> Server ready.
+==> Open http://127.0.0.1:3333 in your browser (Electron disabled)
+    Press Ctrl+C to stop the server.

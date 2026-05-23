@@ -46,9 +46,9 @@ export function SimpleModelsView({
 		if (providerConfigInitialPath) setSection("providers");
 	}, [providerConfigInitialPath, providerConfigInitialNonce]);
 
-	const providerKey = (config?.provider || data?.provider || "ollama").toLowerCase();
+	const providerKey = (config?.provider || data?.provider || "wo-ai").toLowerCase();
 	const unsupported = data?.unsupportedProvider === true;
-	const ollamaHost = config?.ollamaHost ?? data?.ollamaHost ?? "—";
+	const woAiHost = config?.ollamaHost ?? data?.ollamaHost ?? "—";
 	const envDefault =
 		providerKey === "openrouter"
 			? (config?.openrouterModel ?? data?.envDefaultOpenrouter)
@@ -122,8 +122,8 @@ export function SimpleModelsView({
 			rows.push({
 				key: m.name,
 				displayName: m.name,
-				fullId: `ollama/${m.name}`,
-				providerLabel: `Ollama (${ollamaHost})`,
+				fullId: `wo-ai/${m.name}`,
+				providerLabel: `Wo AI (${woAiHost})`,
 				type: "local",
 				sizeLabel: formatBytes(m.size),
 			});
@@ -133,8 +133,8 @@ export function SimpleModelsView({
 			rows.unshift({
 				key: `env-${def}`,
 				displayName: def,
-				fullId: `ollama/${def}`,
-				providerLabel: `Ollama (${ollamaHost})`,
+				fullId: `wo-ai/${def}`,
+				providerLabel: `Wo AI (${woAiHost})`,
 				type: "local",
 				sizeLabel: "env default",
 			});
@@ -169,7 +169,7 @@ export function SimpleModelsView({
 				Think of it like picking an engine for a car — a bigger, smarter model gives better answers but may be slower,
 				while a smaller model replies faster. The <strong className={heading}>Session model</strong> tab lets you pick the
 				model for your current chat. The <strong className={heading}>Provider files</strong> tab is for advanced setup
-				(connecting to Ollama on your computer, or OpenRouter in the cloud) — you can ignore that tab until you need it.
+				(connecting to Wo AI on your computer, or OpenRouter in the cloud) — you can ignore that tab until you need it.
 			</p>
 
 			<div className="mb-4 flex flex-wrap gap-1">
@@ -198,7 +198,7 @@ export function SimpleModelsView({
 							<span className={`font-semibold ${heading}`}>1. Server env</span> (not in the file tree) —{" "}
 							<span className="font-mono text-[11px]">WOP_LLM_PROVIDER</span>,{" "}
 							<span className="font-mono text-[11px]">WOP_CHAT_ENGINE</span>,{" "}
-							<span className="font-mono text-[11px]">OLLAMA_HOST</span> / <span className="font-mono text-[11px]">OLLAMA_MODEL</span>,{" "}
+							<span className="font-mono text-[11px]">WOP_AI_HOST</span> / <span className="font-mono text-[11px]">WOP_AI_MODEL</span>,{" "}
 							<span className="font-mono text-[11px]">OPENROUTER_*</span>, … Full list:{" "}
 							<span className="font-mono text-[11px]">apps/wayofwork-ui/.env.sample</span> in the Way of Work repo. When you
 							start from <span className="font-mono text-[11px]">./start-wayofwork-ui.sh</span> or{" "}
@@ -288,11 +288,11 @@ export function SimpleModelsView({
 							inside this JSON. Restart the Way of Work process after changing env. Invalid JSON cannot be saved.
 						</p>
 						<p className={`mb-3 text-xs font-medium leading-relaxed ${mono}`}>
-							<strong className={heading}>Session model</strong> (other tab) lists live Ollama tags from the daemon (or
+							<strong className={heading}>Session model</strong> (other tab) lists live Wo AI tags from the daemon (or
 							OpenRouter ids you type); it does <em>not</em> build rows from <span className="font-mono">agent/models.json</span>
 							. <span className="font-mono">agent/settings.json</span> <span className="font-mono">defaultModel</span> /{" "}
-							<span className="font-mono">defaultProvider</span> feed Pi and, for Bun, the default Ollama tag when{" "}
-							<span className="font-mono">OLLAMA_MODEL</span> is unset.
+							<span className="font-mono">defaultProvider</span> feed the AI and, for Bun, the default Wo AI tag when{" "}
+							<span className="font-mono">WOP_AI_MODEL</span> is unset.
 						</p>
 						<ProviderConfigEditor
 							appearanceDark={appearanceDark}
@@ -323,9 +323,9 @@ export function SimpleModelsView({
 					</p>
 					<ul className={`list-inside list-disc space-y-1.5 pl-0.5 ${sub}`}>
 						<li>
-							<span className="font-mono text-xs">ollama</span> — Local OpenAI-compatible API at{" "}
-							<span className="font-mono text-xs">OLLAMA_HOST</span> (shown below); catalog from Ollama tags; session
-							pick = model tag (e.g. <span className="font-mono text-xs">llama3</span>). Matches Pi using Ollama.
+							<span className="font-mono text-xs">wo-ai</span> — Local OpenAI-compatible API at{" "}
+							<span className="font-mono text-xs">WOP_AI_HOST</span> (shown below); catalog from Wo AI tags; session
+							pick = model tag (e.g. <span className="font-mono text-xs">qwen3.5:9b</span>).
 						</li>
 						<li>
 							<span className="font-mono text-xs">openrouter</span> — Cloud models at OpenRouter; host must set{" "}
@@ -376,12 +376,12 @@ export function SimpleModelsView({
 							</span>
 						) : null}
 						{unsupported ? (
-							<span className="ml-2 text-red-400">— web chat supports only ollama or openrouter</span>
+							<span className="ml-2 text-red-400">— web chat supports only wo-ai or openrouter</span>
 						) : providerKey === "openrouter" ? (
 							<span className="ml-2">— use custom id field + table below</span>
 						) : (
 							<span className="ml-2">
-								— <span className="font-mono">OLLAMA_HOST</span>={ollamaHost}
+								— <span className="font-mono">WOP_AI_HOST</span>={woAiHost}
 							</span>
 						)}
 					</p>
@@ -395,9 +395,9 @@ export function SimpleModelsView({
 					>
 						<p className="font-bold">Unsupported provider for web chat</p>
 						<p className={`mt-1 ${appearanceDark ? "text-red-100/90" : "text-red-900/90"}`}>
-							Set <span className="font-mono">WOP_LLM_PROVIDER</span> to <span className="font-mono">ollama</span> or{" "}
+							Set <span className="font-mono">WOP_LLM_PROVIDER</span> to <span className="font-mono">wo-ai</span> or{" "}
 							<span className="font-mono">openrouter</span> on the Way of Work server host, then restart. You can still
-							edit Pi provider JSON under <strong>Provider files</strong> for TUI / future wiring.
+							edit provider JSON under <strong>Provider files</strong> for TUI / future wiring.
 						</p>
 						{data?.catalogNote ? (
 							<p className={`mt-2 border-t border-red-500/20 pt-2 text-xs ${appearanceDark ? "text-red-200/80" : "text-red-900/80"}`}>
@@ -451,7 +451,7 @@ export function SimpleModelsView({
 							appearanceDark ? "border-amber-900/50 bg-amber-950/30 text-amber-100" : "border-amber-200 bg-amber-50 text-amber-950"
 						}`}
 					>
-						Could not reach Ollama tags API: {data.error}
+						Could not reach Wo AI tags API: {data.error}
 					</div>
 				) : null}
 
@@ -473,8 +473,8 @@ export function SimpleModelsView({
 						) : null}
 						{!loading && !rows.length && providerKey !== "openrouter" && !unsupported ? (
 							<div className={`p-6 text-sm ${sub}`}>
-								No models returned from Ollama. Pull a model on the host (e.g.{" "}
-								<span className="font-mono">ollama pull llama3</span>) and refresh.
+								No models returned from Wo AI. Pull a model on the host (e.g.{" "}
+								<span className="font-mono">ollama pull qwen3.5:9b</span>) and refresh.
 							</div>
 						) : null}
 						{rows.map((model) => {

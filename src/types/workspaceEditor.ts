@@ -152,6 +152,7 @@ export type HelpMenuHandlers = {
 	/** Opens the maintainer home page (WhyNot Productions). */
 	onSupportUs: () => void;
 	onViewLicense: () => void;
+	onReportBug: () => void;
 	/** False in the browser; true only if embedded in a shell that exposes devtools. */
 	canToggleDeveloperTools: boolean;
 	onToggleDeveloperTools: () => void;

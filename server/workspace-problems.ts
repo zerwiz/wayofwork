@@ -29,7 +29,7 @@ const ESLINT_CONFIG_NAMES = [
 	"eslint.config.js",
 	"eslint.config.mjs",
 	"eslint.config.cjs",
-	"eslint.config.ts",
+	"eslint.config",
 	".eslintrc.cjs",
 	".eslintrc.js",
 	".eslintrc.json",
@@ -154,8 +154,8 @@ async function runCommand(
 	} finally {
 		clearTimeout(killTimer);
 	}
-	const stdout = await new Response(proc.stdout).text();
-	const stderr = await new Response(proc.stderr).text();
+	const stdout = await new Response(proc.stdout as any).text();
+	const stderr = await new Response(proc.stderr as any).text();
 	return { code, stdout, stderr, killed };
 }
 

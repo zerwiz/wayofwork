@@ -4,6 +4,7 @@
  * Files: `wo-chat-<sessionKey>.jsonl`
  */
 
+import { existsSync } from "node:fs";
 import { appendFile, mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { ChatMessage } from "./chat";

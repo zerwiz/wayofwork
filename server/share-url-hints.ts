@@ -20,7 +20,7 @@ export function guessLanIPv4(): string | null {
 	const candidates: string[] = [];
 	for (const addrs of Object.values(nets)) {
 		for (const net of addrs ?? []) {
-			const fam = net.family;
+			const fam: any = net.family;
 			if (fam !== "IPv4" && fam !== 4) continue;
 			if (net.internal) continue;
 			candidates.push(net.address);

@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
 import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { db } from "./db";
-import { formatUnknownOrchestratorToolMessage } from "../shared/session-log-metadata.ts";
+import { formatUnknownOrchestratorToolMessage } from "../shared/session-log-metadata";
 import { broadcastToolLog } from "./tool-log-broadcast";
 import { MAX_FILE_BYTES, shouldSkipDir } from "./paths";
 import { auditLog } from "./audit-logger";
@@ -57,8 +57,10 @@ import {
 	ORCHESTRATOR_CHANNEL_TOOLS_OPENAI,
 	toolTelegramSend,
 	toolWhatsappSend,
+	toolEmailSend,
 } from "./orchestrator-channel-tools";
 import { dispatchToAgent } from "./agent-dispatch";
+import { createPendingChange } from "./pending-changes-api";
 
 export type OrchestratorToolResult = {
 	output: string;
@@ -135,8 +137,8 @@ export function isRuntimeToolExecutionEnabled(): boolean {
 	// auto mode: check if binary is on PATH
 	if (engine === "auto" || !engine) {
 		try {
-			const proc = Bun.spawn(["which", "pi"], { stdout: "pipe" });
-			return proc.exited === 0;
+			const proc = Bun.spawnSync(["which", "pi"]);
+			return proc.exitCode === 0;
 		} catch {
 			return false;
 		}
@@ -598,16 +600,29 @@ export async function executeOrchestratorTool(
 		case "kanban_list_workers":
 			logTool("kanban_list_workers", "");
 			return { output: await kanbanListWorkers(tenantId) };
+		case "suggest_change": {
+			const summary = String(args.summary || "");
+			logTool("suggest_change", summary);
+			try {
+				const id = await createPendingChange(tenantId, userId, args as any);
+				return { output: `suggest_change: ok — created pending change \`${id}\`. Admin has been notified.` };
+			} catch (e) {
+				const m = e instanceof Error ? e.message : String(e);
+				return { output: `suggest_change: ${m}` };
+			}
+		}
 		// ── Channel tools ──
 		case "telegram_send":
 			return { output: await toolTelegramSend(args as any, tenantId) };
 		case "whatsapp_send":
 			return { output: await toolWhatsappSend(args as any, tenantId) };
+		case "email_send":
+			return { output: await toolEmailSend(args as any, tenantId) };
 		case "dispatch_agent": {
 			const name = String(args.agent ?? "");
 			const task = String(args.task ?? "");
 			logTool("dispatch_agent", `${name}: ${task.slice(0, 40)}…`);
-			const res = await dispatchToAgent(name, task, tenantId, userId, "User");
+			const res = await dispatchToAgent(name, task, tenantId, userId, userName);
 			if (res.ok) return { output: res.output };
 			return { output: `Error: ${res.error}` };
 		}
@@ -630,7 +645,7 @@ export async function executeOrchestratorTool(
 			if (endDate) { sql += " AND end_date <= ?"; params.push(endDate); }
 			sql += " ORDER BY start_date ASC";
 			try {
-				const rows = db.query(sql).all(...params);
+				const rows = db.query(sql).all(...(params as any[]));
 				return { output: JSON.stringify(rows, null, 2) };
 			} catch (e) {
 				const m = e instanceof Error ? e.message : String(e);
@@ -649,7 +664,7 @@ export async function executeOrchestratorTool(
 				db.query(`
 					INSERT INTO calendar_events (id, tenant_id, user_id, project_id, title, description, start_date, end_date, all_day, created_by)
 					VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-				`).run(id, tenantId, userId, null, title, description, startDate, endDate, allDay, userId);
+				`).run(...([id, tenantId, userId, null, title, description, startDate, endDate, allDay, userId] as any[]));
 				const event = db.query("SELECT * FROM calendar_events WHERE id = ?").get(id);
 				return { output: JSON.stringify(event, null, 2) };
 			} catch (e) {
@@ -671,7 +686,7 @@ export async function executeOrchestratorTool(
 				db.query(`
 					UPDATE calendar_events SET title = ?, description = ?, start_date = ?, end_date = ?, all_day = ?
 					WHERE id = ? AND tenant_id = ?
-				`).run(title, description, startDate, endDate, allDay, eventId, tenantId);
+				`).run(...([title, description, startDate, endDate, allDay, eventId, tenantId] as any[]));
 				const updated = db.query("SELECT * FROM calendar_events WHERE id = ?").get(eventId);
 				return { output: JSON.stringify(updated, null, 2) };
 			} catch (e) {
@@ -835,6 +850,27 @@ export const ORCHESTRATOR_TOOLS_OPENAI = [
 					command: { type: "string", description: "Single shell command string" },
 				},
 				required: ["command"],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "suggest_change",
+			description:
+				"Create a pending change (Human-in-the-Loop) for admin approval. Use for any data modification (price list, task, project, offer). The change is queued and notified to an admin.",
+			parameters: {
+				type: "object",
+				properties: {
+					change_type: { type: "string", description: "Category of change (e.g. price_update, plan_change, offer_status)." },
+					target_table: { type: "string", description: "Database table (price_lists, tasks, projects, offers)." },
+					target_id: { type: "string", description: "Optional ID of existing record to update." },
+					proposed_data: { type: "object", description: "The new data values proposed for the target." },
+					current_data: { type: "object", description: "Optional current data values before the change (for diffing)." },
+					summary: { type: "string", description: "One-sentence human-readable summary of the change." },
+					assigned_to: { type: "string", description: "Optional admin user ID to assign this change to." },
+				},
+				required: ["change_type", "target_table", "proposed_data", "summary"],
 			},
 		},
 	},

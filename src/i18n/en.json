@@ -4,6 +4,7 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
+    "refresh": "Refresh",
     "close": "Close",
     "loading": "Loading...",
     "error": "An error occurred",
@@ -42,5 +43,23 @@
     "taplanner": "TA-Planner",
     "help": "Help",
     "settings": "Settings"
+  },
+  "approvals": {
+    "title": "Approval Queue",
+    "pending": "pending",
+    "history": "History",
+    "approve": "Approve",
+    "reject": "Reject",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "reason_placeholder": "Reason for rejection...",
+    "no_pending": "No pending approvals",
+    "current": "Current",
+    "proposed": "Proposed",
+    "diff": "Diff",
+    "hide": "Hide",
+    "suggested_by": "Suggested by",
+    "assigned_to_me": "Assigned to me",
+    "assigned_to_other": "Assigned to other admin"
   }
 }

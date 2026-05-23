@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { sendEmail } from "./email";
 
 const TELEGRAM_API = "https://api.telegram.org";
 
@@ -94,6 +95,26 @@ export async function toolWhatsappSend(args: { userId: string; text: string }, t
 	return `Error: Failed to send WhatsApp message to ${args.userId}.`;
 }
 
+export async function toolEmailSend(args: { userId: string; subject: string; text: string }, tenantId: string): Promise<string> {
+	const link = db.query(
+		"SELECT email FROM users WHERE id = ? AND tenant_id = ?"
+	).get(args.userId, tenantId) as { email: string } | undefined;
+
+	if (!link || !link.email) return `Error: User ${args.userId} has no email address on file.`;
+
+	const result = await sendEmail({
+		to: link.email,
+		subject: args.subject,
+		text: args.text,
+	});
+
+	if (result.ok) {
+		logChannelMessage(tenantId, args.userId, "email", link.email, args.text, "outbound");
+		return `Successfully sent email to ${args.userId} (${link.email}).`;
+	}
+	return `Error: Failed to send email: ${result.error}`;
+}
+
 export const ORCHESTRATOR_CHANNEL_TOOLS_OPENAI = [
 	{
 		type: "function" as const,
@@ -122,6 +143,22 @@ export const ORCHESTRATOR_CHANNEL_TOOLS_OPENAI = [
 					text: { type: "string", description: "The message text" },
 				},
 				required: ["userId", "text"],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "email_send",
+			description: "Send an email to a user. The user must have an email address on file.",
+			parameters: {
+				type: "object",
+				properties: {
+					userId: { type: "string", description: "The Way of Work user ID" },
+					subject: { type: "string", description: "Email subject line" },
+					text: { type: "string", description: "Email body text" },
+				},
+				required: ["userId", "subject", "text"],
 			},
 		},
 	},

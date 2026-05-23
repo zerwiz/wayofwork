@@ -2,7 +2,7 @@ import type { ChatAssistantToolCall, ChatMessage, ChatRuntimeModel, StreamChatRe
 import { formatLlmHttpError, messagesToOpenAIFormat, ollamaErrorHint, streamingReasoningPiece } from "./chat";
 import { parseStreamUsage, type StreamTokenUsage } from "./chat-usage";
 import { executeOrchestratorTool, orchestratorToolsForLlm } from "./orchestrator-tools-exec";
-import { resolveOllamaHost, resolveOllamaModelDefault } from "./pi-ollama-env";
+import { resolveWoAiHost, resolveWoAiModelDefault } from "./wo-ai-env";
 
 const MAX_ORCHESTRATOR_TOOL_STEPS = 18;
 
@@ -286,8 +286,9 @@ export async function runOrchestratorToolLoop(
 				};
 			}
 		} else if (provider === "ollama") {
-			const host = (runtime?.ollamaHost || resolveOllamaHost()).replace(/\/$/, "");
-			const model = runtime?.ollamaModel?.trim() || resolveOllamaModelDefault();
+			const host = (runtime?.ollamaHost || resolveWoAiHost()).replace(/\/$/, "");
+			const model = runtime?.ollamaModel?.trim() || resolveWoAiModelDefault();
+
 			const url = `${host}/v1/chat/completions`;
 			const body: Record<string, unknown> = {
 				model,

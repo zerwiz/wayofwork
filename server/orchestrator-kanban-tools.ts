@@ -5,6 +5,7 @@
 import { randomUUID } from "node:crypto";
 import { db } from "./db";
 import { getPrimaryWorkspacePath } from "./workspace-state";
+import { notifyUser } from "./notifications";
 
 const DEFAULT_COLUMNS = [
 	{ id: "todo", name: "To Do" },
@@ -280,6 +281,21 @@ export async function kanbanUpdateCard(args: {
 			args.cardId,
 			args.tenantId,
 		);
+
+		// Notify assignee if changed or updated
+		const targetUserId = args.assigneeId || existing.assigned_to;
+		if (targetUserId) {
+			notifyUser({
+				tenantId: args.tenantId,
+				userId: targetUserId,
+				type: "kanban",
+				severity: "info",
+				title: "Card Updated",
+				message: `Task "${args.title || existing.title}" has been updated.`,
+				link: `/kanban?card=${args.cardId}`
+			}).catch(() => {});
+		}
+
 		return `kanban_update_card: ok — updated card \`${args.cardId}\`.`;
 	} catch (e) {
 		const m = e instanceof Error ? e.message : String(e);
@@ -321,6 +337,20 @@ export async function kanbanMoveCard(args: {
 			args.cardId,
 			args.tenantId,
 		);
+
+		// Notify assignee
+		if (existing.assigned_to) {
+			notifyUser({
+				tenantId: args.tenantId,
+				userId: existing.assigned_to,
+				type: "kanban",
+				severity: "info",
+				title: "Task Moved",
+				message: `Task "${existing.title}" moved to ${args.columnId}.`,
+				link: `/kanban?card=${args.cardId}`
+			}).catch(() => {});
+		}
+
 		return `kanban_move_card: ok — moved card \`${args.cardId}\` to column "${args.columnId}".`;
 	} catch (e) {
 		const m = e instanceof Error ? e.message : String(e);

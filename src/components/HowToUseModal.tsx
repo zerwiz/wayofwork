@@ -124,16 +124,16 @@ function SectionWelcome() {
 				</li>
 				<li>
 					<strong className="text-white">Choose your AI model</strong> — use a local model on your own
-					computer (Ollama) or a cloud model (OpenRouter) depending on your needs.
+					computer (Wo AI / Ollama) or a cloud model (OpenRouter) depending on your needs.
 				</li>
 			</UL>
 
 			<DevBox>
 				Way of Work runs a <Chip>Bun</Chip> server (<Chip>apps/wayofwork-ui/server/</Chip>) and a Vite+React
 				frontend. Chat uses <Chip>WOP_CHAT_ENGINE</Chip> to route turns: when unset or <Chip>auto</Chip>, the
-				server uses headless <Chip>pi --mode json</Chip> when the Pi CLI resolves, otherwise direct
-				Ollama/OpenRouter; <Chip>pi</Chip> requires Pi; <Chip>bundled</Chip>/<Chip>bun</Chip> forces Bun-only. See{" "}
-				<Chip>docs/WOP_PI_BACKEND_WIRING_PLAN.md</Chip> for the wiring map.
+				server uses the authoritative CLI when it resolves, otherwise direct
+				Wo AI/OpenRouter; <Chip>pi</Chip> requires the CLI; <Chip>bundled</Chip>/<Chip>bun</Chip> forces Bun-only. See{" "}
+				<Chip>docs/WOP_BACKEND_WIRING_PLAN.md</Chip> for the wiring map.
 			</DevBox>
 		</>
 	);
@@ -179,7 +179,7 @@ function SectionGettingStarted() {
 						body: (
 							<>
 								Go to <strong className="text-white">AI Brains</strong> (Simple) or the model menu in the
-								status bar (Technical). Pick the AI model you want to use. If you have Ollama running
+								status bar (Technical). Pick the AI model you want to use. If you have Wo AI running
 								locally, your local models will appear here. If you have an OpenRouter API key, cloud
 								models appear too.
 							</>
@@ -422,12 +422,12 @@ function SectionCapabilities() {
 				{[
 					["Simple / Technical / Claw UI", "Three layout modes, all switchable from the top bar"],
 					["File tree & editor", "Browse, read, edit, and save workspace files; markdown preview; binary read"],
-					["Chat with Ollama / OpenRouter", "Direct-to-provider chat; streaming; queue; agent persona merge"],
-					["Workspace agents catalog", "Scans .wo/agents/, agents/, .claude/agents/ — same order as Wo Agent"],
+					["Chat with Wo AI / OpenRouter", "Direct-to-provider chat; streaming; queue; agent persona merge"],
+					["Workspace agents catalog", "Scans .wo/agents/, agents/, .claude/agents/ — same order as Wo AI"],
 					["Teams editor GUI", "Create, edit, delete teams and members without touching YAML"],
 					["AI Brains model picker", "Select session model; configure provider files"],
 					["Projects & Workspace", "Switch workspace, recent folders, refresh tree"],
-					["Diagnostics / Host Doctor", "Health check, env, Ollama probe, Wo Agent binary detection"],
+					["Diagnostics / Host Doctor", "Health check, env, Wo AI probe, Wo Agent binary detection"],
 					["Electron desktop app", "Recommended for full file picker and shell integration"],
 				].map(([feat, note]) => (
 					<Row
@@ -665,8 +665,8 @@ function SectionModels() {
 			<H>Two ways to run AI</H>
 			<div className="mb-4 overflow-hidden rounded-xl border border-[#3c3c3c]">
 				<Row
-					label="🏠 Ollama (local)"
-					value="Runs on your own computer. Private, free, works offline. Install Ollama, pull a model (e.g. llama3), and it appears automatically."
+					label="🏠 Wo AI (local)"
+					value="Runs on your own computer. Private, free, works offline. Install the Wo AI daemon (Ollama), pull a model (e.g. qwen3.5), and it appears automatically."
 				/>
 				<Row
 					label="☁️ OpenRouter (cloud)"
@@ -687,8 +687,8 @@ function SectionModels() {
 			<H>Quick setup guide</H>
 			<UL>
 				<li>
-					<strong className="text-white">Using Ollama:</strong> install from ollama.com, run{" "}
-					<Chip>ollama pull llama3</Chip> (or any model), start Ollama, then open AI Brains — your model
+					<strong className="text-white">Using Wo AI:</strong> install from ollama.com, run{" "}
+					<Chip>ollama pull qwen3.5:9b</Chip> (or any model), start the daemon, then open AI Brains — your model
 					will appear in the list.
 				</li>
 				<li>
@@ -698,9 +698,9 @@ function SectionModels() {
 				</li>
 			</UL>
 			<DevBox>
-				Provider is set by <Chip>WOP_LLM_PROVIDER</Chip> (<Chip>ollama</Chip> or{" "}
-				<Chip>openrouter</Chip>). Ollama host defaults to <Chip>OLLAMA_HOST</Chip> (default{" "}
-				<Chip>http://localhost:11434</Chip>). Default model: <Chip>OLLAMA_MODEL</Chip> or{" "}
+				Provider is set by <Chip>WOP_LLM_PROVIDER</Chip> (<Chip>wo-ai</Chip> or{" "}
+				<Chip>openrouter</Chip>). Wo AI host defaults to <Chip>WOP_AI_HOST</Chip> (default{" "}
+				<Chip>http://localhost:11434</Chip>). Default model: <Chip>WOP_AI_MODEL</Chip> or{" "}
 				<Chip>OPENROUTER_MODEL</Chip>. The session model override is sent over WebSocket as{" "}
 				<Chip>set_model</Chip> and stored in <Chip>localStorage</Chip> as{" "}
 				<Chip>wayofwork.activeLlmModel</Chip>. Restart the Bun server after changing env. Full var list:{" "}
@@ -906,7 +906,7 @@ function SectionForDevelopers() {
 				<Row label={<Chip>GET /api/file?path=…</Chip>} value="Read a workspace file (jailed to workspace roots)" />
 				<Row label={<Chip>PUT /api/file</Chip>} value="Write a workspace file" />
 				<Row label={<Chip>GET /api/tree</Chip>} value="Workspace file tree" />
-				<Row label={<Chip>GET /api/diagnostics</Chip>} value="Health, env, Ollama probe, Wo version" />
+				<Row label={<Chip>GET /api/diagnostics</Chip>} value="Health, env, Wo AI probe, Wo Agent version" />
 				<Row label={<Chip>WS /ws</Chip>} value="Chat WebSocket: send_message, set_model, set_agent, streaming tokens" />
 			</div>
 			<H>Useful commands</H>

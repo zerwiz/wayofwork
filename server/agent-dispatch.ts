@@ -54,7 +54,7 @@ export async function dispatchToAgent(
 		if (r.result.ok) {
 			return { ok: true, output: fullResponse.trim() };
 		}
-		return { ok: false, output: "", error: r.result.error || "Sub-agent execution failed." };
+		return { ok: false, output: "", error: (r.result as any).error || "Sub-agent execution failed." };
 	} catch (e) {
 		const message = e instanceof Error ? e.message : String(e);
 		return { ok: false, output: "", error: message };

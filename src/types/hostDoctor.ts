@@ -28,6 +28,7 @@ export type HostDoctorDiagnostics = {
 		provider?: string;
 		ollamaHost?: string;
 		ollama?: Record<string, unknown>;
+		woAi?: Record<string, unknown>;
 	};
 	piBinary?: Record<string, unknown>;
 	manifestStatic?: Record<string, unknown>;

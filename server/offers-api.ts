@@ -1,6 +1,7 @@
 import { db } from "./db";
 import type { Offer, Invoice, OfferItem } from "../shared/offer-types";
 import { auditLog } from "./audit-logger";
+import { type AuthInfo } from "./auth";
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -19,12 +20,6 @@ function now() {
 
 function today() {
   return now().slice(0, 10);
-}
-
-interface AuthInfo {
-  userId: string;
-  tenantId: string;
-  role: string;
 }
 
 async function readBody<T>(req: Request, method: string): Promise<T | undefined> {

@@ -6,7 +6,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, normalize } from "node:path";
 
-import type { ClawTelegramStatusV1 } from "../shared/claw-telegram-status.ts";
+import type { ClawTelegramStatusV1 } from "../shared/claw-telegram-status";
 import { getClawDotDirAbs, getClawHostRepoRoot } from "./claw-workspace-root";
 import { listWorkspaceFolders } from "./workspace-state";
 

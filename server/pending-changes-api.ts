@@ -1,4 +1,6 @@
 import { db } from "./db";
+import { type AuthInfo } from "./auth";
+import { notifyUser } from "./notifications";
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -15,18 +17,41 @@ function now() {
   return new Date().toISOString().replace("T", " ").slice(0, 19);
 }
 
-interface AuthInfo {
-  userId: string;
-  tenantId: string;
-  role: string;
-}
-
 async function readBody<T>(req: Request): Promise<T | undefined> {
   return await req.json().catch(() => undefined) as T | undefined;
 }
 
 function adminGuard(auth: AuthInfo | null): boolean {
   return !!auth && (auth.role === "SUPER_ADMIN" || auth.role === "ADMIN");
+}
+
+export async function createPendingChange(tenantId: string, userId: string, data: {
+  change_type: string;
+  target_table: string;
+  target_id?: string;
+  proposed_data: any;
+  current_data?: any;
+  summary: string;
+  assigned_to?: string;
+}) {
+  const id = uuid();
+  db.query(`
+    INSERT INTO pending_changes (id, tenant_id, change_type, status, target_table, target_id, proposed_data, current_data, summary, suggested_by, suggested_by_user, assigned_to)
+    VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    tenantId,
+    data.change_type,
+    data.target_table,
+    data.target_id || null,
+    JSON.stringify(data.proposed_data),
+    data.current_data ? JSON.stringify(data.current_data) : null,
+    data.summary,
+    "ai",
+    userId,
+    data.assigned_to || null
+  );
+  return id;
 }
 
 export async function handlePendingChangesApi(
@@ -52,45 +77,30 @@ export async function handlePendingChangesApi(
     if (!body || !body.change_type || !body.target_table || !body.summary) {
       return json({ error: "Missing required fields: change_type, target_table, summary" }, 400);
     }
-    const id = uuid();
-    db.query(`
-      INSERT INTO pending_changes (id, tenant_id, change_type, status, target_table, target_id, proposed_data, current_data, summary, suggested_by, suggested_by_user, assigned_to)
-      VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      id,
-      tenantId,
-      body.change_type,
-      body.target_table,
-      body.target_id || null,
-      JSON.stringify(body.proposed_data),
-      body.current_data ? JSON.stringify(body.current_data) : null,
-      body.summary,
-      "ai",
-      auth.userId,
-      body.assigned_to || null
-    );
-    const row = db.query("SELECT * FROM pending_changes WHERE id = ?").get(id) as any;
-    return json(row, 201);
+    
+    try {
+      const id = await createPendingChange(tenantId, auth.userId, body);
+      const row = db.query("SELECT * FROM pending_changes WHERE id = ?").get(id) as any;
+      return json(row, 201);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      return json({ error: "Failed to create suggestion", details: message }, 500);
+    }
   }
 
   // GET /api/admin/pending-changes — list all pending changes
   if (path === "/api/admin/pending-changes" && method === "GET") {
     if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
-    const rows = db.query(`
-      SELECT pc.*, u.username as assigned_username
-      FROM pending_changes pc
-      LEFT JOIN users u ON u.id = pc.assigned_to
-      WHERE pc.tenant_id = ?
-      ORDER BY pc.created_at DESC
-    `).all(tenantId) as any[];
+    const rows = db.query("SELECT * FROM pending_changes WHERE tenant_id = ? ORDER BY created_at DESC").all(tenantId) as any[];
     return json(rows);
   }
 
-  // GET /api/admin/pending-changes/:id — single change detail
-  const singleMatch = path.match(/^\/api\/admin\/pending-changes\/([^/]+)$/);
-  if (singleMatch && method === "GET") {
+  // GET /api/admin/pending-changes/:id — detail
+  const detailMatch = path.match(/^\/api\/admin\/pending-changes\/([^/]+)$/);
+  if (detailMatch && method === "GET") {
     if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
-    const row = db.query("SELECT * FROM pending_changes WHERE id = ? AND tenant_id = ?").get(singleMatch[1], tenantId) as any;
+    const id = detailMatch[1];
+    const row = db.query("SELECT * FROM pending_changes WHERE id = ? AND tenant_id = ?").get(id, tenantId) as any;
     if (!row) return json({ error: "Not found" }, 404);
     return json(row);
   }
@@ -99,115 +109,44 @@ export async function handlePendingChangesApi(
   const approveMatch = path.match(/^\/api\/admin\/pending-changes\/([^/]+)\/approve$/);
   if (approveMatch && method === "POST") {
     if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
-    const row = db.query("SELECT * FROM pending_changes WHERE id = ? AND tenant_id = ?").get(approveMatch[1], tenantId) as any;
+    const id = approveMatch[1];
+    const row = db.query("SELECT * FROM pending_changes WHERE id = ? AND tenant_id = ?").get(id, tenantId) as any;
     if (!row) return json({ error: "Not found" }, 404);
-    if (row.status !== "pending") return json({ error: "Change is not pending" }, 400);
-    if (row.assigned_to && row.assigned_to !== auth.userId) {
-      return json({ error: "This change is assigned to another admin" }, 403);
-    }
-
-    const proposed = JSON.parse(row.proposed_data);
+    if (row.status !== "pending") return json({ error: "Already processed" }, 400);
 
     try {
-      if (row.target_table === "price_lists") {
-        if (row.target_id) {
-          db.query(`UPDATE price_lists SET name = ?, items_json = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`).run(
-            proposed.name,
-            JSON.stringify(proposed.items_json || []),
-            now(),
-            row.target_id,
-            tenantId
-          );
+      // Apply change to target table
+      const proposed = JSON.parse(row.proposed_data);
+      const targetTable = row.target_table;
+      const targetId = row.target_id;
+
+      if (targetTable === "price_lists") {
+        if (targetId) {
+          db.query(`UPDATE price_lists SET items_json = ?, updated_at = ? WHERE id = ?`).run(JSON.stringify(proposed.items), now(), targetId);
         } else {
-          const newId = uuid();
-          db.query(`INSERT INTO price_lists (id, tenant_id, name, items_json, active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)`).run(
-            newId,
-            tenantId,
-            proposed.name,
-            JSON.stringify(proposed.items_json || []),
-            now(),
-            now()
-          );
+          db.query(`INSERT INTO price_lists (id, tenant_id, name, items_json) VALUES (?, ?, ?, ?)`).run(uuid(), tenantId, proposed.name, JSON.stringify(proposed.items));
         }
-      } else if (row.target_table === "offers") {
-        if (row.target_id) {
-          db.query(`UPDATE offers SET status = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`).run(
-            proposed.status || "draft",
-            now(),
-            row.target_id,
-            tenantId
-          );
-        }
-      } else if (row.target_table === "tasks") {
-        if (row.target_id) {
-          db.query(`
-            UPDATE tasks SET 
-              title = COALESCE(?, title),
-              description = COALESCE(?, description),
-              status = COALESCE(?, status),
-              priority = COALESCE(?, priority),
-              assigned_to = COALESCE(?, assigned_to),
-              due_date = COALESCE(?, due_date),
-              estimated_hours = COALESCE(?, estimated_hours),
-              updated_at = datetime('now')
-            WHERE id = ? AND tenant_id = ?
-          `).run(
-            proposed.title || null,
-            proposed.description || null,
-            proposed.status || null,
-            proposed.priority || null,
-            proposed.assigned_to || null,
-            proposed.due_date || null,
-            proposed.estimated_hours ?? null,
-            row.target_id,
-            tenantId
-          );
-        } else {
-          const newId = `task_${Date.now()}_${uuid().slice(0, 8)}`;
-          db.query(`
-            INSERT INTO tasks (id, tenant_id, project_id, title, description, assigned_to, status, priority, due_date, estimated_hours, created_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).run(
-            newId,
-            tenantId,
-            proposed.project_id || null,
-            proposed.title,
-            proposed.description || null,
-            proposed.assigned_to || null,
-            proposed.status || 'todo',
-            proposed.priority || 'medium',
-            proposed.due_date || null,
-            proposed.estimated_hours ?? null,
-            auth.userId
-          );
-        }
-      } else if (row.target_table === "projects") {
-        if (row.target_id) {
-          db.query(`
-            UPDATE projects SET
-              name = COALESCE(?, name),
-              description = COALESCE(?, description),
-              status = COALESCE(?, status),
-              updated_at = datetime('now')
-            WHERE id = ? AND tenant_id = ?
-          `).run(
-            proposed.name || null,
-            proposed.description || null,
-            proposed.status || null,
-            row.target_id,
-            tenantId
-          );
+      } else if (targetTable === "tasks") {
+        if (targetId) {
+          db.query(`UPDATE tasks SET title = ?, description = ?, status = ?, priority = ?, assigned_to = ?, updated_at = ? WHERE id = ?`).run(proposed.title, proposed.description, proposed.status, proposed.priority, proposed.assigned_to, now(), targetId);
         }
       }
 
-      db.query(`UPDATE pending_changes SET status = 'approved', approved_by = ?, approved_at = ? WHERE id = ?`).run(
-        auth.userId,
-        now(),
-        row.id
-      );
+      db.query(`UPDATE pending_changes SET status = 'approved', approved_by = ?, approved_at = ? WHERE id = ?`).run(auth.userId, now(), row.id);
 
-      const updated = db.query("SELECT * FROM pending_changes WHERE id = ?").get(row.id) as any;
-      return json(updated);
+      if (row.suggested_by_user) {
+        notifyUser({
+          tenantId,
+          userId: row.suggested_by_user,
+          type: "approval",
+          severity: "success",
+          title: "Förändring godkänd",
+          message: row.summary || `Change to ${targetTable} was approved`,
+          link: "/admin/pending-changes",
+        }).catch(() => {});
+      }
+
+      return json({ ok: true });
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       return json({ error: "Failed to apply change", details: message }, 500);
@@ -218,17 +157,29 @@ export async function handlePendingChangesApi(
   const rejectMatch = path.match(/^\/api\/admin\/pending-changes\/([^/]+)\/reject$/);
   if (rejectMatch && method === "POST") {
     if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
-    const row = db.query("SELECT * FROM pending_changes WHERE id = ? AND tenant_id = ?").get(rejectMatch[1], tenantId) as any;
-    if (!row) return json({ error: "Not found" }, 404);
-    if (row.status !== "pending") return json({ error: "Change is not pending" }, 400);
-
+    const id = rejectMatch[1];
     const body = await readBody<{ reason?: string }>(req);
+    const row = db.query("SELECT * FROM pending_changes WHERE id = ? AND tenant_id = ?").get(id, tenantId) as any;
+    if (!row) return json({ error: "Not found" }, 404);
+    
     db.query(`UPDATE pending_changes SET status = 'rejected', approved_by = ?, rejected_reason = ?, approved_at = ? WHERE id = ?`).run(
       auth.userId,
       body?.reason || "No reason given",
       now(),
       row.id
     );
+
+    if (row.suggested_by_user) {
+      notifyUser({
+        tenantId,
+        userId: row.suggested_by_user,
+        type: "approval",
+        severity: "warning",
+        title: "Förändring avvisad",
+        message: row.summary || `Change to ${row.target_table} was rejected`,
+        link: "/admin/pending-changes",
+      }).catch(() => {});
+    }
 
     const updated = db.query("SELECT * FROM pending_changes WHERE id = ?").get(row.id) as any;
     return json(updated);

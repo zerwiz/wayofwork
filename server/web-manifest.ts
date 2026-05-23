@@ -52,7 +52,7 @@ function tryListPiExtensionShims(root: string): ShimSlice | null {
 	const dir = join(root, ".pi", "extensions");
 	if (!existsSync(dir)) return null;
 	try {
-		const names = readdirSync(dir).filter((n) => n.endsWith(".ts") && !n.startsWith("."));
+		const names = readdirSync(dir).filter((n) => n.endsWith("") && !n.startsWith("."));
 		return { root, dir, files: names.slice(0, MAX_SHIMS_PER_ROOT) };
 	} catch {
 		return null;
