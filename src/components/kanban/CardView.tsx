@@ -528,42 +528,7 @@ export const CardView: React.FC<CardViewProps> = ({
     setShowCoverPicker(false);
   };
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // ... (inside the rendered JSX)
-
-  {/* Cover Picker Modal */}
-  {showCoverPicker && (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCoverPicker(false)}>
-      <div className="bg-[#252526] p-4 rounded-lg w-full max-w-sm" onClick={e => e.stopPropagation()}>
-        <h4 className="text-sm font-bold text-white mb-3">Choose Cover</h4>
-        <input 
-            type="file" 
-            ref={fileInputRef} 
-            className="hidden" 
-            onChange={(e) => e.target.files && handleFileUpload(e.target.files).then(() => setShowCoverPicker(false))}
-            accept="image/*"
-        />
-        <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full h-10 mb-3 bg-[#3c3c3c] text-white rounded border border-[#3c3c3c] hover:bg-[#444444]"
-        >
-            Upload Image
-        </button>
-        <div className="grid grid-cols-4 gap-2">
-            {boardColorOptions.map(option => (
-                <button 
-                    key={option.value}
-                    onClick={() => handleSetCover(option)}
-                    className="h-10 rounded border border-[#3c3c3c] transition-transform hover:scale-105"
-                    style={{ background: option.type === 'gradient' ? option.gradient : option.value }}
-                    title={option.label}
-                />
-            ))}
-        </div>
-      </div>
-    </div>
-  )}
+  const handleFileUpload = async (files: FileList) => {
     if (!files || files.length === 0) return;
     
     setUploadingFiles(true);
@@ -2453,4 +2418,5 @@ export const CardView: React.FC<CardViewProps> = ({
       />
     </>
   );
+}
 export default CardView;

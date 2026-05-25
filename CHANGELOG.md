@@ -1,6 +1,35 @@
 # Changelog
 All notable changes to Way of Work
 
+## [2.3.23] - 2026-05-25
+
+### Added
+- **WOW-014 Phase 3: Server-side language persistence.** Added `language` column to `users` table; `GET /api/portal/me` now returns user language; `PUT /api/portal/me` accepts and saves `language` preference.
+- **WOW-014 Phase 2: Extended i18n locale files.** Expanded `sv.json` and `en.json` from 49 keys to 200+ keys across 13 namespaces (`common`, `nav`, `auth`, `chat`, `activity_bar`, `simple_nav`, `approvals`, `admin`, `kanban`, `claw`, `time`, `portal`, `settings`, `ta_planner`, `error`).
+- **WOW-014 Phase 4: WebSocket language pass-through.** `useWayOfWorkSession.ts` and `useKanbanEvents.ts` now append `&lang=` to WebSocket connection URLs, read from `localStorage("wop_language")`. Server `ws-handler.ts` already reads `lang` query param and injects it into agent system prompts.
+- **i18n wiring in core UI pages.** Wired `t()` calls into `AdminDashboard.tsx` (all tabs — workers, clients, channels, LLM providers, price lists, approvals, offers), `LoginPage.tsx` (form labels, login button), and `WorkerPortal.tsx` (tab labels, section headers).
+- **LanguageContext server sync.** `LanguageProvider` now loads user language from `GET /api/portal/me` on mount and persists changes via `PUT /api/portal/me` on every `setLanguage()` call.
+
+### Changed
+- Locale files restructured: all namespaced under top-level keys for type-safe dot-notation access (e.g. `t("admin.users")`).
+- WebSocket connection URLs now include `lang` parameter (e.g. `?surface=kanban&token=xxx&lang=sv`).
+
+## [2.3.22] - 2026-05-25
+
+### Fixed
+- **CardView.tsx Build Errors:** Fixed 60+ TypeScript errors caused by misplaced JSX block, duplicate `fileInputRef` declaration, missing `handleFileUpload` function declaration, and missing component closing brace.
+- **WorkBoard.tsx Build Error:** Added missing `import { BoardControls }` from `./parts/BoardControls` to resolve `TS2304: Cannot find name 'BoardControls'`.
+- **Missing Database Tables:** Added `project_members` and `notifications` CREATE TABLE statements to `server/db.ts` — both tables were referenced by route handlers but never created, which caused 500 errors at runtime.
+- **CRITICAL API Errors Resolved:** Verified all four endpoints work correctly with proper authentication:
+  - `GET /api/admin/users` — returns 14 seeded users (was 404)
+  - `GET /api/portal/tasks` — returns tasks (was 500)
+  - `GET /api/admin/llm-providers` — returns config (was 500)
+  - WebSocket `kanban` surface — agent file exists, mapping works
+
+### Added
+- **WOW-004: Real Data Migration** — Seeded 3 construction projects (vattenledningsrenovering, förskola, takrenovering), 7 tasks with assignees, project members across 3 projects, and 6 time entries spanning 3 days. Seed is idempotent (runs only when no projects exist).
+- **WOW-002: Remote Hosting** — Ngrok tunnel verified working. Auto-starts with `WOP_NGROK_DOMAIN` env var.
+
 ## [2.3.21] - 2026-05-24
 
 ### Fixed

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "../contexts/LanguageContext";
 import type { UiMode } from "../hooks/useUiMode";
 
 interface WorkerCredentials {
@@ -23,6 +24,7 @@ interface WorkerTask {
 }
 
 export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode; setUiMode: (m: UiMode) => void; appHeader?: React.ReactNode }) {
+  const { t } = useTranslation();
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     const token = localStorage.getItem("wop_token");
     if (!token) return false;
@@ -154,7 +156,7 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
 
           <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
             <div>
-              <label className="block text-xs text-[#858585] mb-1">Worker ID</label>
+              <label className="block text-xs text-[#858585] mb-1">{t("auth.username")}</label>
               <input
                 type="text"
                 value={workerId}
@@ -165,7 +167,7 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
             </div>
 
             <div>
-              <label className="block text-xs text-[#858585] mb-1">PIN</label>
+              <label className="block text-xs text-[#858585] mb-1">{t("auth.pin")}</label>
               <input
                 type="password"
                 value={pin}
@@ -184,7 +186,7 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
               type="submit"
               className="w-full rounded bg-[#ea580c] px-4 py-2 text-sm font-semibold text-white hover:bg-[#c2410c] transition-colors"
             >
-              Login
+              {t("auth.login")}
             </button>
           </form>
 
@@ -257,10 +259,10 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
                 : "text-[#858585] hover:text-[#cccccc]"
             }`}
           >
-            {tab === "tasks" && "📋 My Tasks"}
-            {tab === "files" && "📐 My Files"}
-            {tab === "time" && "⏰ Time Entries"}
-            {tab === "profile" && "👤 Profile"}
+            {tab === "tasks" && `📋 ${t("portal.my_tasks")}`}
+            {tab === "files" && `📐 ${t("portal.my_files")}`}
+            {tab === "time" && `⏰ ${t("time.title")}`}
+            {tab === "profile" && `👤 ${t("portal.my_profile")}`}
           </button>
         ))}
       </div>
@@ -270,8 +272,8 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
         {activeTab === "tasks" && (
           <div>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-[#cccccc]">My Tasks</h2>
-              <span className="text-xs text-[#858585]">{tasks.length} tasks</span>
+              <h2 className="text-sm font-semibold text-[#cccccc]">{t("portal.my_tasks")}</h2>
+              <span className="text-xs text-[#858585]">{tasks.length} {t("nav.tasks")}</span>
             </div>
             <div className="grid grid-cols-3 gap-4">
               {(["not_started", "in_progress", "complete"] as const).map((status) => (
@@ -315,7 +317,7 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
 
         {activeTab === "files" && (
           <div>
-            <h2 className="mb-4 text-sm font-semibold text-[#cccccc]">My Files</h2>
+              <h2 className="mb-4 text-sm font-semibold text-[#cccccc]">{t("portal.my_files")}</h2>
             <div className="space-y-2">
               {files.map((file) => (
                 <div key={file.id} className="flex items-center justify-between rounded border border-[#3c3c3c] bg-[#252526] px-4 py-3">
@@ -350,7 +352,7 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
 
         {activeTab === "time" && (
           <div>
-            <h2 className="mb-4 text-sm font-semibold text-[#cccccc]">Time Entries</h2>
+            <h2 className="mb-4 text-sm font-semibold text-[#cccccc]">{t("time.title")}</h2>
             <div className="mb-4 rounded border border-[#3c3c3c] bg-[#252526] p-4">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
@@ -382,7 +384,7 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
 
         {activeTab === "profile" && (
           <div className="max-w-2xl">
-            <h2 className="mb-4 text-sm font-semibold text-[#cccccc]">My Profile</h2>
+            <h2 className="mb-4 text-sm font-semibold text-[#cccccc]">{t("portal.my_profile")}</h2>
             <div className="rounded-lg border border-[#3c3c3c] bg-[#252526] p-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>

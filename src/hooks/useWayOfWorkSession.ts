@@ -198,9 +198,10 @@ export function useWayOfWorkSession(surfaceId: string): UseWayOfWorkSessionRetur
 		connectingRef.current = true;
 
 		const token = localStorage.getItem("wop_token");
+		const lang = localStorage.getItem("wop_language") || "sv";
 		const wsUrl =
 			(import.meta as any).env?.VITE_WAYOFPI_WS_URL || `/ws`;
-		const urlWithSurface = `${wsUrl}?surface=${encodeURIComponent(surfaceId)}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
+		const urlWithSurface = `${wsUrl}?surface=${encodeURIComponent(surfaceId)}${token ? `&token=${encodeURIComponent(token)}` : ""}&lang=${lang}`;
 		const newWs = new WebSocket(urlWithSurface);
 		wsRef.current = newWs;
 

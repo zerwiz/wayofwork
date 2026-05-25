@@ -62,6 +62,7 @@ import type { DevelopmentPhase, DevelopmentWorkflow } from '../../../types/devel
 import type { NSRFolder } from '../../../types/nsrCompliance';
 import type { WorkflowTrack, Workflow } from '../../../types/workflows';
 import type { DriveFile } from '../../../types/drive';
+import { BoardControls } from './parts/BoardControls';
 import { useToast } from '../../../contexts/ToastContext';
 import { BOARD_TEMPLATES, getTemplatesByCategory, type TemplateCategory } from '../../../services/boardTemplates';
 

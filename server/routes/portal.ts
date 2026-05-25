@@ -44,7 +44,7 @@ export function registerPortalRoutes(router: Router) {
 	});
 	router.get("/api/portal/me", async (_req, _params, auth) => {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
-		const user = db.query("SELECT id, username, role, tenant_id, full_name, email, phone, job_title, status FROM users WHERE id = ?").get(auth.userId) as any;
+		const user = db.query("SELECT id, username, role, tenant_id, full_name, email, phone, job_title, status, language FROM users WHERE id = ?").get(auth.userId) as any;
 		if (!user) return json({ error: "User not found" }, 404);
 		return json({
 			id: user.id,
@@ -56,6 +56,7 @@ export function registerPortalRoutes(router: Router) {
 			phone: user.phone,
 			jobTitle: user.job_title,
 			status: user.status,
+			language: user.language || "sv",
 		});
 	});
 
@@ -72,10 +73,11 @@ export function registerPortalRoutes(router: Router) {
 				UPDATE users 
 				SET full_name = COALESCE(?, full_name), 
 				    email = COALESCE(?, email),
-				    phone = COALESCE(?, phone)
+				    phone = COALESCE(?, phone),
+				    language = COALESCE(?, language)
 				WHERE id = ? AND tenant_id = ?
-			`).run(body.full_name, body.email, body.phone, auth.userId, auth.tenantId);
-			const user = db.query("SELECT id, username, role, tenant_id, full_name, email, phone FROM users WHERE id = ?").get(auth.userId);
+			`).run(body.full_name, body.email, body.phone, body.language, auth.userId, auth.tenantId);
+			const user = db.query("SELECT id, username, role, tenant_id, full_name, email, phone, language FROM users WHERE id = ?").get(auth.userId);
 			return json(user);
 		} catch (e) {
 			return json({ error: "Failed to update profile" }, 500);

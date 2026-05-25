@@ -35,6 +35,7 @@ interface AdminStats {
 }
 
 export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; setUiMode: (m: string) => void }) {
+  const { t } = useTranslation();
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [clients, setClients] = useState<Worker[]>([]);
   const [stats, setStats] = useState<AdminStats>({ workers: 0, clients: 0, projects: 0, tasks: 0, time_entries: 0, priceLists: 0, pendingChanges: 0 });
@@ -199,7 +200,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-[#1e1e1e] text-white">
-        <div className="text-lg">Loading Admin Console...</div>
+        <div className="text-lg">{t("common.loading")}</div>
       </div>
     );
   }
@@ -211,8 +212,8 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div>
-              <h1 className="text-2xl font-bold text-white">Admin Console</h1>
-              <p className="text-sm text-[#999] mt-1">Manage team, clients, and projects</p>
+              <h1 className="text-2xl font-bold text-white">{t("admin.title")}</h1>
+              <p className="text-sm text-[#999] mt-1">{t("admin.dashboard")}</p>
             </div>
           </div>
         </div>
@@ -222,11 +223,11 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
         {/* Stats Cards */}
         <div className="grid grid-cols-6 gap-4 mb-8">
           {[
-            { label: "Workers", value: stats.workers, color: "border-blue-500" },
+            { label: t("admin.users"), value: stats.workers, color: "border-blue-500" },
             { label: "Clients", value: stats.clients, color: "border-[#ea580c]" },
-            { label: "Projects", value: stats.projects, color: "border-green-500" },
-            { label: "Price Lists", value: stats.priceLists ?? 0, color: "border-cyan-500" },
-            { label: "Tasks", value: stats.tasks, color: "border-yellow-500" },
+            { label: t("admin.projects"), value: stats.projects, color: "border-green-500" },
+            { label: t("admin.price_lists"), value: stats.priceLists ?? 0, color: "border-cyan-500" },
+            { label: t("nav.tasks"), value: stats.tasks, color: "border-yellow-500" },
             { label: "Time Entries", value: stats.time_entries, color: "border-purple-500" },
           ].map((stat) => (
             <div key={stat.label} className={`bg-[#252526] border-l-4 ${stat.color} p-4 rounded`}>
@@ -246,7 +247,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                 : "text-[#858585] hover:text-[#cccccc]"
             }`}
           >
-            Workers
+            {t("admin.users")}
           </button>
           <button
             onClick={() => setActiveTab("pricing")}
@@ -256,7 +257,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                 : "text-[#858585] hover:text-[#cccccc]"
             }`}
           >
-            Prislistor
+            {t("admin.price_lists")}
           </button>
           <button
             onClick={() => setActiveTab("approvals")}
@@ -266,7 +267,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                 : "text-[#858585] hover:text-[#cccccc]"
             }`}
           >
-            Godkännandekö
+            {t("approvals.title")}
             {stats.pendingChanges > 0 && (
               <span className="bg-[#ea580c] text-white text-xs rounded-full px-2 py-0.5 font-bold">
                 {stats.pendingChanges}
@@ -281,7 +282,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                 : "text-[#858585] hover:text-[#cccccc]"
             }`}
           >
-            Offers & Invoices
+            {t("admin.offers_invoices")}
           </button>
           <button
             onClick={() => setActiveTab("clients")}
@@ -301,7 +302,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                 : "text-[#858585] hover:text-[#cccccc]"
             }`}
           >
-            Channels
+            {t("admin.channels")}
           </button>
           <button
             onClick={() => setActiveTab("llm")}
@@ -311,7 +312,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                 : "text-[#858585] hover:text-[#cccccc]"
             }`}
           >
-            LLM Providers
+            {t("admin.llm_providers")}
           </button>
           <button
             onClick={() => setActiveTab("bugs")}
@@ -321,20 +322,20 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                 : "text-[#858585] hover:text-[#cccccc]"
             }`}
           >
-            Bug Reports
+            {t("admin.bug_reports")}
           </button>
         </div>
 
         {activeTab === "workers" && (
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-white">Workers</h2>
+              <h2 className="text-xl font-semibold text-white">{t("admin.users")}</h2>
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowAddWorker(true)}
                   className="px-4 py-2 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-sm"
                 >
-                  + Add Worker
+                  {t("admin.add_user")}
                 </button>
                 <button
                   onClick={() => { setActiveTab("clients"); setShowAddClient(true); }}
@@ -376,13 +377,13 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                     onClick={handleAddWorker}
                     className="px-4 py-2 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-sm"
                   >
-                    Create Worker
+                    {t("common.create")}
                   </button>
                   <button
                     onClick={() => setShowAddWorker(false)}
                     className="px-4 py-2 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-sm"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                 </div>
               </div>
@@ -392,12 +393,12 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
               <table className="w-full text-sm">
                 <thead className="border-b border-[#3c3c3c]">
                   <tr className="text-left text-[#999]">
-                    <th className="p-3">Username</th>
-                    <th className="p-3">Full Name</th>
-                    <th className="p-3">Role</th>
-                    <th className="p-3">Status</th>
+                    <th className="p-3">{t("auth.username")}</th>
+                    <th className="p-3">{t("common.name")}</th>
+                    <th className="p-3">{t("admin.user_role")}</th>
+                    <th className="p-3">{t("common.status")}</th>
                     <th className="p-3">Last Active</th>
-                    <th className="p-3">Actions</th>
+                    <th className="p-3">{t("common.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -412,14 +413,14 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                       </td>
                       <td className="p-3">
                         <span className={worker.active ? "text-green-500" : "text-red-500"}>
-                          {worker.active ? "Active" : "Inactive"}
+                          {worker.active ? t("admin.active") : t("admin.inactive")}
                         </span>
                       </td>
                       <td className="p-3 text-[#999]">
                         {worker.last_active ? new Date(worker.last_active).toLocaleString() : "Never"}
                       </td>
                       <td className="p-3">
-                        <button className="text-[#ea580c] hover:underline mr-3">Edit</button>
+                        <button className="text-[#ea580c] hover:underline mr-3">{t("common.edit")}</button>
                         <button className="text-red-500 hover:underline">Deactivate</button>
                       </td>
                     </tr>
@@ -481,13 +482,13 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                     onClick={handleAddClient}
                     className="px-4 py-2 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-sm"
                   >
-                    Create Client
+                    {t("common.create")}
                   </button>
                   <button
                     onClick={() => setShowAddClient(false)}
                     className="px-4 py-2 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-sm"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                 </div>
               </div>
@@ -499,9 +500,9 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                   <tr className="text-left text-[#999]">
                     <th className="p-3">Client ID</th>
                     <th className="p-3">Company Name</th>
-                    <th className="p-3">Status</th>
+                    <th className="p-3">{t("common.status")}</th>
                     <th className="p-3">Last Login</th>
-                    <th className="p-3">Actions</th>
+                    <th className="p-3">{t("common.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -511,7 +512,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                       <td className="p-3">{client.full_name || "-"}</td>
                       <td className="p-3">
                         <span className={client.active ? "text-green-500" : "text-red-500"}>
-                          {client.active ? "Active" : "Inactive"}
+                          {client.active ? t("admin.active") : t("admin.inactive")}
                         </span>
                       </td>
                       <td className="p-3 text-[#999]">
@@ -537,7 +538,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
         {activeTab === "channels" && (
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-white">Channels</h2>
+              <h2 className="text-xl font-semibold text-white">{t("admin.channels")}</h2>
             </div>
 
             <div className="flex gap-4 border-b border-[#3c3c3c] mb-6">
@@ -595,8 +596,8 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                           className="bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm col-span-2" />
                       </div>
                       <div className="flex gap-2 mt-3">
-                        <button onClick={handleAddWhatsappBot} className="px-3 py-1.5 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-xs">Create</button>
-                        <button onClick={() => setShowAddWhatsappBot(false)} className="px-3 py-1.5 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-xs">Cancel</button>
+                        <button onClick={handleAddWhatsappBot} className="px-3 py-1.5 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-xs">{t("common.create")}</button>
+                        <button onClick={() => setShowAddWhatsappBot(false)} className="px-3 py-1.5 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-xs">{t("common.cancel")}</button>
                       </div>
                     </div>
                   )}
@@ -618,10 +619,10 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                             </td>
                             <td className="p-2 text-[#999]">{bot.phoneNumber || "-"}</td>
                             <td className="p-2">
-                              <span className={bot.active ? "text-green-500" : "text-red-500"}>{bot.active ? "Yes" : "No"}</span>
+                              <span className={bot.active ? "text-green-500" : "text-red-500"}>{bot.active ? t("common.yes") : t("common.no")}</span>
                             </td>
                             <td className="p-2 text-right">
-                              <button onClick={() => handleDeleteWhatsappBot(bot.id)} className="text-red-500 hover:underline text-xs">Delete</button>
+                              <button onClick={() => handleDeleteWhatsappBot(bot.id)} className="text-red-500 hover:underline text-xs">{t("common.delete")}</button>
                             </td>
                           </tr>
                         ))}
@@ -659,8 +660,8 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                           className="bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm col-span-2" />
                       </div>
                       <div className="flex gap-2 mt-3">
-                        <button onClick={handleAddTelegramBot} className="px-3 py-1.5 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-xs">Create</button>
-                        <button onClick={() => setShowAddTelegramBot(false)} className="px-3 py-1.5 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-xs">Cancel</button>
+                        <button onClick={handleAddTelegramBot} className="px-3 py-1.5 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-xs">{t("common.create")}</button>
+                        <button onClick={() => setShowAddTelegramBot(false)} className="px-3 py-1.5 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-xs">{t("common.cancel")}</button>
                       </div>
                     </div>
                   )}
@@ -682,10 +683,10 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                             </td>
                             <td className="p-2 text-[#999]">{bot.botUsername || "-"}</td>
                             <td className="p-2">
-                              <span className={bot.active ? "text-green-500" : "text-red-500"}>{bot.active ? "Yes" : "No"}</span>
+                              <span className={bot.active ? "text-green-500" : "text-red-500"}>{bot.active ? t("common.yes") : t("common.no")}</span>
                             </td>
                             <td className="p-2 text-right">
-                              <button onClick={() => handleDeleteTelegramBot(bot.id)} className="text-red-500 hover:underline text-xs">Delete</button>
+                              <button onClick={() => handleDeleteTelegramBot(bot.id)} className="text-red-500 hover:underline text-xs">{t("common.delete")}</button>
                             </td>
                           </tr>
                         ))}
@@ -725,7 +726,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
                         <td className="p-3 text-[#999]">{link.channel_username || "-"}</td>
                         <td className="p-3 text-[#999] text-xs">{link.channel_bot_id || "-"}</td>
                         <td className="p-3">
-                          <span className={link.active ? "text-green-500" : "text-red-500"}>{link.active ? "Yes" : "No"}</span>
+                          <span className={link.active ? "text-green-500" : "text-red-500"}>{link.active ? t("common.yes") : t("common.no")}</span>
                         </td>
                         <td className="p-3 text-[#999] text-xs">
                           {link.last_activity_at ? new Date(link.last_activity_at).toLocaleString() : "-"}
@@ -812,6 +813,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
 }
 
 function LlmProvidersTab() {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -896,7 +898,7 @@ function LlmProvidersTab() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-white">LLM Provider</h2>
+      <h2 className="text-xl font-semibold text-white">{t("admin.llm_providers")}</h2>
       <p className="text-sm text-[#858585]">Configure AI model providers for the Claw assistant (web chat & bots). The active provider is used at runtime.</p>
 
       <div className="space-y-3 max-w-2xl">
@@ -973,7 +975,7 @@ function LlmProvidersTab() {
       <div className="flex items-center gap-3">
         <button onClick={handleSave} disabled={saving}
           className="rounded bg-[#ea580c] px-4 py-2 text-sm text-white disabled:opacity-50">
-          {saving ? "Saving..." : "Save"}
+          {saving ? t("common.loading") : t("common.save")}
         </button>
         {saved && <span className="text-xs text-green-500">Saved ✓</span>}
       </div>
@@ -982,6 +984,7 @@ function LlmProvidersTab() {
 }
 
 function PriceListsTab() {
+  const { t } = useTranslation();
   const [lists, setLists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
@@ -1062,13 +1065,13 @@ function PriceListsTab() {
   };
 
   if (loading) {
-    return <div className="text-[#858585] py-4">Loading price lists...</div>;
+    return <div className="text-[#858585] py-4">{t("common.loading")}</div>;
   }
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-white">Price Lists</h2>
+        <h2 className="text-xl font-semibold text-white">{t("admin.price_lists")}</h2>
         <button
           onClick={() => setShowNew(!showNew)}
           className="px-4 py-2 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-sm"
@@ -1088,10 +1091,10 @@ function PriceListsTab() {
           />
           <div className="flex gap-2">
             <button onClick={handleCreate} className="px-4 py-2 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-sm">
-              Create
+              {t("common.create")}
             </button>
             <button onClick={() => setShowNew(false)} className="px-4 py-2 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-sm">
-              Cancel
+              {t("common.cancel")}
             </button>
           </div>
         </div>
@@ -1129,13 +1132,13 @@ function PriceListsTab() {
                     }}
                     className="text-[#999] hover:text-white text-xs"
                   >
-                    {isEditing ? "Close" : "Edit"}
+                    {isEditing ? t("common.close") : t("common.edit")}
                   </button>
                   <button
                     onClick={() => handleDelete(list.id)}
                     className="text-red-500 hover:text-red-400 text-xs"
                   >
-                    Remove
+                    {t("common.delete")}
                   </button>
                 </div>
               </div>
@@ -1525,6 +1528,7 @@ function ApprovalQueueTab() {
 }
 
 function OffersInvoicesTab() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<"offers" | "invoices">("offers");
   const [offers, setOffers] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -1659,7 +1663,7 @@ function OffersInvoicesTab() {
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <div className="text-[#858585] animate-pulse">Loading...</div>
+        <div className="text-[#858585] animate-pulse">{t("common.loading")}</div>
       </div>
     );
   }
@@ -1667,7 +1671,7 @@ function OffersInvoicesTab() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-white capitalize">{tab}</h2>
+        <h2 className="text-xl font-semibold text-white">{t("admin.offers_invoices")}</h2>
         <div className="flex gap-2">
           <button onClick={() => { setTab("offers"); openForm(); }} className="px-4 py-2 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-sm">
             New Offer
@@ -1840,8 +1844,8 @@ function OffersInvoicesTab() {
             </div>
 
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-sm">Cancel</button>
-              <button onClick={saveForm} className="px-4 py-2 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-sm">{editing ? "Update" : "Create"}</button>
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-sm">{t("common.cancel")}</button>
+              <button onClick={saveForm} className="px-4 py-2 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-sm">{editing ? t("common.save") : t("common.create")}</button>
             </div>
           </div>
         </div>

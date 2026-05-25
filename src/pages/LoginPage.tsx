@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "../contexts/LanguageContext";
 
 interface LoginResponse {
   token: string;
@@ -12,6 +13,7 @@ interface LoginResponse {
 }
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
@@ -79,12 +81,12 @@ export function LoginPage() {
              </div>
           </div>
           <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Way of Work</h1>
-          <p className="mt-2 text-sm text-[#858585] font-medium">The Work Production Tool</p>
+          <p className="mt-2 text-sm text-[#858585] font-medium">{t("auth.login_subtitle")}</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-xs font-bold text-[#858585] uppercase tracking-widest mb-1.5">User ID</label>
+            <label className="block text-xs font-bold text-[#858585] uppercase tracking-widest mb-1.5">{t("auth.username")}</label>
             <input
               type="text"
               value={userId}
@@ -96,7 +98,7 @@ export function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#858585] uppercase tracking-widest mb-1.5">PIN</label>
+            <label className="block text-xs font-bold text-[#858585] uppercase tracking-widest mb-1.5">{t("auth.pin")}</label>
             <input
               type="password"
               value={pin}
@@ -118,7 +120,7 @@ export function LoginPage() {
             disabled={loading}
             className="w-full rounded-md bg-[#ea580c] px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#ea580c]/20 hover:bg-[#c2410c] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Authenticating..." : "Sign In"}
+            {loading ? t("auth.logging_in") : t("auth.login")}
           </button>
         </form>
       </div>

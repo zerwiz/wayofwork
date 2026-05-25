@@ -100,6 +100,23 @@ db.run(`
 `);
 
 db.run(`
+  CREATE TABLE IF NOT EXISTS project_members (
+    tenant_id TEXT NOT NULL,
+    project_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'WORKER',
+    created_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (project_id, user_id),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+    FOREIGN KEY (project_id) REFERENCES projects(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`);
+
+db.run("CREATE INDEX IF NOT EXISTS idx_project_members_user ON project_members(user_id)");
+db.run("CREATE INDEX IF NOT EXISTS idx_project_members_tenant ON project_members(tenant_id)");
+
+db.run(`
   CREATE TABLE IF NOT EXISTS time_entries (
     id TEXT PRIMARY KEY,
     tenant_id TEXT NOT NULL,
@@ -275,6 +292,26 @@ db.run(`
 `);
 
 db.run(`
+  CREATE TABLE IF NOT EXISTS notifications (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    link TEXT,
+    read INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`);
+
+db.run("CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(tenant_id, user_id)");
+db.run("CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(tenant_id, user_id, read)");
+
+db.run(`
   CREATE TABLE IF NOT EXISTS ta_plans (
     id TEXT PRIMARY KEY,
     tenant_id TEXT NOT NULL,
@@ -325,6 +362,9 @@ if (!userColNames.includes("status")) {
 }
 if (!userColNames.includes("last_active")) {
   try { db.run("ALTER TABLE users ADD COLUMN last_active DATETIME"); } catch {}
+}
+if (!userColNames.includes("language")) {
+  try { db.run("ALTER TABLE users ADD COLUMN language TEXT DEFAULT 'sv'"); } catch {}
 }
 
 // Migration: add missing columns to projects table (existing databases)
@@ -435,6 +475,112 @@ const keepUsers = new Set(["admin", "anna", "bjorn", "cecilia", "demo-worker", "
 const toRemove = existingUsernames.filter((u: string) => !keepUsers.has(u));
 for (const u of toRemove) {
   db.run("DELETE FROM users WHERE username = ?", [u]);
+}
+
+// Seed demo projects and tasks for WOW-004 (real data migration)
+const existingProjects = db.query("SELECT COUNT(*) as count FROM projects WHERE tenant_id = ?").get(defaultTenantId) as any;
+if (existingProjects.count === 0) {
+  const userIds = db.query("SELECT id, username FROM users WHERE tenant_id = ?").all(defaultTenantId) as any[];
+  const userMap = Object.fromEntries(userIds.map((u: any) => [u.username, u.id]));
+
+  const projectDefs = [
+    {
+      name: "Vattenledningsrenovering - Kungsgatan",
+      description: "Fullständig renovering av vattenledningssystem under Kungsgatan. Omfattar schaktning, ledningsbyte och återställning av gatumiljö.",
+      status: "active",
+      created_by: userMap["cecilia"],
+    },
+    {
+      name: "Nybyggnation förskola - Solbacken",
+      description: "Nybyggnation av förskola med 6 avdelningar. Omfattar grundläggning, stomme, tak, installationer och inredning.",
+      status: "active",
+      created_by: userMap["cecilia"],
+    },
+    {
+      name: "Takrenovering - Centrumhuset",
+      description: "Komplett takrenovering av centrumhuset inklusive byte av takpannor, underlagspapp, och lagning av skorsten.",
+      status: "active",
+      created_by: userMap["cecilia"],
+    },
+  ];
+
+  const projectIds: string[] = [];
+  for (const p of projectDefs) {
+    const id = crypto.randomUUID();
+    db.run(
+      "INSERT INTO projects (id, tenant_id, name, description, status, created_by) VALUES (?, ?, ?, ?, ?, ?)",
+      [id, defaultTenantId, p.name, p.description, p.status, p.created_by]
+    );
+    projectIds.push(id);
+  }
+  console.log(`Created ${projectDefs.length} demo projects`);
+
+  // Project members
+  const memberDefs = [
+    { projectIdx: 0, username: "cecilia", role: "LEADER" },
+    { projectIdx: 0, username: "anna", role: "WORKER" },
+    { projectIdx: 0, username: "bjorn", role: "WORKER" },
+    { projectIdx: 0, username: "kalle", role: "WORKER" },
+    { projectIdx: 0, username: "demo-client", role: "CLIENT" },
+    { projectIdx: 1, username: "cecilia", role: "LEADER" },
+    { projectIdx: 1, username: "demo-worker", role: "WORKER" },
+    { projectIdx: 1, username: "kalle", role: "WORKER" },
+    { projectIdx: 1, username: "demo-client", role: "CLIENT" },
+    { projectIdx: 2, username: "cecilia", role: "LEADER" },
+    { projectIdx: 2, username: "anna", role: "WORKER" },
+    { projectIdx: 2, username: "demo-client", role: "CLIENT" },
+  ];
+  for (const m of memberDefs) {
+    const userId = userMap[m.username];
+    if (!userId) continue;
+    db.run(
+      "INSERT OR IGNORE INTO project_members (project_id, user_id, tenant_id, role) VALUES (?, ?, ?, ?)",
+      [projectIds[m.projectIdx], userId, defaultTenantId, m.role]
+    );
+  }
+  console.log(`Created ${memberDefs.length} project members`);
+
+  // Tasks
+  const taskDefs = [
+    { projectIdx: 0, title: "Schaktning för ledningsgrav", description: "Schakta upp Kungsgatan för ledningsgrav 2m djup", assigned_to: "bjorn", priority: "high", deadline: "2026-06-15", estimated_hours: 40 },
+    { projectIdx: 0, title: "Byte av vattenledningar", description: "Demontera gamla gjutjärnsledningar och installera nya PE-ledningar", assigned_to: "anna", priority: "high", deadline: "2026-06-30", estimated_hours: 80 },
+    { projectIdx: 0, title: "Återställning av gata", description: "Återfyllning, packning och asfaltering av Kungsgatan", assigned_to: "kalle", priority: "medium", deadline: "2026-07-15", estimated_hours: 32 },
+    { projectIdx: 1, title: "Gjutning av grundplatta", description: "Formsättning, armering och gjutning av grundplatta 20x30m", assigned_to: "demo-worker", priority: "high", deadline: "2026-06-20", estimated_hours: 120 },
+    { projectIdx: 1, title: "Resning av trästomme", description: "Resning av bärande trästomme med limträbalkar", assigned_to: "kalle", priority: "high", deadline: "2026-07-10", estimated_hours: 160 },
+    { projectIdx: 2, title: "Rivning av gammalt tak", description: "Rivning och bortforsling av gamla takpannor och underlagstak", assigned_to: "anna", priority: "medium", deadline: "2026-06-10", estimated_hours: 24 },
+    { projectIdx: 2, title: "Montering av nytt tak", description: "Läggning av ny underlagspapp, läkt och betongtakpannor", assigned_to: "bjorn", priority: "high", deadline: "2026-06-28", estimated_hours: 64 },
+  ];
+  let taskCount = 0;
+  for (const t of taskDefs) {
+    const id = crypto.randomUUID();
+    db.run(
+      "INSERT INTO tasks (id, tenant_id, project_id, title, description, assigned_to, status, priority, deadline, estimated_hours, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [id, defaultTenantId, projectIds[t.projectIdx], t.title, t.description, userMap[t.assigned_to], "todo", t.priority, t.deadline, t.estimated_hours, userMap["cecilia"]]
+    );
+    taskCount++;
+  }
+  console.log(`Created ${taskCount} demo tasks`);
+
+  // Time entries (last 3 days)
+  const now = new Date();
+  const timeEntryDefs = [
+    { projectIdx: 0, username: "anna", date: new Date(now.getTime() - 86400000 * 2).toISOString().split("T")[0], hours: 7.5, description: "Schaktning Kungsgatan" },
+    { projectIdx: 0, username: "bjorn", date: new Date(now.getTime() - 86400000 * 2).toISOString().split("T")[0], hours: 8, description: "Ledningsarbete etapp 1" },
+    { projectIdx: 1, username: "kalle", date: new Date(now.getTime() - 86400000 * 1).toISOString().split("T")[0], hours: 7, description: "Formsättning grund" },
+    { projectIdx: 1, username: "demo-worker", date: new Date(now.getTime() - 86400000 * 1).toISOString().split("T")[0], hours: 8, description: "Armeringsarbete" },
+    { projectIdx: 2, username: "anna", date: new Date(now.getTime() - 86400000 * 0).toISOString().split("T")[0], hours: 6.5, description: "Rivning gammalt tak" },
+    { projectIdx: 2, username: "bjorn", date: new Date(now.getTime() - 86400000 * 0).toISOString().split("T")[0], hours: 7, description: "Förberedelse ny takbeläggning" },
+  ];
+  let entryCount = 0;
+  for (const e of timeEntryDefs) {
+    const id = crypto.randomUUID();
+    db.run(
+      "INSERT INTO time_entries (id, tenant_id, user_id, project_id, date, hours, description) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [id, defaultTenantId, userMap[e.username], projectIds[e.projectIdx], e.date, e.hours, e.description]
+    );
+    entryCount++;
+  }
+  console.log(`Created ${entryCount} demo time entries`);
 }
 
 // Seed template price lists for default tenant if they don't already exist by name
