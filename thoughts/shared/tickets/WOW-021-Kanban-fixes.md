@@ -1,10 +1,35 @@
-the settings modal gets higher the what the screen for the user can show.
-we are missing alot of rfeatures in teh cards from teh refernce. we missing so the user can updlaod pictures files to the card cover. and the card coder had gradient and more cour options before.
+# Ticket: [WOW-021] Kanban Board and Card Refinement
 
-the assigen to user are not connected to teh real data base. it seems to be mock users . 
+## Objective
+Address critical UI/UX and functional issues in the Kanban board and card system, ensuring it meets the reference standards and production requirements.
 
+## Problem Statement
+The Kanban system is currently incomplete and suffers from several usability issues, including:
+- Modal height exceeds screen view.
+- Missing card functionality: picture/file upload for card covers.
+- Missing card functionality: gradient and custom color options for card covers.
+- Incorrect data binding: assignee picker uses mock users instead of real system users.
+- Missing functionality: time logs per card are not displayed, which is critical for tracking worker tasks.
 
-and the looged time per card sseems to be missing. mainly cards will be connected to users work tasks could be severaeal of workers ant their task will be in teh carrds. that shhould gets howed in tehri workborad so they know what to work with.
+## Requirements
+### UI/UX Improvements
+- [x] Fix modal height issues (e.g., settings modal) to ensure they fit within the viewport and are scrollable.
+- [x] Implement card cover image upload functionality.
+- [x] Restore gradient and advanced color options for card covers.
 
+### Functional Enhancements
+- [x] Connect the card assignee picker to the real database of system users.
+- [x] Display logged time per card in the card view.
+- [x] Ensure tasks assigned to specific workers are correctly reflected in their workboards.
 
-invetigate all this and make this ticket great. 
+## Acceptance Criteria
+- Modal interfaces are fully responsive and scrollable.
+- Card covers support image uploads, gradients, and custom colors.
+- Assignee picker shows and correctly assigns real users from the system database.
+- Logged time is accurately displayed on Kanban cards.
+- Workers see their assigned tasks correctly in their workboards.
+
+## Meta
+**Created**: 2026-05-24
+**Priority**: High
+**Estimated Effort**: L

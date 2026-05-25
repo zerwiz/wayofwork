@@ -806,7 +806,7 @@ export function SimpleChatView({
 				) : null}
 				<form
 					onSubmit={submit}
-					className={`relative mx-auto flex ${transcriptMax} flex-col gap-0 rounded-2xl border shadow-md transition-all focus-within:border-[#ea580c] focus-within:ring-1 focus-within:ring-[#ea580c]/40 ${composerBg} ${cx ? "p-1.5" : "p-2.5"}`}
+					className={`relative mx-auto flex ${transcriptMax} flex-col gap-0 rounded-2xl border shadow-md transition-all focus-within:border-[#ea580c] focus-within:ring-1 focus-within:ring-[#ea580c]/40 ${composerBg} ${cx ? "p-1.5" : "p-2.5"} flex-shrink-0`}
 				>
 					<input
 						ref={fileRef}

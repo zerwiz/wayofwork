@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Briefcase, Shield, User, LogOut, Columns3, ClipboardList } from "lucide-react";
+import { FileText, Briefcase, Shield, User, LogOut, Columns3, ClipboardList, CircleDot } from "lucide-react";
+import { useNotifications } from "../contexts/NotificationContext";
 
 /** Same control as in the technical `MenuBar` (IDE chrome). */
 export function UiModeToggle({
@@ -119,63 +120,35 @@ export function UiModeToggle({
 				Kanban
 			</button>
 
-			<div className="mx-1 h-3 w-[1px] bg-[#454545]" />
+			<button
+				type="button"
+				onClick={() => {
+					if (window.location.pathname !== "/") navigate("/", { replace: true });
+					onUiModeChange("ta-planner");
+				}}
+				className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors ${
+					uiMode === "ta-planner" && !anyPageActive ? "bg-[#ea580c] text-white" : "text-[#858585] hover:text-[#cccccc]"
+				}`}
+				title="TA-Planner"
+			>
+				<ClipboardList size={12} />
+				TA-Planner
+			</button>
 
-			{isClientRole && (
-				<button
-					type="button"
-					onClick={() => navigate("/client", { replace: true })}
-					className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors ${
-						isClientPage ? "bg-[#ea580c] text-white" : "text-[#858585] hover:text-[#cccccc]"
-					}`}
-					title="Client Dashboard"
-				>
-					<User size={12} />
-					Client
-				</button>
-			)}
-
-			{isAdminRole && (
-				<button
-					type="button"
-					onClick={() => navigate("/admin", { replace: true })}
-					className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors ${
-						isAdminPage ? "bg-[#ea580c] text-white" : "text-[#858585] hover:text-[#cccccc]"
-					}`}
-					title="Admin Console"
-				>
-					<Shield size={12} />
-					Admin
-				</button>
-			)}
-
-			{isSuperAdminRole && (
-				<button
-					type="button"
-					onClick={() => navigate("/super-admin", { replace: true })}
-					className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors ${
-						isSuperAdminPage ? "bg-[#ea580c] text-white" : "text-[#858585] hover:text-[#cccccc]"
-					}`}
-					title="Developer View"
-				>
-					<Shield size={12} />
-					DevView
-				</button>
-			)}
-
-			{isWorkerRole && (
-				<button
-					type="button"
-					onClick={() => navigate("/ata", { replace: true })}
-					className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors ${
-						window.location.pathname === "/ata" ? "bg-[#ea580c] text-white" : "text-[#858585] hover:text-[#cccccc]"
-					}`}
-					title="ÄTA — Change order ticket system"
-				>
-					<ClipboardList size={12} />
-					ÄTA
-				</button>
-			)}
+			<button
+				type="button"
+				onClick={() => {
+					if (window.location.pathname !== "/") navigate("/", { replace: true });
+					onUiModeChange("ata");
+				}}
+				className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors ${
+					uiMode === "ata" && !anyPageActive ? "bg-[#ea580c] text-white" : "text-[#858585] hover:text-[#cccccc]"
+				}`}
+				title="ÄTA — Change order ticket system"
+			>
+				<ClipboardList size={12} />
+				ÄTA
+			</button>
 
 			<button
 				type="button"
@@ -191,6 +164,8 @@ export function UiModeToggle({
 
 			<div className="mx-1 h-3 w-[1px] bg-[#454545]" />
 
+			<NotificationBell />
+
 			<button
 				type="button"
 				onClick={() => {
@@ -202,6 +177,29 @@ export function UiModeToggle({
 			>
 				<LogOut size={12} />
 				Logout
+			</button>
+		</div>
+	);
+}
+
+function NotificationBell() {
+	const { unreadCount } = useNotifications();
+	const [open, setOpen] = useState(false);
+
+	return (
+		<div className="relative">
+			<button
+				type="button"
+				onClick={() => setOpen(!open)}
+				className="relative flex items-center gap-1 rounded px-1.5 py-0.5 text-[#858585] transition-colors hover:text-[#cccccc]"
+				title="Notifications"
+			>
+				<CircleDot size={12} />
+				{unreadCount > 0 && (
+					<span className="absolute -right-0.5 -top-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-[#ea580c] text-[8px] font-bold text-white">
+						{unreadCount > 9 ? "9+" : unreadCount}
+					</span>
+				)}
 			</button>
 		</div>
 	);

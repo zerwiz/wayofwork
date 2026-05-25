@@ -11,21 +11,23 @@ export function registerProjectRoutes(router: Router) {
 			const isWorker = auth.role === "WORKER";
 			const isClient = auth.role === "CLIENT";
 			let projects: any[];
+			const starredSubquery = `(SELECT 1 FROM project_stars WHERE project_id = p.id AND user_id = ?) AS starred`;
 
 			if (isWorker) {
 				projects = db.query(`
-					SELECT p.* FROM projects p
+					SELECT p.*, ${starredSubquery} FROM projects p
 					JOIN project_members pm ON p.id = pm.project_id
 					WHERE p.tenant_id = ? AND pm.user_id = ?
-				`).all(auth.tenantId, auth.userId) as any[];
+				`).all(auth.userId, auth.tenantId, auth.userId) as any[];
 			} else if (isClient) {
 				projects = db.query(`
-					SELECT * FROM projects WHERE tenant_id = ? AND status != 'draft'
-					ORDER BY created_at DESC
-				`).all(auth.tenantId) as any[];
+					SELECT p.*, ${starredSubquery} FROM projects p
+					WHERE p.tenant_id = ? AND p.status != 'draft'
+					ORDER BY p.created_at DESC
+				`).all(auth.userId, auth.tenantId) as any[];
 			} else {
 				// ADMIN, LEADER, SUPER_ADMIN
-				projects = db.query("SELECT * FROM projects WHERE tenant_id = ? ORDER BY created_at DESC").all(auth.tenantId) as any[];
+				projects = db.query(`SELECT p.*, ${starredSubquery} FROM projects p WHERE p.tenant_id = ? ORDER BY p.created_at DESC`).all(auth.userId, auth.tenantId) as any[];
 			}
 
 			// Economics shield: Hide budget info from workers, clients, and leaders
@@ -36,6 +38,9 @@ export function registerProjectRoutes(router: Router) {
 					return rest;
 				});
 			}
+
+			// Cast starred to boolean
+			projects = projects.map(p => ({ ...p, starred: !!p.starred }));
 
 			return json(projects || []);
 		} catch (e) {
@@ -100,7 +105,7 @@ export function registerProjectRoutes(router: Router) {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
 		if (auth.role === "WORKER" || auth.role === "CLIENT") return json({ error: "Forbidden" }, 403);
 
-		let body: { name?: string; description?: string; budget_allocated?: number; status?: string };
+		let body: { name?: string; description?: string; budget_allocated?: number; status?: string; settings_json?: string };
 		try {
 			body = (await req.json()) as any;
 		} catch {
@@ -111,9 +116,9 @@ export function registerProjectRoutes(router: Router) {
 		try {
 			const id = `proj_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 			db.query(`
-				INSERT INTO projects (id, tenant_id, name, description, budget_allocated, status, created_by)
-				VALUES (?, ?, ?, ?, ?, ?, ?)
-			`).run(id, auth.tenantId, body.name, body.description || null, body.budget_allocated || 0, body.status || "active", auth.userId);
+				INSERT INTO projects (id, tenant_id, name, description, budget_allocated, status, created_by, settings_json)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			`).run(id, auth.tenantId, body.name, body.description || null, body.budget_allocated || 0, body.status || "active", auth.userId, body.settings_json || null);
 			
 			const project = db.query("SELECT * FROM projects WHERE id = ?").get(id);
 			return json(project);
@@ -139,6 +144,15 @@ export function registerProjectRoutes(router: Router) {
 			const existing = db.query("SELECT * FROM projects WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId);
 			if (!existing) return json({ error: "Project not found" }, 404);
 			
+			// settings_json: accept from settings_json, settings, or columns (column reorder from drag-drop)
+			let settingsVal = body.settings_json ?? body.settings;
+			if (settingsVal === undefined && body.columns) {
+				settingsVal = { columns: body.columns };
+			}
+			const settingsStr = settingsVal !== undefined && settingsVal !== null
+			  ? (typeof settingsVal === 'string' ? settingsVal : JSON.stringify(settingsVal))
+			  : null;
+
 			db.query(`
 				UPDATE projects 
 				SET name = COALESCE(?, name), 
@@ -152,10 +166,25 @@ export function registerProjectRoutes(router: Router) {
 				    body.description, 
 				    body.budget_allocated, 
 				    body.status, 
-				    (body.settings_json || body.settings) ? JSON.stringify(body.settings_json || body.settings) : null, 
+				    settingsStr, 
 				    id, 
 				    auth.tenantId
 				    );
+
+			// Handle starred (user-specific toggle)
+			if (body.starred !== undefined) {
+				if (body.starred) {
+					db.query(`
+						INSERT OR IGNORE INTO project_stars (user_id, project_id, tenant_id)
+						VALUES (?, ?, ?)
+					`).run(auth.userId, id, auth.tenantId);
+				} else {
+					db.query(`
+						DELETE FROM project_stars WHERE user_id = ? AND project_id = ?
+					`).run(auth.userId, id);
+				}
+			}
+
 			const project = db.query("SELECT * FROM projects WHERE id = ?").get(id);
 			return json(project);
 		} catch (e) {

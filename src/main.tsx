@@ -6,6 +6,7 @@ import { LoginPage, WelcomePage } from "./pages";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { NotificationToast } from "./components/NotificationToast";
 import "./index.css";
+import "./claw/clawUserUiModules";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   constructor(props: { children: ReactNode }) {

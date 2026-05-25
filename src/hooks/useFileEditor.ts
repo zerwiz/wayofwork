@@ -64,7 +64,7 @@ export function useFileEditor(
 	const [dirty, setDirty] = useState(false);
 
 	useEffect(() => {
-		if (!path) {
+		if (!path || path === "") {
 			setContent("");
 			setLastPersistedContent("");
 			setPersistEncoding("utf8");

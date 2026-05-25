@@ -707,6 +707,52 @@ export async function executeOrchestratorTool(
 				return { output: `calendar_delete: ${m}` };
 			}
 		}
+		case "ta_plan_list": {
+			logTool("ta_plan_list", "");
+			try {
+				const plans = db.query("SELECT * FROM ta_plans WHERE tenant_id = ?").all(tenantId);
+				return { output: JSON.stringify(plans, null, 2) };
+			} catch (e) {
+				const m = e instanceof Error ? e.message : String(e);
+				return { output: `ta_plan_list: ${m}` };
+			}
+		}
+		case "ta_plan_get": {
+			logTool("ta_plan_get", String(args.id ?? ""));
+			try {
+				const plan = db.query("SELECT * FROM ta_plans WHERE id = ? AND tenant_id = ?").get(args.id, tenantId);
+				return { output: plan ? JSON.stringify(plan, null, 2) : "Plan not found" };
+			} catch (e) {
+				const m = e instanceof Error ? e.message : String(e);
+				return { output: `ta_plan_get: ${m}` };
+			}
+		}
+		case "ta_plan_create": {
+			logTool("ta_plan_create", String(args.title ?? ""));
+			try {
+				const id = `tap_${Date.now()}`;
+				db.query(`
+					INSERT INTO ta_plans (id, tenant_id, title, work_type, status, created_by)
+					VALUES (?, ?, ?, ?, 'draft', ?)
+				`).run(id, tenantId, args.title, args.work_type || 'fixed', userId);
+				const plan = db.query("SELECT * FROM ta_plans WHERE id = ?").get(id);
+				return { output: JSON.stringify(plan, null, 2) };
+			} catch (e) {
+				const m = e instanceof Error ? e.message : String(e);
+				return { output: `ta_plan_create: ${m}` };
+			}
+		}
+		case "ta_plan_update": {
+			logTool("ta_plan_update", String(args.id ?? ""));
+			try {
+				db.query("UPDATE ta_plans SET title = COALESCE(?, title), status = COALESCE(?, status) WHERE id = ? AND tenant_id = ?").run(args.title, args.status, args.id, tenantId);
+				const plan = db.query("SELECT * FROM ta_plans WHERE id = ?").get(args.id);
+				return { output: plan ? JSON.stringify(plan, null, 2) : "Plan not found" };
+			} catch (e) {
+				const m = e instanceof Error ? e.message : String(e);
+				return { output: `ta_plan_update: ${m}` };
+			}
+		}
 		default:
 			return {
 				output: formatUnknownOrchestratorToolMessage(name),
@@ -940,6 +986,59 @@ export const ORCHESTRATOR_TOOLS_OPENAI = [
 					event_id: { type: "string", description: "The event ID to delete" },
 				},
 				required: ["event_id"],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "ta_plan_list",
+			description: "List all traffic arrangement plans for the current tenant.",
+			parameters: { type: "object", properties: {} },
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "ta_plan_get",
+			description: "Get details of a specific traffic arrangement plan.",
+			parameters: {
+				type: "object",
+				properties: {
+					id: { type: "string", description: "The plan ID" },
+				},
+				required: ["id"],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "ta_plan_create",
+			description: "Create a new traffic arrangement plan.",
+			parameters: {
+				type: "object",
+				properties: {
+					title: { type: "string", description: "Plan title" },
+					work_type: { type: "string", description: "Type of work (e.g. fixed, mobile)" },
+				},
+				required: ["title"],
+			},
+		},
+	},
+	{
+		type: "function" as const,
+		function: {
+			name: "ta_plan_update",
+			description: "Update title or status of a traffic arrangement plan.",
+			parameters: {
+				type: "object",
+				properties: {
+					id: { type: "string", description: "The plan ID" },
+					title: { type: "string", description: "New title" },
+					status: { type: "string", description: "New status" },
+				},
+				required: ["id"],
 			},
 		},
 	},

@@ -2,6 +2,7 @@ import { json } from "../utils";
 import { db, applyActiveProvider } from "../db";
 import type { LlmConfig, LlmProvider } from "../db";
 import type { Router } from "../router";
+import { loadWoSessionMessages } from "../wo-session-jsonl";
 
 function adminGuard(auth: { role?: string } | null): boolean {
 	return !!auth && (auth.role === "SUPER_ADMIN" || auth.role === "ADMIN");
@@ -304,62 +305,20 @@ export function registerAdminRoutes(router: Router) {
 		}
 	});
 
-async function getLlmConfig() {
+	router.get("/api/admin/chat-sessions/:channel/:channelUserId", async (_req, params, auth) => {
+		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
+		const { channel, channelUserId } = params;
+        const sessionKey = `channel-${channel}-${channelUserId}`;
 		try {
-			const row = db.query("SELECT value FROM server_config WHERE key = 'llm_providers'").get() as { value?: string } | undefined;
-			if (row?.value) {
-				const raw = JSON.parse(row.value);
-				// migrate old format if needed
-				if (raw.activeProvider === undefined && raw.providers === undefined) {
-					const providers: LlmProvider[] = [];
-					if (raw.ollamaModel || raw.ollamaHost) {
-						providers.push({ name: "wo-ai", label: "Wo AI (local)", model: raw.ollamaModel || "qwen3.5:9b", host: raw.ollamaHost || "http://127.0.0.1:11434", apiKey: "" });
-					}
-					if (raw.openrouterModel || raw.openrouterApiKey) {
-						providers.push({ name: "openrouter", label: "OpenRouter", model: raw.openrouterModel || "anthropic/claude-3.5-sonnet", host: "https://openrouter.ai/api/v1", apiKey: raw.openrouterApiKey || "" });
-					}
-					if (providers.length === 0) {
-						providers.push({ name: "wo-ai", label: "Wo AI (local)", model: "qwen3.5:9b", host: "http://127.0.0.1:11434", apiKey: "" });
-					}
-					const migrated: LlmConfig = { activeProvider: raw.provider || "wo-ai", providers };
-					db.query("UPDATE server_config SET value = ? WHERE key = 'llm_providers'").run(JSON.stringify(migrated));
-					return json(migrated);
-				}
-				return json(raw as LlmConfig);
-			}
-			return json({
-				activeProvider: "wo-ai",
-				providers: [
-					{ name: "wo-ai", label: "Wo AI (local)", model: "qwen3.5:9b", host: "http://127.0.0.1:11434", apiKey: "" },
-					{ name: "openrouter", label: "OpenRouter", model: "anthropic/claude-3.5-sonnet", host: "https://openrouter.ai/api/v1", apiKey: "" },
-				],
-			});
+			const messages = await loadWoSessionMessages(sessionKey, channel);
+			return json(messages);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
-			return json({ error: "Failed to fetch LLM config", details: message }, 500);
+			return json({ error: "Failed to fetch chat logs", details: message }, 500);
 		}
-	}
+	});
 
-async function saveLlmConfig(req: Request) {
-		let body: LlmConfig;
-		try {
-			body = await req.json();
-		} catch {
-			return json({ error: "Invalid JSON" }, 400);
-		}
-
-		db.query(`
-			INSERT INTO server_config (key, value) VALUES ('llm_providers', ?)
-			ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')
-		`).run(JSON.stringify(body));
-
-		// Apply active provider to runtime
-		applyActiveProvider(body);
-return json({ ok: true });
-}
-}
-
-export function registerAdminRoutes(router: Router) {
+	// ── LLM Provider Config ──
 	router.get("/api/admin/llm-providers", async (_req, _params, auth) => {
 		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
 		return getLlmConfig();
@@ -412,5 +371,59 @@ export function registerAdminRoutes(router: Router) {
 		}
 		return json({ ok: true });
 	});
+}
+
+async function getLlmConfig() {
+		try {
+			const row = db.query("SELECT value FROM server_config WHERE key = 'llm_providers'").get() as { value?: string } | undefined;
+			if (row?.value) {
+				const raw = JSON.parse(row.value);
+				// migrate old format if needed
+				if (raw.activeProvider === undefined && raw.providers === undefined) {
+					const providers: LlmProvider[] = [];
+					if (raw.ollamaModel || raw.ollamaHost) {
+						providers.push({ name: "wo-ai", label: "Wo AI (local)", model: raw.ollamaModel || "qwen3.5:9b", host: raw.ollamaHost || "http://127.0.0.1:11434", apiKey: "" });
+					}
+					if (raw.openrouterModel || raw.openrouterApiKey) {
+						providers.push({ name: "openrouter", label: "OpenRouter", model: raw.openrouterModel || "anthropic/claude-3.5-sonnet", host: "https://openrouter.ai/api/v1", apiKey: raw.openrouterApiKey || "" });
+					}
+					if (providers.length === 0) {
+						providers.push({ name: "wo-ai", label: "Wo AI (local)", model: "qwen3.5:9b", host: "http://127.0.0.1:11434", apiKey: "" });
+					}
+					const migrated: LlmConfig = { activeProvider: raw.provider || "wo-ai", providers };
+					db.query("UPDATE server_config SET value = ? WHERE key = 'llm_providers'").run(JSON.stringify(migrated));
+					return json(migrated);
+				}
+				return json(raw as LlmConfig);
+			}
+			return json({
+				activeProvider: "wo-ai",
+				providers: [
+					{ name: "wo-ai", label: "Wo AI (local)", model: "qwen3.5:9b", host: "http://127.0.0.1:11434", apiKey: "" },
+					{ name: "openrouter", label: "OpenRouter", model: "anthropic/claude-3.5-sonnet", host: "https://openrouter.ai/api/v1", apiKey: "" },
+				],
+			});
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to fetch LLM config", details: message }, 500);
+		}
+	}
+
+async function saveLlmConfig(req: Request) {
+		let body: LlmConfig;
+		try {
+			body = await req.json();
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+
+		db.query(`
+			INSERT INTO server_config (key, value) VALUES ('llm_providers', ?)
+			ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')
+		`).run(JSON.stringify(body));
+
+		// Apply active provider to runtime
+		applyActiveProvider(body);
+return json({ ok: true });
 }
 

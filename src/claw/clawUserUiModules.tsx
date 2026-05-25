@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Building2, CheckCircle, ClipboardCheck, Clock, DollarSign, Download, MessageSquare, Play, ShieldCheck, Wallet, XCircle } from "lucide-react";
 import { registerClawUiModule, type ClawUiModuleContext } from "./clawUiModules";
+import { TmaPlannerChatView } from "../components/taplanner/TmaPlannerChatView";
 import { getTickets, reviewTicket, getApprovedTickets, getTicketStatusReport, getTimeSessions, getProjectBudget } from "../hooks/useTicketApi";
 
 const cardBase = "rounded-xl border p-5 shadow-sm transition-all";
@@ -278,6 +279,18 @@ registerClawUiModule({
         </div>
       </div>
     );
+  },
+});
+
+// --- TA PLANNER MODULE ---
+registerClawUiModule({
+  id: "taplanner",
+  label: "TA-Planner",
+  title: "Traffic Arrangement Planner",
+  icon: ClipboardCheck,
+  order: 65,
+  render: () => {
+    return <TmaPlannerChatView />;
   },
 });
 

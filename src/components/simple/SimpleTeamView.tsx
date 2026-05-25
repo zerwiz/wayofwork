@@ -277,19 +277,18 @@ function AddAgentHintModal({
 			<div className={`max-w-md rounded-xl border p-6 shadow-2xl ${panel}`} role="dialog">
 				<h2 className="text-lg font-bold">Add an agent</h2>
 				<p className={`mt-2 text-sm leading-relaxed ${muted}`}>
-					Agents are Markdown with YAML frontmatter (<code className="rounded bg-black/10 px-1">name</code>,{" "}
-					<code className="rounded bg-black/10 px-1">description</code>, <code className="rounded bg-black/10 px-1">tools</code>
-					, …) under <code className="rounded bg-black/10 px-1">agents/</code>,{" "}
-					<code className="rounded bg-black/10 px-1">.claude/agents/</code>,{" "}
-					<code className="rounded bg-black/10 px-1">.pi/agents/</code>, or{" "}
-					<code className="rounded bg-black/10 px-1">.cursor/agents/</code> (Pi agent-team scan order; first{" "}
-					<code className="rounded bg-black/10 px-1">name</code> wins). Rosters:{" "}
-					<code className="rounded bg-black/10 px-1">.pi/agents/teams.yaml</code>.
+				Agents are Markdown with YAML frontmatter (<code className="rounded bg-black/10 px-1">name</code>,{" "}
+				<code className="rounded bg-black/10 px-1">description</code>, <code className="rounded bg-black/10 px-1">tools</code>
+				, …) under <code className="rounded bg-black/10 px-1">agents/</code>,{" "}
+				<code className="rounded bg-black/10 px-1">.claude/agents/</code>,{" "}
+				<code className="rounded bg-black/10 px-1">.wo/agents/</code>, or{" "}
+				<code className="rounded bg-black/10 px-1">.cursor/agents/</code> (Wo agent-team scan order; first{" "}
+				<code className="rounded bg-black/10 px-1">name</code> wins). Rosters:{" "}
+				<code className="rounded bg-black/10 px-1">.wo/agents/teams.yaml</code>.
 				</p>
 				<p className={`mt-2 text-sm ${muted}`}>
-					Edit the body below the frontmatter for the agent&apos;s system prompt. See <span className="font-mono text-xs">docs/AGENTS.md</span>.
-				</p>
-				<div className="mt-4 flex flex-wrap gap-2">
+				Edit the body below the frontmatter for the agent&apos;s system prompt. See <span className="font-mono text-xs">docs/AGENTS.md</span>.
+				</p>				<div className="mt-4 flex flex-wrap gap-2">
 					{onCreateAgentFile ? (
 						<button
 							type="button"
@@ -377,7 +376,7 @@ export function SimpleTeamView({
 		? "border-[#3c3c3c] bg-[#252526]"
 		: "border-[#e5e5e5] bg-white shadow-sm";
 
-	const pathLabel = teamsPath ?? ".pi/agents/teams.yaml";
+	const pathLabel = ".wo/agents/teams.yaml";
 
 	return (
 		<div className="flex-1 overflow-y-auto p-8">
@@ -386,9 +385,7 @@ export function SimpleTeamView({
 					<div>
 						<h1 className={`mb-2 text-2xl font-extrabold ${heading}`}>My AI Team</h1>
 						<p className={`font-medium ${sub}`}>
-							Agents discovered under <code className="text-xs">agents/</code>, <code className="text-xs">.claude/agents</code>,{" "}
-							<code className="text-xs">.pi/agents</code>, and <code className="text-xs">.cursor/agents</code> (Pi agent-team order; duplicate{" "}
-							<code className="text-xs">name</code> keeps the first). Rosters: <code className="text-xs">{pathLabel}</code>.
+							Agents discovered under <code className="text-xs">.wo/agents</code> (first <code className="text-xs">name</code> wins). Rosters: <code className="text-xs">{pathLabel}</code>.
 						</p>
 						<p className={`mt-2 text-sm ${sub}`}>
 							Create or edit teams here (rewrites <code className="text-xs">teams.yaml</code>). Use <strong className={heading}>Edit prompt</strong> on

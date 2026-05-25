@@ -517,7 +517,53 @@ export const CardView: React.FC<CardViewProps> = ({
     return type.startsWith('image/') && ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'].includes(type.toLowerCase());
   };
 
-  const handleFileUpload = async (files: FileList) => {
+  const handleSetCover = (option: typeof boardColorOptions[0]) => {
+    const coverData: CardCover = {
+      type: option.type === 'gradient' ? 'gradient' : 'color',
+      value: option.type === 'gradient' ? option.gradient! : option.value,
+      size: 'medium',
+    };
+    
+    setEditedCard({ ...editedCard, cover: coverData });
+    setShowCoverPicker(false);
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ... (inside the rendered JSX)
+
+  {/* Cover Picker Modal */}
+  {showCoverPicker && (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCoverPicker(false)}>
+      <div className="bg-[#252526] p-4 rounded-lg w-full max-w-sm" onClick={e => e.stopPropagation()}>
+        <h4 className="text-sm font-bold text-white mb-3">Choose Cover</h4>
+        <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            onChange={(e) => e.target.files && handleFileUpload(e.target.files).then(() => setShowCoverPicker(false))}
+            accept="image/*"
+        />
+        <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full h-10 mb-3 bg-[#3c3c3c] text-white rounded border border-[#3c3c3c] hover:bg-[#444444]"
+        >
+            Upload Image
+        </button>
+        <div className="grid grid-cols-4 gap-2">
+            {boardColorOptions.map(option => (
+                <button 
+                    key={option.value}
+                    onClick={() => handleSetCover(option)}
+                    className="h-10 rounded border border-[#3c3c3c] transition-transform hover:scale-105"
+                    style={{ background: option.type === 'gradient' ? option.gradient : option.value }}
+                    title={option.label}
+                />
+            ))}
+        </div>
+      </div>
+    </div>
+  )}
     if (!files || files.length === 0) return;
     
     setUploadingFiles(true);
@@ -865,13 +911,32 @@ export const CardView: React.FC<CardViewProps> = ({
   };
 
   // Mock user search - replace with real user service
-  const mockUsers: CardAssignee[] = [
-    { userId: '1', email: 'user1@example.com', displayName: 'User One', avatar: undefined },
-    { userId: '2', email: 'user2@example.com', displayName: 'User Two', avatar: undefined },
-    { userId: '3', email: 'user3@example.com', displayName: 'User Three', avatar: undefined },
-  ];
+  const [availableUsers, setAvailableUsers] = useState<CardAssignee[]>([]);
 
-  const filteredUsers = mockUsers.filter(u =>
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem('wop_token');
+        const res = await fetch('/api/admin/users', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const users = await res.json();
+          setAvailableUsers(users.map((u: any) => ({
+            userId: u.id,
+            displayName: u.full_name || u.username,
+            email: u.email || '',
+            avatar: undefined,
+          })));
+        }
+      } catch (e) {
+        console.error("Failed to fetch users", e);
+      }
+    };
+    if (isOpen) fetchUsers();
+  }, [isOpen]);
+
+  const filteredUsers = availableUsers.filter(u =>
     u.displayName.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
     u.email.toLowerCase().includes(userSearchQuery.toLowerCase())
   );
@@ -2388,6 +2453,4 @@ export const CardView: React.FC<CardViewProps> = ({
       />
     </>
   );
-};
-
 export default CardView;

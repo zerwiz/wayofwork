@@ -35,7 +35,7 @@ export function NewAgentModal({
 	}, [open]);
 
 	const isValid = useMemo(() => AGENT_ID_REGEX.test(agentId), [agentId]);
-	const previewPath = useMemo(() => `.pi/agents/${agentId}.md`, [agentId]);
+	const previewPath = useMemo(() => `.wo/agents/${agentId}.md`, [agentId]);
 
 	const panel = appearanceDark
 		? "border-[#454545] bg-[#252526] text-[#cccccc]"

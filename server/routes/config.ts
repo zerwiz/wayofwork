@@ -10,10 +10,6 @@ import { readUiViewsCatalog, seedUiViewsCatalogIfMissing } from "../ui-views-cat
 import { buildClawHostTree } from "../tree";
 import { readClawSchedulesMerged } from "../claw-schedules-store";
 import {
-	orchestratorBashEnabled,
-	orchestratorToolsEnabled,
-} from "../orchestrator-tools-exec";
-import {
 	authoritativeRuntimeEnabled,
 	getWoStackForSurface,
 	resolveWoBinaryPath,
@@ -41,6 +37,7 @@ import {
 	patchOrchestratorGateRuntime,
 	type OrchestratorGateRuntimePatch,
 } from "../orchestrator-tools-exec";
+import * as OrchestratorTools from "../orchestrator-tools-exec";
 import {
 	patchWoJsonChatRuntimeOverride,
 	authoritativeRuntimeEnabled as piDrivesChat,
@@ -77,10 +74,15 @@ function applySessionRuntimePostBody(body: Record<string, unknown>): Response {
 	patchOrchestratorGateRuntime(orchPatch);
 	return json({
 		ok: true,
-		orchestratorTools: orchestratorToolsEnabled(),
-		orchestratorBash: orchestratorBashEnabled(),
+		orchestratorTools: isOrchestratorToolsEnabled(),
+		orchestratorBash: terminalAllowed(),
 		piDrivesChat: piDrivesChat(),
 	});
+	}
+// Local implementation to avoid circular dependency
+function isOrchestratorToolsEnabled(): boolean {
+    const v = process.env.WOP_ORCHESTRATOR_TOOLS?.trim().toLowerCase();
+    return v !== "0" && v !== "false" && v !== "no" && v !== "off";
 }
 
 export function registerConfigRoutes(router: Router) {
@@ -122,8 +124,8 @@ export function registerConfigRoutes(router: Router) {
 			piBinaryResolved: woBinaryResolved,
 			workspaceDotPiPresent,
 			sdkActive,
-			orchestratorTools: orchestratorToolsEnabled(),
-			orchestratorBash: orchestratorBashEnabled(),
+			orchestratorTools: isOrchestratorToolsEnabled(),
+			orchestratorBash: terminalAllowed(),
 			capabilities: {
 				workspaceProblems: true,
 				configRuntimePost: true,

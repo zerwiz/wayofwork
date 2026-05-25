@@ -25,7 +25,7 @@ export async function routeInboundMessage(msg: InboundMessage): Promise<InboundR
 		// 1. Resolve user and tenant from channel link
         let query = `
 			SELECT l.tenant_id, l.user_id, u.full_name, u.role,
-			       bt.label as bot_label
+			       bt.label as bot_label, bt.preferred_agent as preferred_agent
 			FROM user_channel_links l
 			JOIN users u ON l.user_id = u.id AND l.tenant_id = u.tenant_id
 			LEFT JOIN bot_telegram_accounts bt ON l.channel_bot_id = bt.id AND l.tenant_id = bt.tenant_id AND l.channel = 'telegram'
@@ -37,13 +37,15 @@ export async function routeInboundMessage(msg: InboundMessage): Promise<InboundR
             params.push(msg.botId);
         }
         query += " LIMIT 1";
-		const link = db.query(query).get(...params) as { tenant_id: string; user_id: string; full_name: string | null; role: string; bot_label: string | null } | undefined;
+		const link = db.query(query).get(...params) as { tenant_id: string; user_id: string; full_name: string | null; role: string; bot_label: string | null; preferred_agent: string | null } | undefined;
 
 		// 1b. Fallback for WhatsApp (different bot table)
 		let botLabel = link?.bot_label;
+        let preferredAgent = link?.preferred_agent;
 		if (link && msg.channel === 'whatsapp' && !botLabel) {
-			const waBot = db.query("SELECT label FROM bot_whatsapp_accounts WHERE tenant_id = ? AND active = 1 LIMIT 1").get(link.tenant_id) as { label: string } | undefined;
+			const waBot = db.query("SELECT label, preferred_agent FROM bot_whatsapp_accounts WHERE tenant_id = ? AND active = 1 LIMIT 1").get(link.tenant_id) as { label: string; preferred_agent: string | null } | undefined;
 			botLabel = waBot?.label;
+            preferredAgent = waBot?.preferred_agent;
 		}
 
 		if (!link) {
@@ -73,6 +75,7 @@ export async function routeInboundMessage(msg: InboundMessage): Promise<InboundR
 			messageText: msg.text,
 			channel: msg.channel === "email" ? "telegram" as any : msg.channel,
 			channelUserId: msg.channelUserId,
+            agentName: preferredAgent || undefined,
 		});
 
 		if (result.ok) {

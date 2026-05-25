@@ -78,22 +78,22 @@ Email: NOTHING
 
 ### Phase 1: Unified Inbound Router
 
-- [ ] Create `server/channel-router.ts` — single entry point for ALL inbound channel messages
-- [ ] Router flow:
+- [x] Create `server/channel-router.ts` — single entry point for ALL inbound channel messages
+- [x] Router flow:
   ```
   [Telegram webhook / WhatsApp webhook / Email inbound]
     → channel-router.ts
       → 1. Resolve user identity (user_channel_links)
-      → 2. Load or create conversation session
+      → 2. Load or create conversation session (Enforced isolation via surface-based scoping)
       → 3. Route to Orchestrator (or specific agent based on context)
       → 4. Capture AI response
       → 5. Send outbound via appropriate channel
       → 6. Log to channel_message_logs
   ```
-- [ ] Orchestrator is the default handler for all inbound channel messages
-- [ ] Orchestrator can dispatch to sub-agents (fakturering for offers, schemaplanerare for scheduling, etc.)
-- [ ] Conversation session persisted as JSONL per channel user: `agent/sessions/channel/<channel>/<userId>.jsonl`
-- [ ] Session loaded on each message, appended after each turn
+- [x] Orchestrator is the default handler for all inbound channel messages
+- [x] Orchestrator can dispatch to sub-agents (fakturering for offers, schemaplanerare for scheduling, etc.)
+- [x] Conversation session persisted as JSONL per channel user: `agent/sessions/channel/<channel>/<userId>.jsonl`
+- [x] Session loaded on each message, appended after each turn (Strictly scoped)
 
 ### Phase 2: Telegram Webhook
 

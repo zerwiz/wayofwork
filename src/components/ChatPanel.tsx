@@ -544,13 +544,13 @@ export function ChatPanel({
 									aria-label={showModelThinking ? "Hide model thinking" : "Show model thinking"}
 									aria-pressed={showModelThinking}
 									onClick={toggleShowModelThinking}
-									className={`rounded p-1.5 ${
+									className={`rounded p-1 ${
 										showModelThinking
 											? "bg-[#312e81]/60 text-[#c7d2fe]"
 											: "text-[#858585] hover:bg-[#3c3c3c] hover:text-[#cccccc]"
 									}`}
 								>
-									<Brain size={15} strokeWidth={1.75} />
+									<Brain size={13} strokeWidth={1.75} />
 								</button>
 							) : null}
 							{onNewSession && !teamPaneOpen ? (
@@ -1180,7 +1180,7 @@ export function ChatPanel({
 										const v = e.target.value;
 										onChatAgentChange(v === "" ? null : v);
 									}}
-									className="min-w-0 max-w-[min(200px,50%)] shrink rounded border border-[#3c3c3c] bg-[#1e1e1e] px-1.5 py-1 font-mono text-[10px] text-[#cccccc] outline-none focus:border-[#ea580c] disabled:opacity-40"
+									className="min-w-0 max-w-[min(180px,45%)] shrink rounded border border-[#3c3c3c] bg-[#1e1e1e] px-1 py-0.5 text-[9px] text-[#cccccc] outline-none focus:border-[#ea580c] disabled:opacity-40"
 								>
 								<option value="">Orchestrator (session lead)</option>
 								{pickerAgents.map((a) => (
@@ -1204,7 +1204,7 @@ export function ChatPanel({
 								type="button"
 								onClick={() => setTeamPaneOpen((o) => !o)}
 								title="Workspace team roster (Pi agent-team / teams.yaml)"
-								className={`shrink-0 rounded border px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wide transition-colors ${
+								className={`shrink-0 rounded border px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wide transition-colors ${
 									teamPaneOpen
 										? "border-[#ea580c] bg-[#ea580c]/15 text-[#fed7aa]"
 										: "border-[#3c3c3c] bg-[#1e1e1e] text-[#858585] hover:border-[#555555] hover:text-[#cccccc]"
@@ -1233,7 +1233,7 @@ export function ChatPanel({
 										type="button"
 										disabled={streaming}
 										onClick={() => onChatModeChange("build")}
-										className={`rounded px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wide ${
+										className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
 											chatMode === "build" ? "bg-[#ea580c] text-white" : "text-[#858585] hover:text-[#cccccc]"
 										} disabled:opacity-40`}
 									>
@@ -1243,7 +1243,7 @@ export function ChatPanel({
 										type="button"
 										disabled={streaming}
 										onClick={() => onChatModeChange("plan")}
-										className={`rounded px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wide ${
+										className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
 											chatMode === "plan" ? "bg-[#c586c0]/90 text-white" : "text-[#858585] hover:text-[#cccccc]"
 										} disabled:opacity-40`}
 									>
@@ -1256,18 +1256,18 @@ export function ChatPanel({
 									type="button"
 									onClick={onStop}
 									aria-label="Stop generation"
-									className={`flex items-center gap-2 border border-[#ef4444] bg-[#450a0a] px-4 py-1 font-bold uppercase tracking-wide text-[#fecaca] hover:bg-[#7f1d1d] ${technical ? "font-mono text-[11px]" : "text-[12px]"}`}
+									className={`flex items-center gap-1 border border-[#ef4444] bg-[#450a0a] px-2 py-0.5 font-bold uppercase tracking-wide text-[#fecaca] hover:bg-[#7f1d1d] font-mono text-[10px]`}
 								>
-									<Square size={12} className="shrink-0" fill="currentColor" /> Stop
+									<Square size={10} className="shrink-0" fill="currentColor" /> Stop
 								</button>
 							) : (
 								<button
 									type="submit"
 									disabled={(!input.trim() && !attachment) || !connected}
 									aria-label="Send message"
-									className={`flex items-center gap-2 bg-[#c2410c] px-4 py-1 font-bold uppercase tracking-wide text-[#d4d4d4] hover:bg-[#9a3412] disabled:opacity-50 ${technical ? "font-mono text-[11px]" : "text-[13px]"}`}
+									className={`flex items-center gap-1 bg-[#c2410c] px-2 py-0.5 font-bold uppercase tracking-wide text-[#d4d4d4] hover:bg-[#9a3412] disabled:opacity-50 font-mono text-[10px]`}
 								>
-									<Send size={12} className="shrink-0 text-[#d4d4d4]" /> Send
+									<Send size={10} className="shrink-0 text-[#d4d4d4]" /> Send
 								</button>
 							)}
 						</div>

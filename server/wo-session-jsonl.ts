@@ -80,7 +80,7 @@ function trimContent(s: string): string {
 }
 
 /** Read **user** / **assistant** turns in order. */
-export async function loadWoSessionMessages(sessionKey: string, surface?: string): Promise<ChatMessage[]> {
+export async function loadWoSessionMessages(sessionKey: string, surface: string): Promise<ChatMessage[]> {
 	const abs = woSessionAbsPath(sessionKey, surface);
 	try {
 		const st = await stat(abs);
@@ -112,7 +112,7 @@ export async function loadWoSessionMessages(sessionKey: string, surface?: string
 export async function syncWoSessionFile(
 	sessionKey: string,
 	messages: ChatMessage[],
-	surface?: string,
+	surface: string,
 ): Promise<void> {
 	const key = sanitizeSessionKey(sessionKey);
 	const userAsst: Array<{ role: "user" | "assistant"; content: string }> = [];
@@ -151,7 +151,7 @@ export async function syncWoSessionFile(
 	await rename(tmp, abs);
 }
 
-async function ensureSessionHeaderExists(sessionKey: string, surface?: string): Promise<void> {
+async function ensureSessionHeaderExists(sessionKey: string, surface: string): Promise<void> {
 	const abs = woSessionAbsPath(sessionKey, surface);
 	if (!existsSync(abs)) {
 		const key = sanitizeSessionKey(sessionKey);
@@ -173,7 +173,7 @@ export async function appendWoSessionMessage(
 	sessionKey: string,
 	role: "user" | "assistant",
 	content: string,
-	surface?: string,
+	surface: string,
 ): Promise<void> {
 	const key = sanitizeSessionKey(sessionKey);
 	await ensureSessionHeaderExists(key, surface);

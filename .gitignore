@@ -24,3 +24,4 @@ workspace/.wo
 workspace/.github-credentials.json
 workspace/.claw-webhook.json
 workspace/.ui-views.json
+.wayofpi/

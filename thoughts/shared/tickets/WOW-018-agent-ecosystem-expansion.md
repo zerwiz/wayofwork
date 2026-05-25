@@ -60,14 +60,15 @@ The construction industry is highly segmented. A "Project Manager" (`projektleda
 - [ ] **TA-Planner Integration:** Ensure the `tma-planner` or `projektledare` agent is explicitly instructed to use the new `ta_plans` database schema via the `pending-changes` queue (following WOW-017 completion).
 
 ## Acceptance Criteria
-- New agent markdown files exist in `.wo/agents/` with correct YAML frontmatter.
-- New skill markdown files exist in `.wo/skills/`.
-- Orchestrator's `dispatch-agent` skill is updated to map the new agents.
-- All new agents strictly adhere to the Human-in-the-Loop (`pending-changes`) constraint.
+- [x] New agent markdown files exist in `.wo/agents/` with correct YAML frontmatter.
+- [x] New skill markdown files exist in `.wo/skills/`.
+- [x] Orchestrator's `dispatch-agent` skill is updated to map the new agents.
+- [x] All new agents strictly adhere to the Human-in-the-Loop (`pending-changes`) constraint.
 
----
+*Note*: Agent expansion is ongoing based on project needs. The specialized roster (`skyddsombud`, `maskinchef`, `kalkylator`) is fully functional.
+
 ## Meta
 **Created:** 2026-05-22
 **Priority:** Medium
 **Estimated Effort:** M
-**Depends on:** WOW-016 (Completed)
+**Status:** Ongoing maintenance

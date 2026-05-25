@@ -16,6 +16,9 @@ The system can be securely accessed by remote users via a stable URL or IP addre
 - **LAN Access:** `server/share-url-hints.ts` provides logic to guess the local LAN IPv4 and generate access URLs for other devices on the same Wi-Fi.
 - **Vite Proxy:** The dev server handles proxying to the Bun backend, but host headers need careful management when accessed remotely.
 
+### Important Note for Ngrok Message in `start.sh`
+The ngrok message will only appear in the `start.sh` output if the `WOP_NGROK_DOMAIN` environment variable is set (e.g., in your `.env` file).
+
 ### Why This Matters
 Much of the infrastructure for remote access is already built. The task is now to verify its functionality, ensure it's properly configured for the current environment, and document how to enable it safely.
 

@@ -12,11 +12,11 @@ Clearly document the purpose of the symlink in project documentation (e.g., `REA
 - This setup is likely for convenience when tools/agents run inside the `workspace/` subdirectory.
 
 ## Requirements
-- [ ] Confirm this symlink is intended behavior.
-- [ ] Document this structure in `README.md` or a dedicated architectural file.
+- [x] Confirm this symlink is intended behavior.
+- [x] Document this structure in `README.md` (already documented).
 
 ## Acceptance Criteria
-- [ ] Team members understand that `.wo` is the single source of truth.
+- [x] Team members understand that `.wo` is the single source of truth.
 
 ## Meta
 **Created**: 2026-05-23

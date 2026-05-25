@@ -17,6 +17,7 @@ export function titleCaseAgentRosterId(name: string): string {
 const DISPLAY_NAME_OVERRIDES: Record<string, string> = {
 	claw: "Claw",
 	ralph: "Ralph Wiggum",
+	"tma-planner": "TA-Planner",
 };
 
 /** Picker, pulse grid, status bar — value / API still use the roster `name`. */

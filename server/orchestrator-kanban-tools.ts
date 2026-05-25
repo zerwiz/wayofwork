@@ -36,20 +36,43 @@ export async function kanbanListBoards(tenantId: string): Promise<string> {
 export async function kanbanCreateBoard(args: {
 	name: string;
 	description?: string;
+	columns?: string;
 	tenantId: string;
 	userId: string;
 }): Promise<string> {
 	if (!args.name?.trim()) return "kanban_create_board: **name** is required.";
 	try {
 		const id = `proj_${Date.now()}_${randomUUID().slice(0, 8)}`;
+		let settingsJson: string | null = null;
+		let columnsSql = "";
+		if (args.columns) {
+			let cols: Array<{ id?: string; name: string; order?: number }>;
+			try {
+				cols = typeof args.columns === "string" ? JSON.parse(args.columns) : args.columns;
+			} catch {
+				return "kanban_create_board: **columns** must be valid JSON array of {name, order?}.";
+			}
+			if (!Array.isArray(cols) || cols.length === 0) {
+				return "kanban_create_board: **columns** must be a non-empty array.";
+			}
+			const boardColumns = cols.map((c, idx) => ({
+				id: c.id || c.name.toLowerCase().replace(/[^a-z0-9_]/g, "_"),
+				name: c.name,
+				order: c.order ?? idx,
+				boardId: id,
+			}));
+			settingsJson = JSON.stringify({ columns: boardColumns });
+			columnsSql = ", settings_json";
+		}
 		db.query(
-			`INSERT INTO projects (id, tenant_id, name, description, status, created_by)
-			 VALUES (?, ?, ?, ?, 'active', ?)`,
-		).run(id, args.tenantId, args.name.trim(), args.description?.trim() || null, args.userId);
+			`INSERT INTO projects (id, tenant_id, name, description, status, created_by${columnsSql})
+			 VALUES (?, ?, ?, ?, 'active', ?${settingsJson ? ", ?" : ""})`,
+		).run(id, args.tenantId, args.name.trim(), args.description?.trim() || null, args.userId, ...(settingsJson ? [settingsJson] : []));
 		
 		broadcastEvent("kanban_boards_changed", { action: "created", boardId: id });
 		
-		return `kanban_create_board: ok — created board "${args.name.trim()}" (id: \`${id}\`).`;
+		const colInfo = settingsJson ? ` with ${JSON.parse(settingsJson).columns.length} columns` : "";
+		return `kanban_create_board: ok — created board "${args.name.trim()}" (id: \`${id}\`)${colInfo}.`;
 	} catch (e) {
 		const m = e instanceof Error ? e.message : String(e);
 		return `kanban_create_board: ${m}`;
@@ -143,7 +166,7 @@ export async function kanbanListCards(args: {
 					 FROM tasks t
 					 LEFT JOIN users u ON t.assigned_to = u.id
 					 WHERE t.tenant_id = ? AND t.project_id = ?
-					 ORDER BY t.due_date ASC, t.created_at DESC`,
+					 ORDER BY t.deadline ASC, t.created_at DESC`,
 				)
 				.all(args.tenantId, args.boardId) as any[];
 		} else {
@@ -153,7 +176,7 @@ export async function kanbanListCards(args: {
 					 FROM tasks t
 					 LEFT JOIN users u ON t.assigned_to = u.id
 					 WHERE t.tenant_id = ?
-					 ORDER BY t.due_date ASC, t.created_at DESC`,
+					 ORDER BY t.deadline ASC, t.created_at DESC`,
 				)
 				.all(args.tenantId) as any[];
 		}
@@ -167,7 +190,7 @@ export async function kanbanListCards(args: {
 		const lines = rows.map((t: any) => {
 			const status = t.status || "todo";
 			const assignee = t.assigned_name ? `👤 ${t.assigned_name}` : "unassigned";
-			const due = t.due_date ? `📅 ${t.due_date}` : "";
+			const due = t.deadline ? `📅 ${t.deadline}` : "";
 			return `- **${t.title}** (id: \`${t.id}\`) [${status}] ${assignee} ${due}`.trim();
 		});
 		return `[kanban_list_cards]\n${lines.join("\n")}`;
@@ -193,7 +216,7 @@ export async function kanbanCreateCard(args: {
 	try {
 		const id = `task_${Date.now()}_${randomUUID().slice(0, 8)}`;
 		db.query(
-			`INSERT INTO tasks (id, tenant_id, title, description, assigned_to, project_id, status, priority, due_date, estimated_hours, created_by)
+			`INSERT INTO tasks (id, tenant_id, title, description, assigned_to, project_id, status, priority, deadline, estimated_hours, created_by)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		).run(
 			id,
@@ -210,6 +233,20 @@ export async function kanbanCreateCard(args: {
 		);
 
 		broadcastEvent("kanban_cards_changed", { action: "created", boardId: args.boardId, cardId: id });
+
+		if (args.assigneeId) {
+			const project = db.query("SELECT name FROM projects WHERE id = ?").get(args.boardId) as any;
+			const boardName = project?.name || args.boardId;
+			notifyUser({
+				tenantId: args.tenantId,
+				userId: args.assigneeId,
+				type: "kanban",
+				severity: "info",
+				title: "New Card Assigned",
+				message: `"${args.title.trim()}" has been assigned to you on board "${boardName}".`,
+				link: `/kanban?card=${id}`
+			}).catch(() => {});
+		}
 
 		return `kanban_create_card: ok — created card "${args.title.trim()}" (id: \`${id}\`) in column "${args.columnId || "todo"}" on board \`${args.boardId}\`.`;
 	} catch (e) {
@@ -241,7 +278,7 @@ export async function kanbanGetCard(args: {
 			`Status: ${task.status || "todo"}`,
 			`Priority: ${task.priority || "medium"}`,
 			`Assignee: ${task.assigned_name || "unassigned"}`,
-			`Due: ${task.due_date || "none"}`,
+			`Due: ${task.deadline || "none"}`,
 			`Estimated: ${task.estimated_hours ?? "none"} hours`,
 			`Description: ${task.description || "(none)"}`,
 		];
@@ -276,7 +313,7 @@ export async function kanbanUpdateCard(args: {
 			     status = COALESCE(?, status),
 			     priority = COALESCE(?, priority),
 			     assigned_to = COALESCE(?, assigned_to),
-			     due_date = COALESCE(?, due_date),
+			     deadline = COALESCE(?, deadline),
 			     estimated_hours = COALESCE(?, estimated_hours),
 			     updated_at = datetime('now')
 			 WHERE id = ? AND tenant_id = ?`,
@@ -354,7 +391,7 @@ export async function kanbanMoveCard(args: {
 			.query("SELECT * FROM tasks WHERE id = ? AND tenant_id = ?")
 			.get(args.cardId, args.tenantId) as any;
 		if (!existing) return `kanban_move_card: card \`${args.cardId}\` not found.`;
-		db.query("UPDATE tasks SET status = ?, updated_at = datetime('now') WHERE id = ? AND tenant_id = ?").run(
+		db.query("UPDATE tasks SET status = ? WHERE id = ? AND tenant_id = ?").run(
 			args.columnId,
 			args.cardId,
 			args.tenantId,
@@ -482,12 +519,17 @@ export const ORCHESTRATOR_KANBAN_TOOLS_OPENAI = [
 		function: {
 			name: "kanban_create_board",
 			description:
-				"Create a new kanban board (project). Use for new construction phases, work packages, or projects. Requires **name**; optional **description**.",
+				"Create a new kanban board (project). Use for new construction phases, work packages, or projects. Requires **name**; optional **description** and **columns**. Pass columns to define the board lanes — infer from project type (construction, renovation, ÄTA, etc.).",
 			parameters: {
 				type: "object",
 				properties: {
 					name: { type: "string", description: "Board/project name, e.g. 'Gjutning vecka 22'" },
 					description: { type: "string", description: "Optional description of the board's purpose" },
+					columns: {
+						type: "string",
+						description:
+							'JSON array of column objects: [{"name":"Column Name","order":0}]. Example: [{"name":"Projektering","order":0},{"name":"Schakt","order":1}]',
+					},
 				},
 				required: ["name"],
 			},
@@ -540,7 +582,7 @@ export const ORCHESTRATOR_KANBAN_TOOLS_OPENAI = [
 		function: {
 			name: "kanban_list_cards",
 			description:
-				"List cards (tasks) on a kanban board. Optionally filter by **columnId** (todo, in_progress, complete) or **assigneeId** (user id from kanban_list_workers). Pass **boardId** to scope to one board, or omit for all cards.",
+				"List cards (tasks) on a kanban board. Optionally filter by **columnId** (e.g. projektering, schakt_grund) or **assigneeId** (user id from kanban_list_workers). Pass **boardId** to scope to one board, or omit for all cards.",
 			parameters: {
 				type: "object",
 				properties: {
@@ -557,14 +599,14 @@ export const ORCHESTRATOR_KANBAN_TOOLS_OPENAI = [
 		function: {
 			name: "kanban_create_card",
 			description:
-				"Create a new card (task) on a kanban board. Requires **boardId** and **title**. Optional: **description**, **columnId** (default: todo), **priority** (low, medium, high, critical), **assigneeId**, **dueDate** (YYYY-MM-DD), **estimatedHours**.",
+				"Create a new card (task) on a kanban board. Requires **boardId** and **title**. Optional: **description**, **columnId** (use the board's column IDs like projektering, schakt_grund), **priority** (low, medium, high, critical), **assigneeId**, **dueDate** (YYYY-MM-DD), **estimatedHours**.",
 			parameters: {
 				type: "object",
 				properties: {
 					boardId: { type: "string", description: "Board id from kanban_list_boards" },
 					title: { type: "string", description: "Card title" },
 					description: { type: "string", description: "Card description" },
-					columnId: { type: "string", description: "Column: todo (default), in_progress, complete, or custom" },
+					columnId: { type: "string", description: "Column id from the board's column definition (e.g. projektering, schakt_grund, dagvatten, dränering)" },
 					priority: { type: "string", description: "Priority: low, medium (default), high, critical" },
 					assigneeId: { type: "string", description: "User id from kanban_list_workers" },
 					dueDate: { type: "string", description: "Due date YYYY-MM-DD" },
@@ -601,7 +643,7 @@ export const ORCHESTRATOR_KANBAN_TOOLS_OPENAI = [
 					cardId: { type: "string", description: "Card id to update" },
 					title: { type: "string", description: "New title" },
 					description: { type: "string", description: "New description" },
-					columnId: { type: "string", description: "Move to column: todo, in_progress, complete" },
+					columnId: { type: "string", description: "Move to column by id (e.g. projektering, schakt_grund)" },
 					priority: { type: "string", description: "New priority: low, medium, high, critical" },
 					assigneeId: { type: "string", description: "User id to assign" },
 					dueDate: { type: "string", description: "New due date YYYY-MM-DD" },
@@ -631,12 +673,12 @@ export const ORCHESTRATOR_KANBAN_TOOLS_OPENAI = [
 		function: {
 			name: "kanban_move_card",
 			description:
-				"Move a card to another column (change its status). Pass **cardId** and **columnId** (todo, in_progress, complete, or custom status). Shortcut for kanban_update_card when only changing column.",
+				"Move a card to another column (change its status). Pass **cardId** and **columnId** (e.g. projektering, schakt_grund). Shortcut for kanban_update_card when only changing column.",
 			parameters: {
 				type: "object",
 				properties: {
 					cardId: { type: "string", description: "Card id to move" },
-					columnId: { type: "string", description: "Target column: todo, in_progress, complete" },
+					columnId: { type: "string", description: "Target column id from board definition" },
 				},
 				required: ["cardId", "columnId"],
 			},

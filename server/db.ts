@@ -41,6 +41,22 @@ db.run(`
 `);
 
 db.run(`
+  CREATE TABLE IF NOT EXISTS user_licenses (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    tenant_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    issuer TEXT,
+    valid_until TEXT,
+    category TEXT NOT NULL DEFAULT 'trade',
+    status TEXT NOT NULL DEFAULT 'valid',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+  )
+`);
+
+db.run(`
   CREATE TABLE IF NOT EXISTS projects (
     id TEXT PRIMARY KEY,
     tenant_id TEXT NOT NULL,
@@ -48,6 +64,19 @@ db.run(`
     description TEXT,
     status TEXT DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS project_stars (
+    user_id TEXT NOT NULL,
+    project_id TEXT NOT NULL,
+    tenant_id TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, project_id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (project_id) REFERENCES projects(id),
     FOREIGN KEY (tenant_id) REFERENCES tenants(id)
   )
 `);
@@ -296,6 +325,39 @@ if (!userColNames.includes("status")) {
 }
 if (!userColNames.includes("last_active")) {
   try { db.run("ALTER TABLE users ADD COLUMN last_active DATETIME"); } catch {}
+}
+
+// Migration: add missing columns to projects table (existing databases)
+const projCols = db.query("PRAGMA table_info(projects)").all() as any[];
+const projColNames = projCols.map((c: any) => c.name);
+if (!projColNames.includes("budget_allocated")) {
+  try { db.run("ALTER TABLE projects ADD COLUMN budget_allocated REAL DEFAULT 0"); } catch {}
+}
+if (!projColNames.includes("created_by")) {
+  try { db.run("ALTER TABLE projects ADD COLUMN created_by TEXT"); } catch {}
+}
+if (!projColNames.includes("settings_json")) {
+	try { db.run("ALTER TABLE projects ADD COLUMN settings_json TEXT DEFAULT '{}'"); } catch {}
+}
+
+// Add cover column to tasks
+const taskCols = db.query("PRAGMA table_info(tasks)").all() as any[];
+const taskColNames = taskCols.map((c: any) => c.name);
+if (!taskColNames.includes("cover")) {
+	try { db.run("ALTER TABLE tasks ADD COLUMN cover TEXT"); } catch {}
+}
+
+// Add missing summary column to audit_logs
+const auditCols = db.query("PRAGMA table_info(audit_logs)").all() as any[];
+const auditColNames = auditCols.map((c: any) => c.name);
+if (!auditColNames.includes("summary")) {
+	try { db.run("ALTER TABLE audit_logs ADD COLUMN summary TEXT"); } catch {}
+}
+
+// Add created_by column to tasks (referenced by kanbanCreateCard)
+const taskColNames2 = db.query("PRAGMA table_info(tasks)").all().map((c: any) => c.name);
+if (!taskColNames2.includes("created_by")) {
+	try { db.run("ALTER TABLE tasks ADD COLUMN created_by TEXT"); } catch {}
 }
 
 // Seed default tenant and admin if not exists

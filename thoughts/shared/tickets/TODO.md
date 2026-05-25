@@ -20,6 +20,7 @@ When working on tickets below, you **MUST** activate the relevant custom skill t
 - **WOW-006**: `server/index.ts` refactored from 1846 → 236 lines. All route groups extracted.
 - **WOW-012**: Isolated Chat per Surface — WebSocket isolation, JSONL per surface, auto-select agent (Claw→claw, Docs→docs, Kanban→kanban, Simple→Orchestrator), double-bubble fix, symlink + docs agent.
 - **WOW-013**: Orchestrator & GitHub — Save Version / Version History, daily backup (30-day prune), workspace-storage skill, channel handler routes through Orchestrator with `dispatch_agent`, surface-specific agents.
+- **WOW-026**: Chat Architecture Documentation & Session Isolation (Verified agent assignments, updated documentation, enforced strict session isolation per UI surface).
 
 ### Authentication & Security
 - **Auth**: Real JWT auth with PIN + password login. Role in JWT payload. `WOP_AUTH_SECRET` required in production.
@@ -42,10 +43,9 @@ When working on tickets below, you **MUST** activate the relevant custom skill t
 - **Global Rebrand**: Ollama → Wo AI (env vars, UI labels, functions). Way of Pi → Way of Work. Pi Purge (`.wayofpi/` → `.index/`).
 
 ### TA-Planner
-- **WOW-017**: TA-Planner — `ta_plans` table, CRUD API + Trafikverket proxy, UI Planning Wizard, Validation Engine (`ta-validation.ts`), TDOK 2024:0043 Sketch Library.
-
-### Notification System
-- **WOW-019**: Notification System — `notifications` table, `notifyUser()` persists + sends TG/WA, GET/PATCH/DELETE API, NotificationToast, NotificationInbox in Settings, MenuBar badge wired to live unreadCount, integrations (pending changes, audit logger, kanban, weather alerts, ID06 expiry), construction triggers service.
+- [x] **WOW-017**: TA-Planner — `ta_plans` table, CRUD API + Trafikverket proxy, UI Planning Wizard, Validation Engine (`ta-validation.ts`), TDOK 2024:0043 Sketch Library.
+- [x] **WOW-017 Refactor:** TA Planning system refactored into `.wo/extensions/ta-planner-extension.ts`.
+- [x] **WOW-017**: TA Planner Chat Layout: Chat input not sticky to the bottom and TA label correction.
 
 ### Bug Report System
 - **WOW-020**: Bug Report & Feature Request System — `bug_reports` table, 4 API endpoints (submit, admin list, admin detail, admin PATCH, user list), status workflow (pending→in-review→fixed→closed), screenshot upload, system info capture, BugReportModal, BugReportsAdmin dashboard, Admin Dashboard tab.
@@ -66,7 +66,7 @@ When working on tickets below, you **MUST** activate the relevant custom skill t
 - [ ] **P5: Dead code & routing cleanup** — decide fate of excluded menu files, add missing server endpoints (`PUT /api/portal/me`, `POST /api/portal/change-pin`), fix `/api/admin/stats` role gating for ADMIN, decide fate of "technical" uiMode, clean up Dashboard.tsx, audit orphaned server routes.
 - [ ] **Acceptance**: build passes (zero tsc errors), all client routes render correct components, start.sh launches without errors, login flow lands on correct page per role.
 
-### WOW-002 — Local Hosting for Remote Access (⛔ NOT STARTED)
+### WOW-002 — Local Hosting for Remote Access (🟡 IN PROGRESS)
 - [ ] Verify Tunnel Gate (`WOP_TUNNEL_GATE_HOST_MARKERS`)
 - [ ] Configure Basic Auth (tunnel-gate.v1.json)
 - [ ] LAN Access Verification (`guessLanIPv4`)
@@ -94,8 +94,27 @@ When working on tickets below, you **MUST** activate the relevant custom skill t
 - [ ] **kanbanService.ts**: Complete TODO stubs (`deleteBoard`, `createColumn`, `deleteColumn`)
 - [ ] **Multi-Tenancy Audit**: Verify Tenant A → Tenant B data isolation in all endpoints
 - [ ] **Agent Integration Test**: Verify Wo Agent works with real DB endpoints
-- [ ] **WOW-008**: Agent wiring verification — confirm projektledare reads price lists end-to-end
+- [ ] **WOW-008**: Agent wiring verification — confirm `projektledare` reads price lists end-to-end
 - [ ] **WOW-009**: Verify offer/invoice send via TG/WA works end-to-end
+- [ ] **WOW-022**: General Updates and Fixes (Claw Workspace Onboarding)
+- [ ] **WOW-023**: Docs Page (Investigate the need for a dedicated `DocsApp` for documents, distinct from general file viewing)
+- [ ] **WOW-024**: Private & Shared Access Control for Kanban, Docs, and Files (Schema implemented, RBAC utility implemented, API integration pending, UI pending)
+- [ ] **WOW-025**: Wo Agent Management and "My AI Team" Restoration
+- [ ] **WOW-027**: Systematic Rebrand: wayofpi → wayofwork, Technical → Simple/Claw (Cosmetic rebranding in progress, "Technical" components tracking, structural migration deferred)
+- [🟡 IN PROGRESS] **WOW-028**: Mobile-First UI/UX Design and Implementation (Detailed plan drafted)
+- [ ] **WOW-029**: Refactor AdminDashboard.tsx into Smaller Components
+- [ ] **WOW-029**: Refactor AdminDashboard.tsx into Smaller Components
+- [ ] **CRITICAL: Build Errors**: Application currently fails to compile due to TypeScript errors in `src/components/MenuBar.tsx` and `src/components/menubar/ViewMenu.tsx`. These are being addressed via manual structural and import fixes for JSX and helper functions.
+- [ ] **CRITICAL: API Errors**: Investigate and fix:
+    - `GET /api/admin/users` returning 404 Not Found.
+    - `GET /api/portal/tasks` returning 500 Internal Server Error.
+    - `GET /api/admin/llm-providers` returning 500 Internal Server Error.
+    - WebSocket connection failure for `kanban` surface.
+
+### Refactoring & Maintenance
+- [ ] **WOW-028**: Modularize `src/components/MenuBar.tsx` into smaller sub-components.
+- [ ] **WOW-029**: Modularize `src/components/work/kanban/WorkBoard.tsx` into smaller sub-components.
+- [ ] **WOW-029**: Refactor AdminDashboard.tsx into Smaller Components.
 
 ## Priority Order
 

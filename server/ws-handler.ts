@@ -179,7 +179,7 @@ async function processActivateSession(ws: any, msg: { transcript?: unknown; sess
 
 	let hydratedFromDisk = false;
 	if (next.length === 0 && sessionKey) {
-		const disk = await loadWoSessionMessages(sessionKey, ws.data.surface || undefined);
+		const disk = await loadWoSessionMessages(sessionKey, ws.data.surface || "default");
 		if (disk.length > 0) {
 			ws.data.messages = disk;
 			hydratedFromDisk = true;
@@ -288,7 +288,7 @@ async function runChatTurn(ws: any, text: string, notifyUser: boolean, selectedP
 			historyText = `[System Context: User is viewing/editing "${selectedPath}"]\n\n${text}`;
 		}
 		data.messages.push({ role: "user", content: historyText });
-		if (data.wopSessionKey) await appendWoSessionMessage(data.wopSessionKey, "user", historyText, data.surface || undefined).catch(() => {});
+		if (data.wopSessionKey) await appendWoSessionMessage(data.wopSessionKey, "user", historyText, data.surface || "default").catch(() => {});
 
 		await applyLeadFromCache(data);
 
@@ -371,7 +371,7 @@ async function runChatTurn(ws: any, text: string, notifyUser: boolean, selectedP
 
 			if (result.ok) {
 				if (data.wopSessionKey && full.length > 0) {
-					await appendWoSessionMessage(data.wopSessionKey, "assistant", full, data.surface || undefined).catch(() => {});
+					await appendWoSessionMessage(data.wopSessionKey, "assistant", full, data.surface || "default").catch(() => {});
 				}
 				data.cumPromptTokens += lastStreamUsage?.promptTokens || 0;
 				data.cumCompletionTokens += lastStreamUsage?.completionTokens || 0;
@@ -415,6 +415,7 @@ export const websocketHandler = {
 				else if (s === "ata") ws.data.agentName = "ata";
 				else if (s === "billing") ws.data.agentName = "fakturering";
 				else if (s === "planning") ws.data.agentName = "schemaplanerare";
+				else if (s === "taplanner") ws.data.agentName = "tma-planner";
 				else if (s === "project") ws.data.agentName = "projektledare";
 				console.log(`[WS] Mapped surface '${s}' to agent '${ws.data.agentName}'.`);
 			}

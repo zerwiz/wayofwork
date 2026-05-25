@@ -13,16 +13,17 @@ The current system retains references to "Pi" agents and their `.pi/agents` conf
 
 ## Requirements
 ### Functional Requirements
-- [ ] **Agent Discovery:** Update agent discovery mechanisms to scan `.wo/agents/` (and potentially other "Wo" designated agent paths) instead of `.pi/agents/`.
-- [ ] **Agent Roster Management:** Rework `teams.yaml` parsing and creation to specifically manage `Wo` agents.
-- [ ] **UI Renaming:** Update all UI elements related to "Pi" agents and "My AI Team" to reflect "Wo" agent branding.
-- [ ] **Agent Editing:** Ensure the "Edit prompt on an agent" functionality correctly targets and modifies `Wo` agent Markdown bodies and frontmatter.
-- [ ] **Team Creation:** Restore/implement the ability to create new agent teams, linking them to discovered `Wo` agents.
+- [x] **Agent Discovery:** Update agent discovery mechanisms to scan `.wo/agents/` exclusively.
+- [x] **Agent Roster Management:** Rework `teams.yaml` parsing and creation to specifically manage `Wo` agents within `.wo/agents/`.
+- [x] **UI Renaming:** Update all UI elements related to "Pi" agents and "My AI Team" to reflect "Wo" agent branding.
+- [x] **Agent Editing:** Ensure the "Edit prompt on an agent" functionality correctly targets and modifies `Wo` agent Markdown bodies and frontmatter exclusively within `.wo/`.
+- [x] **Team Creation:** Restore/implement the ability to create new agent teams, linking them to discovered `Wo` agents exclusively from the `.wo/` path.
 
-### Technical Requirements
-- [ ] **Backend API Audit:** Review `server/agents.ts` and related API endpoints (`/api/agents`) to ensure they correctly interact with the `.wo/agents` directory.
-- [ ] **Frontend Component Update:** Modify `SimpleTeamView.tsx` and any other relevant frontend components to use the new "Wo" agent APIs and display logic.
-- [ ] **Configuration File Update:** Ensure agent configuration files (e.g., `teams.yaml`) are correctly located and managed within the `.wo/` directory structure.
+### Frontend Refactoring
+- [x] **Path Cleanup:** Systematically replace all `.pi/` hardcoded paths and references in `src/components/` with the corresponding `.wo/` equivalents (e.g., `.pi/settings.json` → `.wo/settings.json`, `.pi/agents/` → `.wo/agents/`).
+- [x] **UI Messaging:** Update all user-facing documentation/tooltips in UI components (e.g., `ClawHelpModal`, `NewAgentModal`) to refer to the `.wo/` directory structure.
+- [x] **Roster Management:** Ensure visual editors (e.g., `TeamsGuiEditorModal`) correctly interact with `.wo/agents/teams.yaml`.
+- [x] **Configuration UI:** Update `TechnicalSidePanels` and `HostDoctorModal` to correctly locate and manage `.wo/` configuration files.
 
 ## Acceptance Criteria
 - "My AI Team" tab in Simple mode correctly lists available "Wo" agents.

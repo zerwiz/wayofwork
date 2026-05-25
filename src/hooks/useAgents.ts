@@ -102,10 +102,16 @@ export function useAgents(): UseAgentsReturn {
 	};
 
 	const fetchAgents = useCallback(async () => {
-		await new Promise((resolve) => setTimeout(resolve, 100));
-		const stored = loadFromStorage();
-		saveToStorage(stored);
-		return stored || { agents: [], teamsPath: undefined, plan: undefined };
+        try {
+            const response = await fetch("/api/agents");
+            if (!response.ok) throw new Error("Failed to fetch agents");
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.warn("Failed to fetch agents from API:", error);
+            // Fallback to storage if API fails, or return empty
+            return loadFromStorage() || { agents: [], teamsPath: undefined, plan: undefined };
+        }
 	}, []);
 
 	const getTeamMap = useCallback((): AgentTeamMap | null => {

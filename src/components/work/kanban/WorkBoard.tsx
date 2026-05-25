@@ -73,6 +73,7 @@ export function WorkBoard() {
   const [draggedCard, setDraggedCard] = useState<string | null>(null);
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [onlyMyTasks, setOnlyMyTasks] = useState(false);
   const [selectedDevelopmentWorkflowId, setSelectedDevelopmentWorkflowId] = useState<string | ''>('');
   const [selectedDevelopmentPhase, setSelectedDevelopmentPhase] = useState<DevelopmentPhase | ''>('');
   const [selectedNSRFolder, setSelectedNSRFolder] = useState<NSRFolder | ''>('');
@@ -1719,194 +1720,30 @@ export function WorkBoard() {
               </div>
             </div>
 
-            {/* Row 2: Search, Filters, and Actions */}
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              {/* Search */}
-              <div className="relative flex-1 min-w-[150px] sm:min-w-[200px]">
-                <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-[#858585]" />
-                <input
-                  type="text"
-                  placeholder="Search cards..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#252526] border border-[#3c3c3c] rounded-lg pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 text-[#cccccc] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
-                />
-              </div>
-
-              {/* Development Workflow Filters */}
-              {availableWorkflows.length > 0 && (
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                  <select
-                    value={selectedDevelopmentWorkflowId}
-                    onChange={(e) => setSelectedDevelopmentWorkflowId(e.target.value)}
-                    className="px-2 sm:px-3 py-1.5 sm:py-2 bg-[#252526] border border-[#3c3c3c] rounded-lg text-[#cccccc] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[120px] sm:min-w-0"
-                  >
-                    <option value="">All Workflows</option>
-                    {availableWorkflows.map((workflow) => (
-                      <option key={workflow.id} value={workflow.id}>
-                        {workflow.name.length > 20 ? `${workflow.name.substring(0, 20)}...` : workflow.name}
-                      </option>
-                    ))}
-                  </select>
-                  {selectedDevelopmentWorkflowId && (
-                    <select
-                      value={selectedDevelopmentPhase}
-                      onChange={(e) => setSelectedDevelopmentPhase(e.target.value as DevelopmentPhase | '')}
-                      className="px-2 sm:px-3 py-1.5 sm:py-2 bg-[#252526] border border-[#3c3c3c] rounded-lg text-[#cccccc] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[100px] sm:min-w-0"
-                    >
-                      <option value="">All Phases</option>
-                      <option value="analysis">Analysis</option>
-                      <option value="planning">Planning</option>
-                      <option value="solutioning">Solutioning</option>
-                      <option value="developing">Developing</option>
-                      <option value="implementation">Implementation</option>
-                      <option value="deploying">Deploying</option>
-                    </select>
-                  )}
-                  {(selectedDevelopmentWorkflowId || selectedDevelopmentPhase) && (
-                    <button
-                      onClick={() => {
-                        setSelectedDevelopmentWorkflowId('');
-                        setSelectedDevelopmentPhase('');
-                      }}
-                      className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-[#858585] hover:text-[#cccccc] transition-colors whitespace-nowrap"
-                      title="Clear Development Workflow Filters"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* NSR Folder Filter (for NSR-compliant workflows) */}
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                <select
-                  value={selectedNSRFolder}
-                  onChange={(e) => setSelectedNSRFolder(e.target.value as NSRFolder | '')}
-                  className="px-2 sm:px-3 py-1.5 sm:py-2 bg-[#252526] border border-[#3c3c3c] rounded-lg text-[#cccccc] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[120px] sm:min-w-0"
-                >
-                  <option value="">All NSR Folders</option>
-                  {NSR_MANDATORY_FOLDERS.map((folder) => (
-                    <option key={folder} value={folder}>
-                      {NSR_FOLDER_DISPLAY_NAMES[folder]}
-                    </option>
-                  ))}
-                </select>
-                {selectedNSRFolder && (
-                  <button
-                    onClick={() => setSelectedNSRFolder('')}
-                    className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-[#858585] hover:text-[#cccccc] transition-colors whitespace-nowrap"
-                    title="Clear NSR Folder Filter"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-
-              {/* Workflow Track Filters (Quick Flow, Project Management, Enterprise Method) */}
-              {availableWorkflowTracks.length > 0 && (
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                  <select
-                    value={selectedWorkflowTrack}
-                    onChange={(e) => {
-                      const track = e.target.value as WorkflowTrack | '';
-                      setSelectedWorkflowTrack(track);
-                      setSelectedWorkflowId('');
-                      setSelectedEnterprisePhase('');
-                    }}
-                    className="px-2 sm:px-3 py-1.5 sm:py-2 bg-[#252526] border border-[#3c3c3c] rounded-lg text-[#cccccc] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[120px] sm:min-w-0"
-                  >
-                    <option value="">All Tracks</option>
-                    <option value="quick-flow">Quick Flow</option>
-                    <option value="project-management">Project Management</option>
-                    <option value="enterprise-method">Enterprise Method</option>
-                  </select>
-                  
-                  {selectedWorkflowTrack && (
-                    <select
-                      value={selectedWorkflowId}
-                      onChange={(e) => setSelectedWorkflowId(e.target.value)}
-                      className="px-2 sm:px-3 py-1.5 sm:py-2 bg-[#252526] border border-[#3c3c3c] rounded-lg text-[#cccccc] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[120px] sm:min-w-0"
-                    >
-                      <option value="">All Workflows</option>
-                      {availableWorkflowTracks
-                        .filter((w) => w.track === selectedWorkflowTrack)
-                        .map((workflow) => (
-                          <option key={workflow.id} value={workflow.id}>
-                            {workflow.name.length > 20 ? `${workflow.name.substring(0, 20)}...` : workflow.name}
-                          </option>
-                        ))}
-                    </select>
-                  )}
-
-                  {/* Enterprise Method Phase Filter */}
-                  {selectedWorkflowTrack === 'enterprise-method' && selectedWorkflowId && (
-                    <select
-                      value={selectedEnterprisePhase}
-                      onChange={(e) => setSelectedEnterprisePhase(e.target.value)}
-                      className="px-2 sm:px-3 py-1.5 sm:py-2 bg-[#252526] border border-[#3c3c3c] rounded-lg text-[#cccccc] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[100px] sm:min-w-0"
-                    >
-                      <option value="">All Phases</option>
-                      {(() => {
-                        const workflow = availableWorkflowTracks.find((w) => w.id === selectedWorkflowId);
-                        if (workflow) {
-                          // Extract unique phases from workflow steps or use default phases
-                          const phases = ['Sprint 1', 'Sprint 2', 'Sprint 3', 'Sprint 4'];
-                          return phases.map((phase) => (
-                            <option key={phase} value={phase}>
-                              {phase}
-                            </option>
-                          ));
-                        }
-                        return null;
-                      })()}
-                    </select>
-                  )}
-
-                  {(selectedWorkflowTrack || selectedWorkflowId || selectedEnterprisePhase) && (
-                    <button
-                      onClick={() => {
-                        setSelectedWorkflowTrack('');
-                        setSelectedWorkflowId('');
-                        setSelectedEnterprisePhase('');
-                      }}
-                      className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-[#858585] hover:text-[#cccccc] transition-colors whitespace-nowrap"
-                      title="Clear Workflow Track Filters"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                <button
-                  onClick={() => {}}
-                  className="p-2 sm:px-4 sm:py-2 bg-[#252526] text-[#cccccc] rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-                  title="Filter"
-                >
-                  <Filter className="w-4 h-4" />
-                  <span className="hidden sm:inline">Filter</span>
-                </button>
-                <button
-                  onClick={() => setShowWorkTeamView(true)}
-                  className="p-2 sm:px-4 sm:py-2 bg-[#252526] text-[#cccccc] rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-                  title="Members"
-                >
-                  <Users className="w-4 h-4" />
-                  <span className="hidden sm:inline">Members</span>
-                </button>
-                <button
-                  onClick={() => setShowBoardSettings(true)}
-                  className="p-2 sm:px-4 sm:py-2 bg-[#252526] text-[#cccccc] rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-                  title="Board Settings"
-                >
-                  <Settings className="w-4 h-4" />
-                  <span className="hidden sm:inline">Settings</span>
-                </button>
-              </div>
-            </div>
+      {/* Board Controls */}
+      <BoardControls
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onlyMyTasks={onlyMyTasks}
+        setOnlyMyTasks={setOnlyMyTasks}
+        selectedDevelopmentWorkflowId={selectedDevelopmentWorkflowId}
+        setSelectedDevelopmentWorkflowId={setSelectedDevelopmentWorkflowId}
+        selectedDevelopmentPhase={selectedDevelopmentPhase}
+        setSelectedDevelopmentPhase={setSelectedDevelopmentPhase}
+        availableWorkflows={availableWorkflows}
+        selectedNSRFolder={selectedNSRFolder}
+        setSelectedNSRFolder={setSelectedNSRFolder}
+        selectedWorkflowTrack={selectedWorkflowTrack}
+        setSelectedWorkflowTrack={setSelectedWorkflowTrack}
+        selectedWorkflowId={selectedWorkflowId}
+        setSelectedWorkflowId={setSelectedWorkflowId}
+        selectedEnterprisePhase={selectedEnterprisePhase}
+        setSelectedEnterprisePhase={setSelectedEnterprisePhase}
+        availableWorkflowTracks={availableWorkflowTracks}
+        setShowWorkTeamView={setShowWorkTeamView}
+        setShowBoardSettings={setShowBoardSettings}
+        stats={stats}
+      />
           </div>
         </div>
 

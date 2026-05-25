@@ -1,4 +1,4 @@
-import { Brain, Cpu, Folder, HelpCircle, MessageCircle, Settings, Users, FileText, Map as RoadIcon, CircleDot } from "lucide-react";
+import { Brain, Cpu, Folder, HelpCircle, MessageCircle, Settings, Users, FileText, Map as RoadIcon } from "lucide-react";
 import { useTranslation } from "../../contexts/LanguageContext";
 
 export type SimpleTabId = "chat" | "team" | "models" | "projects" | "documenthandler" | "taplanner" | "settings";
@@ -85,14 +85,6 @@ export function SimpleNavRail({
 			<NavItem icon={RoadIcon} label={t("simple_nav.taplanner")} id="taplanner" />
 
 		<div className="mt-auto flex flex-col items-center gap-2">
-			<button
-				type="button"
-				className="group relative flex h-12 w-12 items-center justify-center rounded-2xl transition-colors hover:bg-[#3c3c3c]"
-				title="Recent notifications"
-			>
-				<CircleDot size={24} className="text-[#858585] group-hover:text-[#cccccc]" />
-				<span className="absolute right-2.5 top-2.5 flex h-2 w-2 rounded-full bg-[#ea580c] ring-2 ring-[#333333]" />
-			</button>
 
 			{onHelp ? (
 				<button

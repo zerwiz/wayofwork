@@ -10,6 +10,7 @@ import { runOrchestratorToolLoop } from "./chat-orchestrator-tools";
 import { composeLeadSystem } from "./session-prompts";
 import { getPrimaryWorkspacePath } from "./workspace-state";
 import { appendWoSessionMessage, loadWoSessionMessages } from "./wo-session-jsonl";
+import { getAgentBodyByName, resolveAgentSkillsFromName } from "./agents";
 import type { ChatMessage } from "./chat";
 
 export interface BotBridgeOpts {
@@ -19,6 +20,7 @@ export interface BotBridgeOpts {
 	messageText: string;
 	channel: "telegram" | "whatsapp";
 	channelUserId: string;
+    agentName?: string;
 	/** Conversation context — previous messages to maintain history (optional, will be loaded from disk if not provided). */
 	history?: ChatMessage[];
 }
@@ -40,12 +42,12 @@ export async function processBotMessage(
 	const sessionKey = `channel-${opts.channel}-${opts.channelUserId}`;
 
 	// Persist the user message first
-	await appendWoSessionMessage(sessionKey, "user", opts.messageText).catch(() => {});
+	await appendWoSessionMessage(sessionKey, "user", opts.messageText, opts.channel).catch(() => {});
 
 	// Load history if not provided (or even if provided, to ensure persistence)
 	let history = opts.history;
 	if (!history) {
-		history = await loadWoSessionMessages(sessionKey);
+		history = await loadWoSessionMessages(sessionKey, opts.channel);
 		// Trim to last 20 messages (10 turns)
 		if (history.length > 20) {
 			history = history.slice(-20);
@@ -57,11 +59,11 @@ export async function processBotMessage(
 	// Build orchestrator system prompt (agentBody=null → ORCHESTRATOR_WEB_SHELL_SYSTEM)
 	const baseSystem = await composeLeadSystem({
 		mode: "build",
-		agentBody: null,
-		agentNameLower: null,
-		agentSkills: null,
+		agentBody: opts.agentName ? await getAgentBodyByName(opts.agentName, opts.tenantId) : null,
+		agentNameLower: opts.agentName?.toLowerCase() ?? null,
+		agentSkills: opts.agentName ? await resolveAgentSkillsFromName(opts.agentName, opts.tenantId) : null,
 		plannerAgentBody: null,
-		orchestratorToolsEnabled: true,
+		orchestratorToolsEnabled: !opts.agentName,
 		authoritativeRuntime: false,
 		workspaceIndexBoost: null,
 	});
@@ -103,7 +105,7 @@ export async function processBotMessage(
 		if (r.result.ok) {
 			const response = fullResponse.trim();
 			if (response) {
-				await appendWoSessionMessage(sessionKey, "assistant", response).catch(() => {});
+				await appendWoSessionMessage(sessionKey, "assistant", response, opts.channel).catch(() => {});
 			}
 			return { ok: true, response };
 		}

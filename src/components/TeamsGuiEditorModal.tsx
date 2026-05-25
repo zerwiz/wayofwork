@@ -434,9 +434,8 @@ export function TeamsGuiEditorModal({
 						Edit My AI Team
 					</h2>
 					<p className={`mt-1 text-sm leading-relaxed ${muted}`}>
-						Add or remove agents from your teams. No coding needed — just click!
-					</p>
-				</div>
+					Add or remove agents from your teams. No coding needed — just click! (Teams stored in <code className="rounded bg-black/10 px-1">.wo/agents/teams.yaml</code>)
+					</p>				</div>
 				<button
 					type="button"
 					onClick={onClose}
@@ -565,7 +564,7 @@ export function TeamsGuiEditorModal({
 				<div className={`shrink-0 flex items-center justify-between gap-3 border-t px-5 py-4 ${borderB}`}>
 					<p className={`text-xs ${muted}`}>
 						Saves to{" "}
-						<code className="break-all font-mono text-[11px]">{teamsYamlWritePath}</code>
+						<code className="break-all font-mono text-[11px]">.wo/agents/teams.yaml</code>
 					</p>
 					<div className="flex shrink-0 gap-2">
 						<button

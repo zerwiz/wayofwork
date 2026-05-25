@@ -3,6 +3,8 @@ import { ChevronRight, ArrowLeft, Save, Map, AlertTriangle, FileText, CheckCircl
 import { useTranslation } from "../contexts/LanguageContext";
 import { validateTAPlan, type ValidationResult } from "../utils/ta-validation";
 import { SketchLibrary, TA_SKETCHES } from "../components/TAPlanner/SketchLibrary";
+import { MapCanvas } from "../components/taplanner/MapCanvas";
+import html2canvas from "html2canvas";
 
 interface WizardProps {
   onComplete: (planData: any) => Promise<void>;
@@ -22,11 +24,17 @@ export function TAPlanningWizard({ onComplete, onCancel }: WizardProps) {
     traffic_volume_adt: "",
     work_type: "fixed",
     sketch_id: "",
+    map_screenshot_base64: "",
     risk_assessment: {
       hazards: [],
       mitigations: ""
     }
   });
+
+  const handleCapture = async (element: HTMLDivElement) => {
+    const canvas = await html2canvas(element);
+    updateField("map_screenshot_base64", canvas.toDataURL("image/png"));
+  };
   const handleNext = () => setStep(s => s + 1);
   const handlePrev = () => setStep(s => Math.max(1, s - 1));
 
@@ -62,7 +70,7 @@ export function TAPlanningWizard({ onComplete, onCancel }: WizardProps) {
           </button>
           <div>
             <h2 className="text-lg font-bold text-white">Create TA Plan</h2>
-            <p className="text-xs text-[#858585]">Step {step} of 3</p>
+            <p className="text-xs text-[#858585]">Step {step} of 4</p>
           </div>
         </div>
       </div>
@@ -121,6 +129,22 @@ export function TAPlanningWizard({ onComplete, onCancel }: WizardProps) {
 
           {step === 2 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-blue-500/20 text-blue-400 rounded-lg"><Map size={24} /></div>
+                    <h3 className="text-xl font-bold text-white">Visual Map & Overlay</h3>
+                </div>
+                <MapCanvas onCapture={handleCapture} />
+                {formData.map_screenshot_base64 && (
+                    <div className="mt-4">
+                        <p className="text-xs text-emerald-400">Screenshot captured successfully!</p>
+                        <img src={formData.map_screenshot_base64} alt="Screenshot" className="max-h-32 mt-2 rounded border border-[#3c3c3c]" />
+                    </div>
+                )}
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-amber-500/20 text-amber-400 rounded-lg"><AlertTriangle size={24} /></div>
                 <h3 className="text-xl font-bold text-white">Work Characteristics</h3>
@@ -163,7 +187,7 @@ export function TAPlanningWizard({ onComplete, onCancel }: WizardProps) {
             </div>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg"><CheckCircle size={24} /></div>

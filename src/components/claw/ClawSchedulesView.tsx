@@ -4,7 +4,7 @@
  * Definitions sync to **`<host>/.claw/schedule/claw-schedules.v1.json`**; the Bun server
  * runs enabled entries when **`WOP_CLAW_SCHEDULER=1`** and **`WOP_CHAT_ENGINE`** enables Pi.
  */
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import {
 	BookOpen,
 	CalendarDays,
@@ -27,6 +27,7 @@ import { useAgents, type AgentMeta } from "../../hooks/useAgents";
 import { useClawAutomationStatus } from "../../hooks/useClawAutomationStatus";
 import type { ServerConfig } from "../../hooks/useServerConfig";
 import { ClawScheduleMonthCalendar } from "./ClawScheduleMonthCalendar";
+import { ClawCronBuilder } from "./ClawCronBuilder";
 import {
 	formatYMDLocal,
 	localYmdAndHmToISO,
@@ -441,11 +442,10 @@ function ScheduleForm({
 								))}
 							</select>
 							{form.selectedPreset === "custom" && (
-								<input
-									className={`${inputC} mt-2 font-mono`}
-									placeholder="Cron expression, e.g. 0 9 * * 1-5"
+								<ClawCronBuilder
+									dark={dark}
 									value={form.customCron}
-									onChange={(e) => update("customCron", e.target.value)}
+									onChange={(v) => update("customCron", v)}
 								/>
 							)}
 						</div>
@@ -908,7 +908,6 @@ export function ClawSchedulesView({
 			const d = new Date(s.runOnceAt);
 			if (!Number.isNaN(d.getTime())) setCalendarSelectedDay(startOfLocalDay(d));
 		}
-		handleEdit(s);
 	}
 
 	function handleCancel() {
@@ -1082,6 +1081,154 @@ export function ClawSchedulesView({
 						/>
 					</div>
 				</aside>
+			</div>
+		</div>
+	);
+}
+
+// ──────────────────────────────────────────────
+// Cron builder — visual cron expression editor
+// ──────────────────────────────────────────────
+
+const DAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+const DAY_INDEX: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+
+function parseCron(cron: string): { hour: string; minute: string; days: string[]; mode: "daily" | "weekdays" | "weekends" | "days" } {
+	const parts = cron.trim().split(/\s+/);
+	const minute = parts[0] || "0";
+	const hour = parts[1] || "*";
+	const dayOfWeek = parts[4] || "*";
+
+	if (dayOfWeek === "*") return { hour, minute, days: [], mode: "daily" };
+	if (dayOfWeek === "1-5") return { hour, minute, days: [], mode: "weekdays" };
+	if (dayOfWeek === "0,6" || dayOfWeek === "6,0" || dayOfWeek === "0,6,0") return { hour, minute, days: [], mode: "weekends" };
+
+	const days: string[] = [];
+	for (const day of ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]) {
+		const idx = DAY_INDEX[day];
+		if (dayOfWeek.includes(String(idx))) days.push(day);
+	}
+	return { hour, minute, days, mode: days.length > 0 ? "days" : "daily" };
+}
+
+function buildCron(hour: string, minute: string, mode: string, days: string[]): string {
+	let dow = "*";
+	if (mode === "weekdays") dow = "1-5";
+	else if (mode === "weekends") dow = "0,6";
+	else if (mode === "days" && days.length > 0) {
+		dow = days.map((d) => String(DAY_INDEX[d])).sort().join(",");
+	}
+	return `${minute} ${hour} * * ${dow}`;
+}
+
+function CronBuilder({ dark, value, onChange }: { dark: boolean; value: string; onChange: (v: string) => void }) {
+	const parsed = useMemo(() => parseCron(value || "0 * * * *"), [value]);
+	const [hour, setHour] = useState(parsed.hour === "*" ? "8" : parsed.hour);
+	const [minute, setMinute] = useState(parsed.minute === "*" ? "0" : parsed.minute);
+	const [mode, setMode] = useState(parsed.mode);
+	const [days, setDays] = useState<string[]>(parsed.days);
+
+	useEffect(() => {
+		onChange(buildCron(hour, minute, mode, days));
+	}, [hour, minute, mode, days]);
+
+	const bg = dark ? "bg-[#1e1e1e] border-[#3c3c3c]" : "bg-white border-[#e5e5e5]";
+	const text = dark ? "text-[#cccccc]" : "text-[#333333]";
+	const muted = dark ? "text-[#858585]" : "text-[#888888]";
+	const inputBg = dark ? "bg-[#252526] border-[#3c3c3c]" : "bg-white border-[#d5d5d5] text-[#333333]";
+
+	return (
+		<div className={`mt-2 rounded-lg border p-3 ${bg}`}>
+			<div className="flex flex-wrap items-end gap-3">
+				<div>
+					<label className={`mb-0.5 block text-[9px] font-semibold uppercase tracking-wider ${muted}`}>Time</label>
+					<div className="flex items-center gap-1">
+						<select
+							className={`w-14 rounded border px-1.5 py-1 text-xs ${inputBg}`}
+							value={hour}
+							onChange={(e) => setHour(e.target.value)}
+						>
+							{Array.from({ length: 24 }, (_, i) => (
+								<option key={i} value={String(i)}>{String(i).padStart(2, "0")}</option>
+							))}
+						</select>
+						<span className={`text-xs ${muted}`}>:</span>
+						<select
+							className={`w-14 rounded border px-1.5 py-1 text-xs ${inputBg}`}
+							value={minute}
+							onChange={(e) => setMinute(e.target.value)}
+						>
+							{["00", "15", "30", "45"].map((m) => (
+								<option key={m} value={m}>{m}</option>
+							))}
+						</select>
+					</div>
+				</div>
+
+				<div className="flex-1">
+					<label className={`mb-0.5 block text-[9px] font-semibold uppercase tracking-wider ${muted}`}>Repeat</label>
+					<div className="flex flex-wrap gap-1.5">
+						{(["daily", "weekdays", "weekends"] as const).map((m) => (
+							<button
+								key={m}
+								type="button"
+								onClick={() => setMode(m)}
+								className={`rounded px-2 py-1 text-[10px] font-medium transition-colors ${
+									mode === m
+										? dark
+											? "bg-[#ea580c]/20 text-[#fb923c]"
+											: "bg-[#ea580c]/12 text-[#ea580c]"
+										: dark
+											? "bg-[#2a2a2a] text-[#858585] hover:bg-[#333]"
+											: "bg-[#f0f0f0] text-[#888] hover:bg-[#e5e5e5]"
+								}`}
+							>
+								{m === "daily" ? "Every day" : m === "weekdays" ? "Weekdays" : "Weekends"}
+							</button>
+						))}
+						<button
+							type="button"
+							onClick={() => setMode("days")}
+							className={`rounded px-2 py-1 text-[10px] font-medium transition-colors ${
+								mode === "days"
+									? dark
+										? "bg-[#ea580c]/20 text-[#fb923c]"
+										: "bg-[#ea580c]/12 text-[#ea580c]"
+									: dark
+										? "bg-[#2a2a2a] text-[#858585] hover:bg-[#333]"
+										: "bg-[#f0f0f0] text-[#888] hover:bg-[#e5e5e5]"
+							}`}
+						>
+							Specific days
+						</button>
+					</div>
+					{mode === "days" && (
+						<div className="mt-1.5 flex flex-wrap gap-1">
+							{DAYS_SHORT.map((d, i) => {
+								const key = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][i];
+								const active = days.includes(key);
+								return (
+									<button
+										key={key}
+										type="button"
+										onClick={() => setDays(active ? days.filter((x) => x !== key) : [...days, key])}
+										className={`h-7 w-7 rounded text-[10px] font-semibold transition-colors ${
+											active
+												? dark
+													? "bg-[#ea580c]/20 text-[#fb923c]"
+													: "bg-[#ea580c]/12 text-[#ea580c]"
+												: dark
+													? "bg-[#2a2a2a] text-[#585858] hover:bg-[#333]"
+													: "bg-[#f0f0f0] text-[#888] hover:bg-[#e5e5e5]"
+										}`}
+									>
+										{d}
+									</button>
+								);
+							})}
+						</div>
+					)}
+				</div>
 			</div>
 		</div>
 	);

@@ -44,9 +44,19 @@ export function registerPortalRoutes(router: Router) {
 	});
 	router.get("/api/portal/me", async (_req, _params, auth) => {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
-		const user = db.query("SELECT id, username, role, tenant_id FROM users WHERE id = ?").get(auth.userId) as any;
+		const user = db.query("SELECT id, username, role, tenant_id, full_name, email, phone, job_title, status FROM users WHERE id = ?").get(auth.userId) as any;
 		if (!user) return json({ error: "User not found" }, 404);
-		return json({ id: user.id, username: user.username, role: user.role, tenantId: user.tenant_id });
+		return json({
+			id: user.id,
+			username: user.username,
+			role: user.role,
+			tenantId: user.tenant_id,
+			fullName: user.full_name,
+			email: user.email,
+			phone: user.phone,
+			jobTitle: user.job_title,
+			status: user.status,
+		});
 	});
 
 	router.put("/api/portal/me", async (req, _params, auth) => {
@@ -101,7 +111,7 @@ export function registerPortalRoutes(router: Router) {
 					LEFT JOIN users u ON t.assigned_to = u.id
 					LEFT JOIN projects p ON t.project_id = p.id
 					WHERE t.tenant_id = ?
-					ORDER BY t.due_date ASC, t.created_at DESC
+					ORDER BY t.deadline ASC, t.created_at DESC
 				`).all(auth.tenantId) as any[];
 			} else {
 				tasks = db.query(`
@@ -109,7 +119,7 @@ export function registerPortalRoutes(router: Router) {
 					FROM tasks t
 					LEFT JOIN projects p ON t.project_id = p.id
 					WHERE t.tenant_id = ? AND t.assigned_to = ?
-					ORDER BY t.due_date ASC, t.created_at DESC
+					ORDER BY t.deadline ASC, t.created_at DESC
 				`).all(auth.tenantId, auth.userId) as any[];
 			}
 
@@ -349,7 +359,7 @@ export function registerPortalRoutes(router: Router) {
 
 	router.post("/api/portal/tasks", async (req, _params, auth) => {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
-		let body: { title?: string; assigned_to?: string; project_id?: string; estimated_hours?: number; due_date?: string; kanban_card_id?: string; kanban_board_id?: string };
+		let body: { title?: string; assigned_to?: string; project_id?: string; estimated_hours?: number; deadline?: string; status?: string; priority?: string; description?: string };
 		try {
 			body = (await req.json()) as any;
 		} catch {
@@ -361,14 +371,132 @@ export function registerPortalRoutes(router: Router) {
 		try {
 			const id = `task_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 			db.query(`
-				INSERT INTO tasks (id, tenant_id, title, assigned_to, project_id, estimated_hours, due_date, status, created_by, kanban_card_id, kanban_board_id)
-				VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)
-			`).run(id, auth.tenantId, body.title, body.assigned_to || null, body.project_id || null, body.estimated_hours || null, body.due_date || null, auth.userId, body.kanban_card_id || null, body.kanban_board_id || null);
+				INSERT INTO tasks (id, tenant_id, title, assigned_to, project_id, estimated_hours, deadline, status, priority, description)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`).run(id, auth.tenantId, body.title, body.assigned_to || null, body.project_id || null, body.estimated_hours || null, body.deadline || null, body.status || 'todo', body.priority || 'medium', body.description || null);
 			const task = db.query("SELECT * FROM tasks WHERE id = ?").get(id);
 			return json(task);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ error: "Failed to create task", details: message }, 500);
+		}
+	});
+
+	// GET /api/portal/tasks/:id - Get single card
+	router.get("/api/portal/tasks/:id", async (_req, params, auth) => {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		try {
+			const task = db.query(`
+				SELECT t.*, u.username as assigned_name, p.name as project_name
+				FROM tasks t
+				LEFT JOIN users u ON t.assigned_to = u.id
+				LEFT JOIN projects p ON t.project_id = p.id
+				WHERE t.id = ? AND t.tenant_id = ?
+			`).get(params.id, auth.tenantId);
+			if (!task) return json({ error: "Task not found" }, 404);
+			return json(task);
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to fetch task", details: message }, 500);
+		}
+	});
+
+	// PUT /api/portal/tasks/:id - Update card (title, status/column, priority, assignee, etc.)
+	router.put("/api/portal/tasks/:id", async (req, params, auth) => {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		if (auth.role === "CLIENT") return json({ error: "Forbidden" }, 403);
+		let body: { title?: string; status?: string; priority?: string; assigned_to?: string; description?: string; deadline?: string; estimated_hours?: number; cover?: string };
+		try {
+			body = (await req.json()) as any;
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		try {
+			const existing = db.query("SELECT * FROM tasks WHERE id = ? AND tenant_id = ?").get(params.id, auth.tenantId);
+			if (!existing) return json({ error: "Task not found" }, 404);
+			db.query(`
+				UPDATE tasks
+				SET title = COALESCE(?, title),
+				    description = COALESCE(?, description),
+				    status = COALESCE(?, status),
+				    priority = COALESCE(?, priority),
+				    assigned_to = COALESCE(?, assigned_to),
+				    deadline = COALESCE(?, deadline),
+				    estimated_hours = COALESCE(?, estimated_hours),
+				    cover = COALESCE(?, cover)
+				WHERE id = ? AND tenant_id = ?
+			`).run(
+				body.title || null,
+				body.description !== undefined ? body.description : null,
+				body.status || null,
+				body.priority || null,
+				body.assigned_to || null,
+				body.deadline || null,
+				body.estimated_hours ?? null,
+				body.cover !== undefined ? body.cover : null,
+				params.id,
+				auth.tenantId,
+			);
+			const task = db.query("SELECT * FROM tasks WHERE id = ?").get(params.id);
+			return json(task);
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to update task", details: message }, 500);
+		}
+	});
+
+	// DELETE /api/portal/tasks/:id - Delete card
+	router.delete("/api/portal/tasks/:id", async (_req, params, auth) => {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		if (auth.role === "CLIENT") return json({ error: "Forbidden" }, 403);
+		try {
+			const existing = db.query("SELECT * FROM tasks WHERE id = ? AND tenant_id = ?").get(params.id, auth.tenantId);
+			if (!existing) return json({ error: "Task not found" }, 404);
+			db.query("DELETE FROM tasks WHERE id = ? AND tenant_id = ?").run(params.id, auth.tenantId);
+			return json({ ok: true });
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to delete task", details: message }, 500);
+		}
+	});
+
+	// GET /api/portal/licenses - Get current user's licenses
+	router.get("/api/portal/licenses", async (_req, _params, auth) => {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		try {
+			const licenses = db.query(`
+				SELECT l.* FROM user_licenses l
+				WHERE l.user_id = ? AND l.tenant_id = ?
+				ORDER BY l.category, l.name
+			`).all(auth.userId, auth.tenantId);
+			return json(licenses);
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to fetch licenses", details: message }, 500);
+		}
+	});
+
+	// PUT /api/portal/licenses - Save all licenses for current user (replace)
+	router.put("/api/portal/licenses", async (req, _params, auth) => {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		let body: { licenses: Array<{ name: string; issuer?: string; valid_until?: string; category: string; status: string }> };
+		try {
+			body = (await req.json()) as any;
+		} catch {
+			return json({ error: "Invalid JSON" }, 400);
+		}
+		if (!Array.isArray(body.licenses)) return json({ error: "licenses array required" }, 400);
+		try {
+			db.query("DELETE FROM user_licenses WHERE user_id = ? AND tenant_id = ?").run(auth.userId, auth.tenantId);
+			const stmt = db.prepare("INSERT INTO user_licenses (id, user_id, tenant_id, name, issuer, valid_until, category, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+			for (const lic of body.licenses) {
+				const id = `lic_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+				stmt.run(id, auth.userId, auth.tenantId, lic.name, lic.issuer || null, lic.valid_until || null, lic.category, lic.status);
+			}
+			return json({ ok: true });
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to save licenses", details: message }, 500);
 		}
 	});
 }

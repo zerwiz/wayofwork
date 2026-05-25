@@ -55,6 +55,9 @@ export function UserProfilePage({
   const [channelLinks, setChannelLinks] = useState<any[]>([]);
   const [showLinkForm, setShowLinkForm] = useState(false);
   const [newLink, setNewLink] = useState({ channel: "telegram", channelUserId: "", channelUsername: "" });
+  const [licenses, setLicenses] = useState<Certificate[]>([]);
+  const [editingLicenses, setEditingLicenses] = useState(false);
+  const [editLicenses, setEditLicenses] = useState<Certificate[]>([]);
 
   const handleStartServer = async () => {
     setStartBusy(true);
@@ -165,15 +168,6 @@ export function UserProfilePage({
       const res = await fetch("/api/portal/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
-        // Also fetch channel links
-        try {
-          const linksRes = await fetch("/api/channels/links", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (linksRes.ok) setChannelLinks(await linksRes.json());
-        } catch {}
-      }
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         if (res.status === 401 || res.status === 503) {
@@ -182,7 +176,6 @@ export function UserProfilePage({
               "Not authenticated. Please log in to view your profile.",
           );
         } else if (res.status === 404) {
-          // In dev environment, API may not be ready
           setError("API not ready. Please check Way of Work server is running.");
         } else {
           throw new Error(errorData.error || "Failed to load profile");
@@ -192,6 +185,32 @@ export function UserProfilePage({
       const data = await res.json();
       setProfile(data);
       setFormData(data);
+
+      // Fetch channel links
+      try {
+        const linksRes = await fetch("/api/channels/links", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (linksRes.ok) setChannelLinks(await linksRes.json());
+      } catch {}
+
+      // Fetch licenses
+      try {
+        const licRes = await fetch("/api/portal/licenses", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (licRes.ok) {
+          const licData = await licRes.json();
+          setLicenses(licData.map((l: any) => ({
+            id: l.id,
+            name: l.name,
+            issuer: l.issuer || "",
+            validUntil: l.valid_until || "",
+            category: l.category as Certificate["category"],
+            status: l.status as Certificate["status"],
+          })));
+        }
+      } catch {}
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load profile");
     } finally {
@@ -429,34 +448,139 @@ export function UserProfilePage({
               </button>
             </div>
 
-            {/* Certificates Section */}
-            {profile?.certificates && profile.certificates.length > 0 && (
-              <div className="mt-8">
-                <h2 className="mb-4 text-sm font-semibold text-[#cccccc]">Certificates & Licenses</h2>
+            {/* Certificates & Licenses Section */}
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-[#cccccc]">Certificates & Licenses</h2>
+                <button
+                  onClick={() => {
+                    setEditingLicenses(!editingLicenses);
+                    if (!editingLicenses) setEditLicenses([...licenses]);
+                  }}
+                  className="rounded bg-[#3c3c3c] px-3 py-1 text-xs text-white hover:bg-[#555]"
+                >
+                  {editingLicenses ? "Cancel" : "Edit"}
+                </button>
+              </div>
+              {editingLicenses ? (
                 <div className="space-y-2">
-                  {profile.certificates.map((cert) => (
-                    <div key={cert.id} className="flex items-center justify-between rounded border border-[#3c3c3c] bg-[#1e1e1e] p-3">
+                  {editLicenses.map((lic, idx) => (
+                    <div key={idx} className="flex items-center gap-2 rounded border border-[#3c3c3c] bg-[#1e1e1e] p-3">
+                      <input
+                        className="flex-1 bg-[#333] border border-[#444] rounded px-2 py-1 text-sm text-white"
+                        value={lic.name}
+                        onChange={(e) => {
+                          const next = [...editLicenses];
+                          next[idx] = { ...next[idx], name: e.target.value };
+                          setEditLicenses(next);
+                        }}
+                      />
+                      <select
+                        className="bg-[#333] border border-[#444] rounded px-2 py-1 text-xs text-white"
+                        value={lic.category}
+                        onChange={(e) => {
+                          const next = [...editLicenses];
+                          next[idx] = { ...next[idx], category: e.target.value as Certificate["category"] };
+                          setEditLicenses(next);
+                        }}
+                      >
+                        <option value="site">Site</option>
+                        <option value="safety">Safety</option>
+                        <option value="trade">Trade</option>
+                        <option value="machine">Machine</option>
+                      </select>
+                      <select
+                        className="bg-[#333] border border-[#444] rounded px-2 py-1 text-xs text-white"
+                        value={lic.status}
+                        onChange={(e) => {
+                          const next = [...editLicenses];
+                          next[idx] = { ...next[idx], status: e.target.value as Certificate["status"] };
+                          setEditLicenses(next);
+                        }}
+                      >
+                        <option value="valid">Valid</option>
+                        <option value="expiring">Expiring</option>
+                        <option value="expired">Expired</option>
+                      </select>
+                      <input
+                        className="w-28 bg-[#333] border border-[#444] rounded px-2 py-1 text-xs text-white"
+                        type="date"
+                        value={lic.validUntil}
+                        onChange={(e) => {
+                          const next = [...editLicenses];
+                          next[idx] = { ...next[idx], validUntil: e.target.value };
+                          setEditLicenses(next);
+                        }}
+                      />
+                      <button
+                        onClick={() => setEditLicenses(editLicenses.filter((_, i) => i !== idx))}
+                        className="text-red-400 hover:text-red-300 text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setEditLicenses([...editLicenses, { id: `new_${Date.now()}`, name: "", issuer: "", validUntil: "", category: "safety", status: "valid" }])}
+                    className="w-full rounded border border-dashed border-[#555] px-3 py-2 text-xs text-[#858585] hover:text-white hover:border-[#ea580c]"
+                  >
+                    + Add License
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const token = localStorage.getItem("wop_token");
+                      const payload = {
+                        licenses: editLicenses.map((l) => ({
+                          name: l.name,
+                          issuer: l.issuer,
+                          valid_until: l.validUntil,
+                          category: l.category,
+                          status: l.status,
+                        })),
+                      };
+                      const res = await fetch("/api/portal/licenses", {
+                        method: "PUT",
+                        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                      });
+                      if (res.ok) {
+                        setLicenses(editLicenses);
+                        setEditingLicenses(false);
+                      }
+                    }}
+                    className="w-full mt-2 rounded bg-[#ea580c] px-3 py-2 text-sm text-white hover:bg-[#c2410c]"
+                  >
+                    Save Licenses
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {licenses.length === 0 && (
+                    <p className="text-xs text-[#858585]">No licenses registered. Click Edit to add.</p>
+                  )}
+                  {licenses.map((lic) => (
+                    <div key={lic.id} className="flex items-center justify-between rounded border border-[#3c3c3c] bg-[#1e1e1e] p-3">
                       <div>
-                        <p className="text-sm font-medium text-[#cccccc]">{cert.name}</p>
-                        <p className="text-xs text-[#858585]">Issuer: {cert.issuer}</p>
+                        <p className="text-sm font-medium text-[#cccccc]">{lic.name}</p>
+                        <p className="text-xs text-[#858585]">{lic.issuer ? `Issuer: ${lic.issuer}` : lic.category}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-[#858585]">Valid until: {cert.validUntil}</p>
+                        {lic.validUntil && <p className="text-xs text-[#858585]">Until: {lic.validUntil}</p>}
                         <span className={`rounded px-2 py-1 text-xs ${
-                          cert.status === "valid" ? "bg-green-900/30 text-green-400" :
-                          cert.status === "expiring" ? "bg-yellow-900/30 text-yellow-400" :
+                          lic.status === "valid" ? "bg-green-900/30 text-green-400" :
+                          lic.status === "expiring" ? "bg-yellow-900/30 text-yellow-400" :
                           "bg-red-900/30 text-red-400"
                         }`}>
-                          {cert.status === "valid" && "✓ Valid"}
-                          {cert.status === "expiring" && "⚠ Expiring Soon"}
-                          {cert.status === "expired" && "✗ Expired"}
+                          {lic.status === "valid" && "✓ Valid"}
+                          {lic.status === "expiring" && "⚠ Expiring"}
+                          {lic.status === "expired" && "✗ Expired"}
                         </span>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Channel Links Section */}
             <div className="mt-8">

@@ -23,7 +23,7 @@ import { registerAdminRoutes } from "./routes/admin";
 import { registerClientRoutes } from "./routes/client";
 import { registerProjectRoutes } from "./routes/projects";
 import { registerCalendarRoutes } from "./routes/calendar";
-import { registerTAPlannerRoutes } from "./routes/ta-planner";
+import { registerTAPlannerExtensionRoutes } from "../.wo/extensions/ta-planner-extension";
 import { registerClawRoutes } from "./routes/claw";
 import { registerSystemRoutes } from "./routes/system";
 import { registerDevRoutes } from "./routes/dev";
@@ -63,7 +63,7 @@ registerAdminRoutes(apiRouter);
 registerClientRoutes(apiRouter);
 registerProjectRoutes(apiRouter);
 registerCalendarRoutes(apiRouter);
-registerTAPlannerRoutes(apiRouter);
+registerTAPlannerExtensionRoutes(apiRouter);
 registerClawRoutes(apiRouter);
 registerSystemRoutes(apiRouter);
 registerDevRoutes(apiRouter);
@@ -81,8 +81,13 @@ async function handleApi(url: URL, req: Request): Promise<Response> {
 	const token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
 	let auth = token ? await verifyToken(token) : null;
 
+	console.log(`[API] ${req.method} ${url.pathname} (Authenticated: ${!!auth}, Role: ${auth?.role})`);
+
 	const routerRes = await apiRouter.handle(url, req, auth);
-	if (routerRes) return routerRes;
+	if (routerRes) {
+		console.log(`[API] Router handled: ${url.pathname}`);
+		return routerRes;
+	}
 
 	const p = url.pathname.replace(/\/{2,}/g, "/").replace(/\/+$/, "") || "/";
 

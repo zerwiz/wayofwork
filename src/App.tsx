@@ -17,6 +17,8 @@ const uiModeRouteMap: Record<string, string> = {
   claw: "/claw",
   docs: "/docs",
   kanban: "/kanban",
+  "ta-planner": "/ta-planner",
+  ata: "/ata",
 };
 
 const routeUiModeMap: Record<string, string> = {
@@ -25,6 +27,8 @@ const routeUiModeMap: Record<string, string> = {
   "/kanban": "kanban",
   "/claw": "claw",
   "/docs": "docs",
+  "/ta-planner": "ta-planner",
+  "/ata": "ata",
 };
 
 function RouteSync() {

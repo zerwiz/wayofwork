@@ -85,11 +85,13 @@ Based on industry standards (ISY Road, Bluebeam), the module will use a hybrid w
 ## Requirements
 
 ### Functional Requirements
-- [ ] Backend service `server/api/trafikverket.ts` to proxy Trafikverket Open API calls.
-- [ ] Frontend page `src/pages/TAPlanner/` with a multi-step planning wizard.
-- [ ] Digital library of TDOK 2024:0043 sketches.
-- [ ] Validation engine `src/utils/ta-validation.ts` for automated safety checks.
-- [ ] Database support via `ta_plans` table (already added to schema).
+- [x] Backend service `server/api/trafikverket.ts` to proxy Trafikverket Open API calls.
+- [x] Frontend page `src/pages/TAPlanner/` with a multi-step planning wizard.
+- [x] Digital library of TDOK 2024:0043 sketches.
+- [x] Validation engine `src/utils/ta-validation.ts` for automated safety checks.
+- [x] Database support via `ta_plans` table (already added to schema).
+- [ ] **Visual Integration:** Implement map-based planning (Leaflet/OpenStreetMap), drag-and-drop signage/cones, and automated screenshot capture of the plan canvas.
+- [ ] **Detail View**: Enable opening plans to view the generated map overlay.
 
 ## References & Web Sources
 

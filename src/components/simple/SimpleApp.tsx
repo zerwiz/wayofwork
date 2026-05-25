@@ -678,7 +678,7 @@ export function SimpleApp({
 										appearanceDark={appearanceDark}
 									/>
 								</div>
-							) : activeTab === "docs" ? (
+							) : activeTab === "documenthandler" ? (
 								<div className="min-h-0 flex-1 overflow-hidden">
 									<ChatExplorer
 									appearanceDark={appearanceDark}

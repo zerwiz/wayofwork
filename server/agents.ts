@@ -26,7 +26,7 @@ function unquoteFrontmatterField(raw: string): string {
 }
 
 /** Same dirs as agent scan roots but for skills. `.wo/skills` is the primary Way of Work location. */
-const SKILL_SCAN_ROOTS = [".wo/skills", "skills", ".pi/skills", ".claude/skills", ".cursor/skills"];
+const SKILL_SCAN_ROOTS = [".wo/skills"];
 
 /**
  * Resolve skill markdown bodies from a comma-separated skills string.
@@ -128,9 +128,6 @@ async function collectAgentMarkdownFiles(absDir: string): Promise<string[]> {
 function agentScanRoots(workspaceRoot: string): string[] {
 	const roots = [
 		join(workspaceRoot, ".wo", "agents"),
-		join(workspaceRoot, "agents"),
-		join(workspaceRoot, ".claude", "agents"),
-		join(workspaceRoot, ".cursor", "agents"),
 	];
 
 	// Also include Way of Work host repo root agents if it's different from the workspace
@@ -206,7 +203,7 @@ export async function loadWorkspaceAgents(tenantId: string = "default"): Promise
 	const primary = folders[0]?.path;
 	const primaryLabel = folders[0]?.label;
 	if (primary && primaryLabel) {
-		const ty = join(primary, ".pi", "agents", "teams.yaml");
+		const ty = join(primary, ".wo", "agents", "teams.yaml");
 		if (existsSync(ty)) {
 			try {
 				teams = parseTeamsYaml(await readFile(ty, "utf8"));

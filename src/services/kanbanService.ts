@@ -1,4 +1,15 @@
-import type { Board, BoardColumn, BoardCard, BoardMember, CardTimeLog } from '../types/kanban';
+import type { Board, BoardColumn, BoardCard, BoardMember, CardTimeLog, CardCover } from '../types/kanban';
+import { BOARD_TEMPLATES } from './boardTemplates';
+
+function parseCover(value: string): CardCover | undefined {
+	try {
+		const parsed = JSON.parse(value);
+		if (parsed && typeof parsed === 'object' && parsed.type && parsed.value) {
+			return { type: parsed.type, value: parsed.value, size: parsed.size || 'medium' };
+		}
+	} catch {}
+	return undefined;
+}
 
 export const kanbanService = {
   getAllBoards: async (): Promise<Board[]> => {
@@ -20,6 +31,7 @@ export const kanbanService = {
         id: p.id,
         name: p.name,
         description: p.description,
+        starred: !!p.starred,
         columns: settings.columns || [
           { id: 'todo', name: 'To Do', order: 0, boardId: p.id },
           { id: 'in_progress', name: 'In Progress', order: 1, boardId: p.id },
@@ -42,21 +54,27 @@ export const kanbanService = {
 
   createBoard: async (data: Partial<Board>, _templateId?: string): Promise<Board> => {
     const token = localStorage.getItem('wop_token');
+    const body: Record<string, unknown> = { name: data.name };
+    if (data.columns) {
+      body.settings_json = JSON.stringify({ columns: data.columns });
+    }
     const res = await fetch('/api/projects', {
       method: 'POST',
       headers: { 
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(body)
     });
     if (!res.ok) throw new Error('Failed to create board');
     const p = await res.json();
+    const settings = p.settings_json ? JSON.parse(p.settings_json) : {};
     return {
       id: p.id,
       name: p.name,
       description: p.description,
-      columns: [
+      starred: !!p.starred,
+      columns: settings.columns || [
         { id: 'todo', name: 'To Do', order: 0, boardId: p.id },
         { id: 'in_progress', name: 'In Progress', order: 1, boardId: p.id },
         { id: 'complete', name: 'Complete', order: 2, boardId: p.id },
@@ -67,7 +85,16 @@ export const kanbanService = {
   },
 
   createBoardFromTemplate: async (templateId: string, name: string): Promise<Board> => {
-    return kanbanService.createBoard({ name });
+    const template = BOARD_TEMPLATES.find(t => t.id === templateId);
+    const columns: BoardColumn[] = template
+      ? template.columns.map((colName, idx) => ({
+          id: colName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+          name: colName,
+          order: idx,
+          boardId: '',
+        }))
+      : [];
+    return kanbanService.createBoard({ name, columns } as any, templateId);
   },
 
   updateBoard: async (id: string, data: Partial<Board>): Promise<void> => {
@@ -125,6 +152,11 @@ export const kanbanService = {
         description: t.description,
         priority: t.priority || 'medium',
         order: 0,
+        dueDate: t.deadline || undefined,
+        startDate: undefined,
+        estimatedTime: t.estimated_hours ?? undefined,
+        estimatedTimeUnit: 'hours' as const,
+        cover: t.cover ? parseCover(t.cover) : undefined,
         createdAt: new Date(t.created_at).getTime(),
         updatedAt: new Date(t.updated_at || t.created_at).getTime(),
         assignees: t.assigned_to ? [{ userId: t.assigned_to, displayName: t.assigned_name || 'Assigned', email: '' }] : [],
@@ -152,6 +184,11 @@ export const kanbanService = {
       description: t.description,
       priority: t.priority || 'medium',
       order: 0,
+      dueDate: t.deadline || undefined,
+      startDate: undefined,
+      estimatedTime: t.estimated_hours ?? undefined,
+      estimatedTimeUnit: 'hours' as const,
+      cover: t.cover ? parseCover(t.cover) : undefined,
       createdAt: new Date(t.created_at).getTime(),
       updatedAt: new Date(t.updated_at || t.created_at).getTime(),
       assignees: t.assigned_to ? [{ userId: t.assigned_to, displayName: t.assigned_name || 'Assigned', email: '' }] : [],
@@ -208,6 +245,9 @@ export const kanbanService = {
     if (data.columnId) updateData.status = data.columnId;
     if (data.priority) updateData.priority = data.priority;
     if (data.description !== undefined) updateData.description = data.description;
+    if (data.cover) updateData.cover = JSON.stringify(data.cover);
+    if (data.dueDate) updateData.deadline = data.dueDate;
+    if (data.estimatedTime !== undefined) updateData.estimated_hours = data.estimatedTime;
     
     await fetch(`/api/portal/tasks/${cardId}`, {
       method: 'PUT',
