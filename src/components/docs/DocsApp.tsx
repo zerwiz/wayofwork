@@ -519,11 +519,11 @@ export function DocsApp({
 					</>
 				)}
 			</div>
+			<VersionHistoryModal 
+				open={historyOpen} 
+				onDismiss={() => setHistoryOpen(false)} 
+				history={history} 
+			/>
 		</div>
-		<VersionHistoryModal 
-			open={historyOpen} 
-			onDismiss={() => setHistoryOpen(false)} 
-			history={history} 
-		/>
 	);
 }

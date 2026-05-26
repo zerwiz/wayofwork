@@ -92,6 +92,8 @@ export function TerminalSettingsSection({
 				) : (
 					<p className={muted}>Loading server config…</p>
 				)}
+			</div>
+
 			{/* Toggle button — works for everyone, no file editing needed */}
 			<div className={`mt-3 rounded-lg border p-3 ${dark ? "border-[#3c3c3c] bg-[#252526]" : "border-[#e5e5e5] bg-[#f8f8f8]"}`}>
 				<p className={`mb-2 text-[12px] font-semibold ${dark ? "text-[#d4d4d4]" : "text-[#333]"}`}>

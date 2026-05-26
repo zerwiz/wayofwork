@@ -100,7 +100,7 @@ export function ChatPanel({
 	/** After resolving latest `plans/PLAN-*.md`, open it in the workspace editor (Plan → Review plan). */
 	onOpenPlanFileForReview,
 	/** Primary workspace folder path (or `""`) — scopes saved **Plan document** choice in localStorage. */
-	planHandoffWorkspaceKey = "",
+	planHandoffWorkspaceKey,
 }: {
 	uiMode: string;
 	rows: ChatRow[];
@@ -147,7 +147,7 @@ export function ChatPanel({
 	dockPanelFrame?: boolean;
 	embeddedInWorkspace?: boolean;
 	onOpenPlanFileForReview?: (workspaceRelativePath: string) => void;
-	planHandoffWorkspaceKey?: string;
+	planHandoffWorkspaceKey: string;
 }) {
 	const { t } = useTranslation();
 	const [queueModalOpen, setQueueModalOpen] = useState(false);
