@@ -31,14 +31,14 @@ All proposals go through **human-in-the-loop** (WOW-010) — the agent sends sug
 ## Requirements
 
 ### Functional Requirements
-- [ ] Agent reads time reports: `GET /api/portal/time` or `kanban_card_time_logs`
-- [ ] Agent reads kanban plan: `kanban_list_cards` with assignee and estimated_hours
-- [ ] Agent compares reported time vs planned time per card
-- [ ] Agent creates variance report: "Card X: planned 8 h, reported 10 h (+2 h)"
-- [ ] Agent proposes tomorrow's schedule: distributes cards per worker based on deadline/status
-- [ ] Schedule proposal goes through approval queue (WOW-010) — admin clicks Approve
-- [ ] On approval: Telegram sent to each worker at 06:30 with daily tasks
-- [ ] Telegram message contains: card name, project, priority, planned hours
+- [x] Agent reads time reports: `GET /api/portal/time` or `kanban_card_time_logs`
+- [x] Agent reads kanban plan: `kanban_list_cards` with assignee and estimated_hours
+- [x] Agent compares reported time vs planned time per card
+- [x] Agent creates variance report: "Card X: planned 8 h, reported 10 h (+2 h)"
+- [x] Agent proposes tomorrow's schedule: distributes cards per worker based on deadline/status
+- [x] Schedule proposal goes through approval queue (WOW-010) — admin clicks Approve
+- [x] On approval: Telegram sent to each worker at 06:30 with daily tasks
+- [x] Telegram message contains: card name, project, priority, planned hours
 
 ### Out of Scope
 - Real-time schedule changes during the day — future
@@ -49,16 +49,15 @@ All proposals go through **human-in-the-loop** (WOW-010) — the agent sends sug
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] Build completes: `bun run build`
+- [x] Build completes: `bun run build`
 
 ### Manual Verification
-- [ ] Agent can list time reports for all workers
-- [ ] Agent can list kanban cards per worker with estimated_hours
-- [ ] Agent identifies variances >20% between planned and reported
-- [ ] Agent creates schedule proposal as pending_change
-- [ ] Admin approves → Telegram sent to workers
-- [ ] Message contains correct tasks per person
-
+- [x] Agent can list time reports for all workers
+- [x] Agent can list kanban cards per worker with estimated_hours
+- [x] Agent identifies variances >20% between planned and reported
+- [x] Agent creates schedule proposal as pending_change
+- [x] Admin approves → Telegram sent to workers
+- [x] Message contains correct tasks per person
 ## Technical Notes
 
 ### Agent: `schemaplanerare` (Schedule Planner)

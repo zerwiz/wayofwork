@@ -167,10 +167,10 @@ export async function processTelegramUpdate(
 	let mediaRef = "";
 	if (msg.photo && msg.photo.length > 0) {
 		const largest = msg.photo[msg.photo.length - 1];
-		mediaRef = await downloadTelegramFile(token, largest.file_id, "photos", fromId);
+		mediaRef = await downloadTelegramFile(token, largest.file_id, "photos", fromId, undefined, botTenantId);
 	}
 	if (msg.document) {
-		mediaRef = await downloadTelegramFile(token, msg.document.file_id, "documents", fromId, msg.document.file_name);
+		mediaRef = await downloadTelegramFile(token, msg.document.file_id, "documents", fromId, msg.document.file_name, botTenantId);
 	}
 
 	const fullText = mediaRef
@@ -219,6 +219,7 @@ async function downloadTelegramFile(
 	subDir: string,
 	userId: string,
 	fileName?: string,
+    tenantId: string,
 ): Promise<string> {
 	try {
 		const fileRes = await fetch(`${TELEGRAM_API}/bot${token}/getFile?file_id=${fileId}`);
@@ -233,7 +234,7 @@ async function downloadTelegramFile(
 		if (!dlRes.ok) return "";
 		const buffer = await dlRes.arrayBuffer();
 
-		const saveDir = join(getWorkspaceRoot(), ".telegram", subDir, userId);
+		const saveDir = join(getWorkspaceRoot(tenantId), ".telegram", subDir, userId);
 		await mkdir(saveDir, { recursive: true });
 		const savePath = join(saveDir, name);
 		await writeFile(savePath, Buffer.from(buffer));

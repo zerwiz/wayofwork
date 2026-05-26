@@ -1,6 +1,104 @@
 # Changelog
 All notable changes to Way of Work
 
+## [2.3.26] - 2026-05-25
+
+### Added
+- **WOW-024: Private & Shared Access Control for Kanban, Docs, and Files - UI Integration (Complete)**
+  - **Kanban Board UI:**
+    - Added `Globe`, `Lock`, and `Share` icons to `lucide-react` import in `src/pages/Kanban.tsx`.
+    - Added `showBoardShareModal` state variable to `src/pages/Kanban.tsx`.
+    - Implemented a visibility indicator for Kanban boards in `src/pages/Kanban.tsx` header, showing `Lock` (private), `Share` (shared), or `Globe` (tenant) icons based on `resourcePermission.visibility`.
+    - Added a "Share" button to the Kanban board header in `src/pages/Kanban.tsx` to toggle the `ResourceShareModal`.
+    - Created `src/components/common` directory.
+    - Created a generic `src/components/common/ResourceShareModal.tsx` component to manage resource sharing (visibility and explicit shares).
+    - Integrated `ResourceShareModal` into `src/pages/Kanban.tsx` for Kanban boards.
+  - **Notes (Documents) UI:**
+    - Updated `src/types/notes.ts` to include `ResourcePermission` interface and `resourcePermission` field in `Note` interface.
+    - Modified `GET /api/notes` and `GET /api/notes/:id` in `server/routes/projects.ts` to include `resourcePermission` data in the response.
+    - Integrated `ResourceShareModal` and visibility indicators into `src/components/kanban/BoardDocsView.tsx` for notes.
+  - **Workspace Files UI:**
+    - Updated `src/types/drive.ts` to include `ResourcePermission` import and `resourcePermission` field in `DriveFile` interface.
+    - Modified `GET /api/portal/files` and `GET /api/portal/files/:id` in `server/routes/portal.ts` to include `resourcePermission` data in the response.
+    - Integrated `ResourceShareModal` and visibility indicators into `src/components/kanban/BoardDriveView.tsx` for workspace files.
+  - **Dashboards:**
+    - Integrated visibility indicators for tasks and files into `src/pages/WorkerPortal.tsx`.
+    - Integrated visibility indicators for projects and drawings into `src/pages/ClientDashboard.tsx`.
+    - Reviewed `src/pages/AdminDashboard.tsx` and determined no direct modification is needed for resource visibility lists.
+  - **API Extension:**
+    - Added `GET /api/access/:resourceId/permissions` route to `server/routes/access.ts` to retrieve resource permission details for frontend use.
+
+## [2.3.25] - 2026-05-25
+
+### Added
+- **WOW-024: Private & Shared Access Control for Kanban, Docs, and Files - Backend Implementation**
+  - **Data Model Changes:**
+    - Added `resource_permission_id` foreign key to `projects`, `tasks`, `notes`, and `workspace_files` tables in `server/schema.sql` and `server/db.ts`.
+    - Ensured `resource_permissions` and `resource_shares` table definitions are present in `server/db.ts`.
+  - **Backend Integration - Resource Creation:**
+    - Implemented `createResourcePermission` helper function in `server/db.ts` to automatically create `resource_permissions` entries upon resource creation.
+    - Integrated `createResourcePermission` into the creation logic for `projects` (`POST /api/projects` in `server/routes/projects.ts`), `notes` (`POST /api/notes` in `server/routes/projects.ts`), and `workspace_files` (`POST /api/portal/files/upload` in `server/routes/portal.ts`), and `tasks` (`POST /api/portal/tasks` in `server/routes/portal.ts`).
+  - **Backend Integration - Access Control Layer:**
+    - Created `server/accessControl.ts` with `checkResourceAccess` function for centralized permission verification.
+    - Integrated `checkResourceAccess` into read operations for `projects` (`GET /api/projects` and `GET /api/projects/:id` in `server/routes/projects.ts`), `notes` (`GET /api/notes` and `GET /api/notes/:id` in `server/routes/projects.ts`), `workspace_files` (`GET /api/portal/files` and `GET /api/portal/files/:id` in `server/routes/portal.ts`), and `tasks` (`GET /api/portal/tasks` and `GET /api/portal/tasks/:id` in `server/routes/portal.ts`).
+  - **Backend Integration - Sharing Mechanism APIs:**
+    - Created `server/routes/access.ts` to expose API endpoints for managing resource access.
+    - Added routes for:
+      - `PUT /api/access/:resourceId/visibility` to change a resource's visibility.
+      - `POST /api/access/:resourceId/share` to add/update explicit shares for a resource.
+      - `DELETE /api/access/:resourceId/share/:sharedWithId` to remove explicit shares.
+      - `GET /api/access/:resourceId/shares` to retrieve current shares for a resource.
+    - Registered `server/routes/access.ts` in `server/index.ts`.
+
+## [2.3.24] - 2026-05-25
+
+### Added
+- **WOW-004: Production Readiness - Full CRUD & Multi-Tenancy Hardening.**
+  - **Backend API Completion:** Verified existing full CRUD implementations for Projects (`/api/projects`), Tasks (`/api/portal/tasks`), Notes (`/api/notes`), and Calendar (`/api/calendar/events`) including `POST`, `PUT`, and `DELETE` operations.
+  - **Frontend Services Completion:**
+    - Confirmed Tasks Service (`src/services/tasksService.ts`) provides a full CRUD interface.
+    - Implemented missing `uploadFile` functionality for Drive Service, including:
+      - Added `workspace_files` table definition to `server/db.ts`.
+      - Created new `POST /api/portal/files/upload` endpoint in `server/routes/portal.ts` to handle `multipart/form-data` uploads to tenant-specific directories.
+      - Added `uploadFile` function to `src/services/driveService.ts` to interact with the new backend endpoint.
+    - Confirmed Notes/Calendar frontend services (`notesService.ts`, `calendarService.ts`) are correctly wired and support CRUD. Corrected `mockCalendarService` imports to `calendarService` in `src/components/kanban/CardView.tsx` and `src/components/kanban/PushToKanbanModal.tsx`.
+  - **Filesystem & Multi-Tenancy Hardening:**
+    - Verified consistent injection of `auth.tenantId` in `POST/PUT` database operations for multi-tenancy enforcement.
+    - Confirmed robust implementation of tenant-scoped filesystem operations, utilizing `getPrimaryWorkspacePath` and `resolveUnderWorkspace` for secure path handling in `server/workspace-state.ts` and `server/paths.ts`.
+- **WOW-008: Price List and Offer Template Integration.**
+  - Implemented price list integration in `OffersInvoicesTab` to allow picking items from existing price lists.
+  - Added "Save as Template" functionality to `OffersInvoicesTab`, allowing users to save current offer items as a new price list (template).
+- **WOW-003: Filesystem Partitioning.** Implemented robust multi-tenancy for workspace file system operations by ensuring tenant-specific subdirectories are enforced via `server/workspace-state.ts`'s `getPrimaryWorkspacePath` and `safeResolveUnderWorkspace` functions, with comprehensive path traversal checks.
+- **WOW-013: Version Storage UI & Backend.**
+  - Integrated "Version Storage" UI elements:
+    - Renamed "GitHub" references to "Version Storage" in UI components (`VersionStorageManageSettingsCard`, `DocsApp`).
+    - Added "Save Version" button and prompt UI in `DocsApp.tsx`.
+    - Added "Version History" button and integrated `VersionHistoryModal` in `DocsApp.tsx`.
+    - Added "Restore Version" button in `VersionHistoryModal` and implemented its API endpoint (`POST /api/github/restore-version`).
+    - Added Git user config UI (`name` and `email` input fields) in `VersionStorageManageSettingsCard`.
+    - Added "Version Storage" tab to `AdminDashboard.tsx`.
+  - Implemented `git_configs` table in `server/db.ts`.
+  - Implemented `gitConfig` function in `server/git.ts` to save Git user config to DB and apply to repository.
+  - Added `/api/github/git-config` endpoint in `server/routes/github.ts` for Git user config.
+- **WOW-013: Version Storage UI & Backend.**
+  - Integrated "Version Storage" UI elements:
+    - Renamed "GitHub" references to "Version Storage" in UI components (`VersionStorageManageSettingsCard`, `DocsApp`).
+    - Added "Save Version" button and prompt UI in `DocsApp.tsx`.
+    - Added "Version History" button and integrated `VersionHistoryModal` in `DocsApp.tsx`.
+    - Added "Restore Version" button in `VersionHistoryModal` and implemented its API endpoint (`POST /api/github/restore-version`).
+    - Added Git user config UI (`name` and `email` input fields) in `VersionStorageManageSettingsCard`.
+    - Added "Version Storage" tab to `AdminDashboard.tsx`.
+  - Implemented `git_configs` table in `server/db.ts`.
+  - Implemented `gitConfig` function in `server/git.ts` to save Git user config to DB and apply to repository.
+  - Added `/api/github/git-config` endpoint in `server/routes/github.ts` for Git user config.
+
+### Fixed
+- **TODO.md Update:** Corrected `TODO.md` for WOW-008, marking the "Replace JSON textarea in `OffersInvoicesTab` with a proper item table editor" task as complete, as the feature was already implemented.
+- **WOW-003: Multi-Tenancy Client Project Progress Fix.** Addressed a potential multi-tenancy vulnerability in `server/routes/client.ts` by explicitly including `tenant_id` in sub-queries for tasks and time entries within the `/api/client/projects/:id/progress` route.
+- **WOW-003: Multi-Tenancy Tool Log Traceability.** Enhanced traceability for multi-tenancy by adding `tenantId` to `broadcastToolLog` calls within `POST /api/run-script` in `server/routes/config.ts`, and updating `server/tool-log-broadcast.ts` to accept and log the `tenantId`.
+- **WOW-027 Phase 1: Technical UI Deprecation & Cleanup.** Moved `TerminalSettingsSection.tsx` to `src/components/simple/`, cleared redundant technical UI components (`CommandPalette.tsx`, `DebugPanel.tsx`, `PlanReview.tsx`, `TechnicalChatPanel.tsx`, `TechnicalEditorColumn.tsx`, `TechnicalPrimarySidebar.tsx`, `TechnicalEditorColumn.tsx`, `TechnicalPrimarySidebar.tsx`, `TechnicalSidePanels.tsx`, `TechnicalWorkspaceGrid.tsx`), removed "technical" from `UiMode` type in `useWayOfWorkSession.ts`, removed legacy "Technical" nav entry from `Navigation.tsx`, and updated fallback `setUiMode("technical")` calls in `SimplePage.tsx` and `ClawPage.tsx`.
+- **WOW-003: Multi-Tenancy Git/Plans Integration Fix.** Addressed multi-tenancy vulnerabilities in `server/routes/github.ts` by passing `auth.tenantId` to `getWorkspaceRoot()` calls and `listPlansCatalog()`, ensuring git operations and plan listings are correctly tenant-scoped.
+
 ## [2.3.23] - 2026-05-25
 
 ### Added
@@ -18,7 +116,7 @@ All notable changes to Way of Work
 
 ### Fixed
 - **CardView.tsx Build Errors:** Fixed 60+ TypeScript errors caused by misplaced JSX block, duplicate `fileInputRef` declaration, missing `handleFileUpload` function declaration, and missing component closing brace.
-- **WorkBoard.tsx Build Error:** Added missing `import { BoardControls }` from `./parts/BoardControls` to resolve `TS2304: Cannot find name 'BoardControls'`.
+- **WorkBoard.tsx Build Error:** Added missing `import { BoardControls}` from `./parts/BoardControls` to resolve `TS2304: Cannot find name 'BoardControls'`.
 - **Missing Database Tables:** Added `project_members` and `notifications` CREATE TABLE statements to `server/db.ts` — both tables were referenced by route handlers but never created, which caused 500 errors at runtime.
 - **CRITICAL API Errors Resolved:** Verified all four endpoints work correctly with proper authentication:
   - `GET /api/admin/users` — returns 14 seeded users (was 404)

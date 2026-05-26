@@ -30,9 +30,11 @@ import BoardSelector from '../components/kanban/BoardSelector';
 import ConfirmationModal from '../components/modals/ConfirmationModal';
 import BoardDocsView from '../components/kanban/BoardDocsView';
 import BoardDriveView from '../components/kanban/BoardDriveView';
+import { BoardShareModal } from '../components/common/ResourceShareModal';
 import type { Board, BoardCard } from '../types/kanban';
 import type { Project } from '../services/projectsService';
 import type { DriveFile } from '../types/drive';
+import { getAuth } from '../utils/auth';
 import {
   Plus,
   MoreHorizontal,
@@ -64,6 +66,9 @@ import {
   GitBranch,
   MessageSquare,
   RefreshCw,
+  Globe,
+  Lock,
+  Share,
   // Archive, // TODO: Use for archive functionality
 } from 'lucide-react';
 import type { BoardViewType } from '../types/kanban';
@@ -125,6 +130,8 @@ export default function Kanban() {
   const [_driveSearchQuery, _setDriveSearchQuery] = useState('');
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [kanbanChatOpen, setKanbanChatOpen] = useState(false);
+  const [showBoardShareModal, setShowBoardShareModal] = useState(false);
+  const currentUserId = useMemo(() => getAuth()?.userId, []);
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -1684,9 +1691,15 @@ export default function Kanban() {
                 <GripVertical className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
               </div>
               <span className="truncate">{board.name}</span>
+              {board.resourcePermission && (
+                <span className="ml-2 flex items-center gap-1 text-sm text-[#858585]" title={`Visibility: ${board.resourcePermission.visibility}`}>
+                  {board.resourcePermission.visibility === 'private' && <Lock className="w-4 h-4" />}
+                  {board.resourcePermission.visibility === 'shared' && <Share className="w-4 h-4" />}
+                  {board.resourcePermission.visibility === 'tenant' && <Globe className="w-4 h-4" />}
+                </span>
+              )}
             </h1>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-1">
-              <p className="text-xs sm:text-sm text-[#858585]">Manage tasks with Kanban board</p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-1">              <p className="text-xs sm:text-sm text-[#858585]">Manage tasks with Kanban board</p>
               {board.projectIds && board.projectIds.length > 0 && (
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs text-[#6e6e6e] hidden sm:inline">•</span>
@@ -2013,6 +2026,14 @@ export default function Kanban() {
                 >
                   <Users className="w-4 h-4" />
                   <span className="hidden sm:inline">Members</span>
+                </button>
+                <button
+                  onClick={() => setShowBoardShareModal(true)}
+                  className="p-2 sm:px-4 sm:py-2 bg-[#333333] text-white rounded-lg hover:bg-[#444444] transition-colors flex items-center justify-center gap-2"
+                  title="Share Board"
+                >
+                  <Share className="w-4 h-4" />
+                  <span className="hidden sm:inline">Share</span>
                 </button>
                 <button
                   onClick={() => setShowBoardSettings(true)}
@@ -3387,6 +3408,19 @@ export default function Kanban() {
           type="danger"
           confirmText="Delete Column"
           cancelText="Cancel"
+        />
+      )}
+
+      {board && (
+        <BoardShareModal
+          boardId={board.id}
+          currentUserId={currentUserId || ''} // Pass currentUserId, handle null case
+          isOpen={showBoardShareModal}
+          onClose={() => setShowBoardShareModal(false)}
+          onUpdated={() => {
+            loadBoard(); // Reload board to reflect permission changes
+            loadAllBoards(); // Reload all boards to update list view
+          }}
         />
       )}
 

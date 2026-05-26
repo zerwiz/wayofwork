@@ -10,6 +10,7 @@ import {
 	X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
+import { useTranslation } from "../contexts/LanguageContext";
 import {
 	buildChatMessageWithAttachment,
 	MAX_CHAT_ATTACHMENT_CHARS,
@@ -148,10 +149,11 @@ export function ChatPanel({
 	onOpenPlanFileForReview?: (workspaceRelativePath: string) => void;
 	planHandoffWorkspaceKey?: string;
 }) {
+	const { t } = useTranslation();
 	const [queueModalOpen, setQueueModalOpen] = useState(false);
 	const technical = uiMode !== "simple";
 	const activeChatTabLabel =
-		chatTabs.find((t) => t.id === activeChatTabId)?.label ?? (technical ? "New Chat" : "Chat");
+		chatTabs.find((t) => t.id === activeChatTabId)?.label ?? (technical ? t("chat.newChatTitle") : t("chat.chat"));
 	const docked = technical && technicalDock != null;
 	const embedPane = Boolean(embeddedInWorkspace);
 	const widthClass = embedPane
@@ -183,7 +185,7 @@ export function ChatPanel({
 	const queueItems = chatQueueItems ?? [];
 	/** Session picker + chat headers — phrase-dispatch does not replace “Orchestrator” here. */
 	const sessionPick = chatAgentName?.trim() || null;
-	const assistantShort = sessionPick ? workspaceAgentDisplayName(sessionPick) : "Orchestrator";
+	const assistantShort = sessionPick ? workspaceAgentDisplayName(sessionPick) : t("chat.orchestrator");
 	/** Pulse grid / team highlight — session picker only (matches who “speaks” in Team pulse transcript). */
 	const pulseAgentName = sessionPick;
 	const embedSplit = embedPane && technical;
@@ -302,7 +304,9 @@ export function ChatPanel({
 	}, [slashMenuKey]);
 
 	const injectComposer = useCallback((t: string) => {
-		setInput((prev) => (prev.trim() ? `${prev.trim()}\n\n${t}` : t));
+		setInput((prev) => (prev.trim() ? `${prev.trim()}
+
+${t}` : t));
 		queueMicrotask(() => {
 			const el = textareaRef.current;
 			if (!el) return;
@@ -361,8 +365,8 @@ export function ChatPanel({
 		if (!path) {
 			injectComposer(
 				kind === "implement"
-					? "No `plans/PLAN-*.md` file found yet — use **New plan file** or create one under `plans/`."
-					: "No `plans/PLAN-*.md` file found yet — create a plan file first, then run this again.",
+					? t("chat.noPlanFileFound")
+					: t("chat.noPlanFileFoundReview"),
 			);
 			return;
 		}
@@ -377,12 +381,12 @@ export function ChatPanel({
 		const f = list?.[0];
 		if (!f) return;
 		if (f.size > 512 * 1024) {
-			setAttachErr("File too large (max 512 KiB for chat attachment).");
+			setAttachErr(t("chat.fileTooLarge"));
 			return;
 		}
 		const text = await f.text();
 		if (text.length > MAX_CHAT_ATTACHMENT_CHARS) {
-			setAttachErr(`Attachment text too long (max ${MAX_CHAT_ATTACHMENT_CHARS} characters).`);
+			setAttachErr(t("chat.attachmentTextTooLong", { maxChars: MAX_CHAT_ATTACHMENT_CHARS }));
 			return;
 		}
 		setAttachment({ name: f.name, text });
@@ -420,7 +424,7 @@ export function ChatPanel({
 					<div
 						className="scrollbar-hide absolute inset-0 overflow-x-auto overflow-y-hidden"
 						role="tablist"
-						aria-label="Chat sessions"
+						aria-label={t("chat.chatSessions")}
 					>
 						<div
 							className={`flex h-full items-stretch ${
@@ -442,7 +446,7 @@ export function ChatPanel({
 								const soleTab = chatTabs.length <= 1;
 								const label = technical
 									? tab.label
-									: tab.label.replace(/^(Session Chat|New Chat|New chat)$/, "Chat");
+									: tab.label.replace(new RegExp(`^(${t("chat.sessionChat")}|${t("chat.newChatTitle")}|${t("chat.newChatSmall")})$`), t("chat.chat"));
 								return (
 									<div
 										key={tab.id}
@@ -473,15 +477,15 @@ export function ChatPanel({
 												type="button"
 												aria-label={
 													soleTab
-														? `Clear chat ${tab.label} and start fresh`
-														: `Close ${tab.label}`
+														? t("chat.clearChatAndStartFresh", { label: tab.label })
+														: t("chat.closeChat", { label: tab.label })
 												}
 												title={
 													closeDisabled
-														? "Wait for the current reply to finish before closing this tab"
+														? t("chat.waitToFinishBeforeClosing")
 														: soleTab
-															? "Clear this chat and start a fresh session"
-															: `Close ${tab.label}`
+															? t("chat.clearChatAndStartFresh", { label: tab.label })
+															: t("chat.closeChat", { label: tab.label })
 												}
 												disabled={closeDisabled}
 												onClick={(e) => {
@@ -509,7 +513,7 @@ export function ChatPanel({
 								<>
 									<button
 										type="button"
-										title="Dock agents to the right"
+										title={t("chat.dockAgentsRight")}
 										onClick={() => technicalDock.onSetRegion("right")}
 										className={`rounded p-1.5 ${technicalDock.region === "right" ? "bg-[#37373d] text-white" : "text-[#858585] hover:bg-[#3c3c3c] hover:text-[#cccccc]"}`}
 									>
@@ -517,7 +521,7 @@ export function ChatPanel({
 									</button>
 									<button
 										type="button"
-										title="Dock agents to the bottom"
+										title={t("chat.dockAgentsBottom")}
 										onClick={() => technicalDock.onSetRegion("bottom")}
 										className={`rounded p-1.5 ${technicalDock.region === "bottom" ? "bg-[#37373d] text-white" : "text-[#858585] hover:bg-[#3c3c3c] hover:text-[#cccccc]"}`}
 									>
@@ -525,7 +529,7 @@ export function ChatPanel({
 									</button>
 									<button
 										type="button"
-										title="Hide agent panel (View menu or palette to show again)"
+										title={t("chat.hideAgentPanel")}
 										onClick={() => technicalDock.onHidePanel()}
 										className="rounded p-1.5 text-[#858585] hover:bg-[#3c3c3c] hover:text-[#cccccc]"
 									>
@@ -538,10 +542,10 @@ export function ChatPanel({
 									type="button"
 									title={
 										showModelThinking
-											? "Hide model thinking — reasoning blocks already in the transcript stay saved"
-											: "Show model thinking — when the provider streams reasoning (e.g. some OpenRouter models), it appears above each assistant reply"
+											? t("chat.hideModelThinking")
+											: t("chat.showModelThinking")
 									}
-									aria-label={showModelThinking ? "Hide model thinking" : "Show model thinking"}
+									aria-label={showModelThinking ? t("chat.hideModelThinking") : t("chat.showModelThinking")}
 									aria-pressed={showModelThinking}
 									onClick={toggleShowModelThinking}
 									className={`rounded p-1 ${
@@ -558,15 +562,15 @@ export function ChatPanel({
 									type="button"
 									title={
 										streaming
-											? "Wait for the current reply to finish before starting a new session"
-											: "New Chat — add a tab and start a fresh session on the server for this connection"
+											? t("chat.waitToFinishBeforeNewSession")
+											: t("chat.newChatSession")
 									}
 									disabled={!connected || streaming}
 									onClick={() => onNewSession()}
 									className="flex shrink-0 items-center gap-1 rounded px-2 py-1 font-mono text-[11px] uppercase tracking-wide text-[#cccccc] hover:bg-[#3c3c3c] disabled:cursor-not-allowed disabled:opacity-40"
 								>
 									<MessageSquarePlus size={14} className="shrink-0" />
-									<span className="hidden sm:inline">New</span>
+									<span className="hidden sm:inline">{t("chat.newChatSmall")}</span>
 								</button>
 							) : null}
 						</div>
@@ -580,16 +584,13 @@ export function ChatPanel({
 						className={`shrink-0 border-b border-[#3c3c3c] bg-[#1e1e1e] font-mono text-[12px] leading-relaxed text-[#858585] ${technical ? "px-4 pb-2 pt-3" : "px-5 pb-2 pt-4"}`}
 					>
 						{agentsLoading ? (
-							<p className="text-[#a3a3a3]">Loading workspace agents…</p>
+							<p className="text-[#a3a3a3]">{t("chat.loadingWorkspaceAgents")}</p>
 						) : teamNames.length === 0 ? (
 							<div className="rounded border border-[#3c3c3c] bg-[#252526] p-4">
-								<p className="mb-2 text-[#cccccc]">No teams in workspace</p>
+								<p className="mb-2 text-[#cccccc]">{t("chat.noTeamsInWorkspace")}</p>
 								<p>
-									Pi <strong className="text-[#d4d4d4]">agent-team</strong> reads{" "}
-									<code className="text-[#fb923c]">.pi/agents/teams.yaml</code>. Add rosters there, refresh
-									the tree or reload the app, then open this tab again.
-								</p>
-								<p className="mt-3">
+									Pi <strong className="text-[#d4d4d4]">{t("chat.agentTeam")}</strong> {t("chat.readsTeamsYaml")}
+									<code className="text-[#fb923c]">.pi/agents/teams.yaml</code>. {t("chat.addRosters")}
 									<button
 										type="button"
 										className="text-[#fb923c] underline"
@@ -597,20 +598,20 @@ export function ChatPanel({
 									>
 										{activeChatTabLabel}
 									</button>{" "}
-									— message the main session (dispatcher) here in the web UI.
+									{t("chat.messageMainSession")}
 								</p>
 							</div>
 						) : (
 							<>
 								{pulseTeam ? (
 									<div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] text-[#cccccc]">
-										<span className="text-[#858585]">Team</span>
+										<span className="text-[#858585]">{t("chat.team")}</span>
 										{teamNames.length > 1 ? (
 											<select
 												value={pulseTeam}
 												onChange={(e) => setPulseTeam(e.target.value || null)}
 												className="max-w-full rounded border border-[#fb923c]/45 bg-[#252526] px-2 py-1 font-mono text-[11px] text-[#d4d4d4]"
-												aria-label="Workspace team roster"
+												aria-label={t("chat.workspaceTeamRoster")}
 											>
 												{teamNames.map((n: string) => (
 													<option key={n} value={n}>
@@ -627,10 +628,10 @@ export function ChatPanel({
 											<button
 												type="button"
 												onClick={onEditTeam}
-												title="Edit team members and create teams (My Team — writes teams.yaml)"
+												title={t("chat.editTeamMembersAndCreateTeams")}
 												className="shrink-0 rounded border border-[#fb923c]/45 bg-[#252526] px-2 py-1 font-mono text-[11px] uppercase tracking-wide text-[#fdba74] hover:bg-[#ea580c]/15"
 											>
-												Edit team
+												{t("chat.editTeam")}
 											</button>
 										) : null}
 									</div>
@@ -646,7 +647,7 @@ export function ChatPanel({
 										sessionTokenSummary={sessionTokenSummary ?? null}
 									/>
 								) : (
-									<p className="text-[#a3a3a3]">Selected team has no members in YAML.</p>
+									<p className="text-[#a3a3a3]">{t("chat.selectedTeamHasNoMembers")}</p>
 								)}
 							</>
 						)}
@@ -659,7 +660,7 @@ export function ChatPanel({
 						>
 							{!connected ? (
 								<div className={`text-[#ce9178] ${technical ? "font-mono text-[12px]" : "text-[13px]"}`}>
-									Connecting to server…
+									{t("chat.connectingToServer")}
 								</div>
 							) : null}
 							{error ? (
@@ -672,7 +673,7 @@ export function ChatPanel({
 												onClick={onReopenLlmFixModal}
 												className="rounded border border-[#fb923c]/40 bg-[#ea580c]/15 px-2 py-1 text-[11px] font-semibold text-[#fdba74] hover:bg-[#ea580c]/25"
 											>
-												Fix model / provider…
+												{t("chat.fixModelProvider")}
 											</button>
 										) : null}
 										<button
@@ -680,7 +681,7 @@ export function ChatPanel({
 											onClick={onClearError}
 											className="rounded border border-[#f14c4c]/30 px-2 py-1 text-[11px] text-[#f14c4c] hover:bg-[#f14c4c]/10"
 										>
-											Dismiss
+											{t("chat.dismiss")}
 										</button>
 									</div>
 								</div>
@@ -689,16 +690,16 @@ export function ChatPanel({
 						<div className="flex min-h-0 min-w-0 flex-1 flex-row">
 							<div
 								className={`flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-y-auto ${technical ? "p-4" : "p-4"}`}
-								aria-label="Assistant messages"
+								aria-label={t("chat.assistantMessages")}
 							>
 								<p className="font-mono text-[10px] uppercase tracking-wide text-[#858585]">
-									{assistantShort} (session)
+									{assistantShort} ({t("chat.assistantSession")})
 								</p>
 								{assistantRowsForView.length === 0 && !streamingNeedsPlaceholder ? (
 									<p className="font-mono text-[11px] leading-relaxed text-[#6b6b6b]">
 										{teamPulseHidesUserColumn
-											? "Roster agent replies stream here when Session Chat’s workspace agent (picker) is a team member."
-											: "Assistant replies from the model stream here. Your prompts stay in the column on the right."}
+											? t("chat.rosterAgentRepliesStream")
+											: t("chat.assistantRepliesStream")}
 									</p>
 								) : null}
 								{assistantRowsForView.map((msg) => (
@@ -706,7 +707,7 @@ export function ChatPanel({
 										<div className="flex items-center justify-between">
 											<span className="font-mono text-[11px] uppercase text-[#858585]">
 												{teamPulseHidesUserColumn && msg.assistantPersona?.trim()
-													? workspaceAgentDisplayName(msg.assistantPersona.trim())
+													? workspaceAgentDisplayName(msg.assistantPersona.trim()).toUpperCase()
 													: assistantShort.toUpperCase()}
 											</span>
 											<span className="font-mono text-[10px] text-[#555555]">{msg.timestamp}</span>
@@ -715,7 +716,7 @@ export function ChatPanel({
 											{showModelThinking && msg.reasoning?.trim() ? (
 												<div className="mb-3 border border-[#6366f1]/30 bg-[#1e1b4b]/35 p-2">
 													<div className="mb-1 font-mono text-[9px] uppercase tracking-wide text-[#a5b4fc]">
-														Thinking
+														{t("chat.thinkingBlock")}
 													</div>
 													<div className="whitespace-pre-wrap text-[11px] leading-relaxed text-[#c7d2fe]">
 														{msg.reasoning}
@@ -730,8 +731,8 @@ export function ChatPanel({
 									<div className="flex flex-col gap-1">
 										<span className="font-mono text-[11px] uppercase text-[#858585]">
 											{teamPulseHidesUserColumn && chatAgentName?.trim()
-												? `${workspaceAgentDisplayName(chatAgentName.trim())} (streaming)`
-												: `${assistantShort.toUpperCase()} (streaming)`}
+												? `${workspaceAgentDisplayName(chatAgentName.trim()).toUpperCase()} (${t("chat.streaming")})`
+												: `${assistantShort.toUpperCase()} (${t("chat.streaming")})`}
 										</span>
 										<div className="flex items-center gap-2 border border-[#3c3c3c] bg-[#252526] p-3">
 											<div className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#858585]" />
@@ -750,22 +751,22 @@ export function ChatPanel({
 							</div>
 							<aside
 								className={`flex min-h-0 w-[min(300px,44%)] max-w-[400px] shrink-0 flex-col gap-4 overflow-y-auto border-l border-[#3c3c3c] bg-[#252526]/40 ${technical ? "p-4" : "p-4"}`}
-								aria-label="Your messages"
+								aria-label={t("chat.yourMessages")}
 							>
 								<p className="font-mono text-[10px] uppercase tracking-wide text-[#858585]">
-									{teamPulseHidesUserColumn ? "Session chat" : "You"}
+									{teamPulseHidesUserColumn ? t("chat.sessionChat") : t("chat.userMessages")}
 								</p>
 								{userRowsForTeamPulse.length === 0 ? (
 									<p className="font-mono text-[11px] leading-relaxed text-[#6b6b6b]">
 										{teamPulseHidesUserColumn
-											? "You and the orchestrator stay in Session Chat; this column is roster output only."
-											: "Your messages and attachments appear here; compose below."}
+											? t("chat.sessionChatPlaceholder")
+											: t("chat.userMessagesPlaceholder")}
 									</p>
 								) : null}
 								{userRowsForTeamPulse.map((msg) => (
 									<div key={msg.id} className="flex w-full flex-col gap-1">
 										<div className="flex items-center justify-between">
-											<span className="font-mono text-[11px] uppercase text-[#858585]">USER</span>
+											<span className="font-mono text-[11px] uppercase text-[#858585]">{t("chat.user")}</span>
 											<span className="font-mono text-[10px] text-[#555555]">{msg.timestamp}</span>
 										</div>
 										<div className="w-full border border-[#ea580c]/30 bg-[#ea580c]/10 p-3 font-mono leading-relaxed text-[#d4d4d4]">
@@ -785,7 +786,7 @@ export function ChatPanel({
 							<div
 								className={`text-[#ce9178] ${technical ? "font-mono text-[12px]" : "text-[13px]"}`}
 							>
-								Connecting to server…
+								{t("chat.connectingToServer")}
 							</div>
 						) : null}
 						{error ? (
@@ -798,105 +799,106 @@ export function ChatPanel({
 											onClick={onReopenLlmFixModal}
 											className="rounded border border-[#fb923c]/40 bg-[#ea580c]/15 px-2 py-1 text-[11px] font-semibold text-[#fdba74] hover:bg-[#ea580c]/25"
 										>
-											Fix model / provider…
+											{t("chat.fixModelProvider")}
 										</button>
 									) : null}
 									<button
 										type="button"
 										onClick={onClearError}
 										className="rounded border border-[#f14c4c]/30 px-2 py-1 text-[11px] text-[#f14c4c] hover:bg-[#f14c4c]/10"
-									>
-										Dismiss
-									</button>
+										>
+											{t("chat.dismiss")}
+										</button>
+									</div>
 								</div>
-							</div>
-						) : null}
-						{transcriptRows.map((msg, idx) => {
-							// Skip the last assistant row if it's empty while streaming (avoid double-bubble with placeholder)
-							if (
-								streaming &&
-								idx === transcriptRows.length - 1 &&
-								msg.role === "assistant" &&
-								!msg.content?.trim() &&
-								!msg.reasoning?.trim()
-							) {
-								return null;
-							}
-							return (
-								<div key={msg.id} className="flex w-full flex-col gap-1">
-								<div className="flex items-center justify-between">
+							) : null}
+							{transcriptRows.map((msg, idx) => {
+								// Skip the last assistant row if it's empty while streaming (avoid double-bubble with placeholder)
+								if (
+									streaming &&
+									idx === transcriptRows.length - 1 &&
+									msg.role === "assistant" &&
+									!msg.content?.trim() &&
+									!msg.reasoning?.trim()
+								) {
+									return null;
+								}
+								return (
+									<div key={msg.id} className="flex w-full flex-col gap-1">
+									<div className="flex items-center justify-between">
+										<span
+											className={
+												technical
+													? "font-mono text-[11px] uppercase text-[#858585]"
+													: "text-[12px] font-medium text-[#858585]"
+											}
+										>
+											{technical
+												? msg.role === "user"
+													? t("chat.user").toUpperCase()
+													: teamPulseHidesUserColumn && msg.assistantPersona?.trim()
+														? workspaceAgentDisplayName(msg.assistantPersona.trim()).toUpperCase()
+														: assistantShort.toUpperCase()
+												: msg.role === "user"
+													? t("chat.user")
+													: teamPulseHidesUserColumn && msg.assistantPersona?.trim()
+														? workspaceAgentDisplayName(msg.assistantPersona.trim())
+														: assistantShort}
+										</span>
+										<span className={`text-[#555555] ${technical ? "font-mono text-[10px]" : "text-[11px]"}`}>
+											{msg.timestamp}
+										</span>
+									</div>
+									<div
+										className={`w-full leading-relaxed ${
+											technical ? "p-3 font-mono" : "rounded-md p-4 font-sans text-[14px]"
+										} ${
+											msg.role === "user"
+												? "border border-[#ea580c]/30 bg-[#ea580c]/10 text-[#d4d4d4]"
+												: "border border-[#3c3c3c] bg-[#252526] text-[#cccccc]"
+										}`}
+									>
+										{technical && showModelThinking && msg.role === "assistant" && msg.reasoning?.trim() ? (
+											<div className="mb-3 border border-[#6366f1]/30 bg-[#1e1b4b]/35 p-2">
+												<div className="mb-1 font-mono text-[9px] uppercase tracking-wide text-[#a5b4fc]">
+													{t("chat.thinkingBlock")}
+												</div>
+												<div className="whitespace-pre-wrap text-[11px] leading-relaxed text-[#c7d2fe]">
+													{msg.reasoning}
+												</div>
+											</div>
+										) : null}
+										<div className="whitespace-pre-wrap">{msg.content}</div>
+									</div>
+								</div>
+								);
+							})}
+							{streamingNeedsPlaceholder ? (
+								<div className="flex flex-col gap-1">
 									<span
 										className={
 											technical
 												? "font-mono text-[11px] uppercase text-[#858585]"
-												: "text-[12px] font-medium text-[#858585]"
+												: "text-[12px] text-[#858585]"
 										}
 									>
-										{technical
-											? msg.role === "user"
-												? "USER"
-												: teamPulseHidesUserColumn && msg.assistantPersona?.trim()
-													? workspaceAgentDisplayName(msg.assistantPersona.trim()).toUpperCase()
-													: assistantShort.toUpperCase()
-											: msg.role === "user"
-												? "You"
-												: teamPulseHidesUserColumn && msg.assistantPersona?.trim()
-													? workspaceAgentDisplayName(msg.assistantPersona.trim())
-													: assistantShort}
+										{technical ? `${assistantShort.toUpperCase()} (${t("chat.streaming")})` : `${assistantShort} ${t("chat.isReplying")}`}
 									</span>
-									<span className={`text-[#555555] ${technical ? "font-mono text-[10px]" : "text-[11px]"}`}>
-										{msg.timestamp}
-									</span>
+									<div className="flex items-center gap-2 border border-[#3c3c3c] bg-[#252526] p-3">
+										<div className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#858585]" />
+										<div
+											className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#858585]"
+											style={{ animationDelay: "150ms" }}
+										/>
+										<div
+											className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#858585]"
+											style={{ animationDelay: "300ms" }}
+										/>
+									</div>
 								</div>
-								<div
-									className={`w-full leading-relaxed ${
-										technical ? "p-3 font-mono" : "rounded-md p-4 font-sans text-[14px]"
-									} ${
-										msg.role === "user"
-											? "border border-[#ea580c]/30 bg-[#ea580c]/10 text-[#d4d4d4]"
-											: "border border-[#3c3c3c] bg-[#252526] text-[#cccccc]"
-									}`}
-								>
-									{technical && showModelThinking && msg.role === "assistant" && msg.reasoning?.trim() ? (
-										<div className="mb-3 border border-[#6366f1]/30 bg-[#1e1b4b]/35 p-2">
-											<div className="mb-1 font-mono text-[9px] uppercase tracking-wide text-[#a5b4fc]">
-												Thinking
-											</div>
-											<div className="whitespace-pre-wrap text-[11px] leading-relaxed text-[#c7d2fe]">
-												{msg.reasoning}
-											</div>
-										</div>
-									) : null}
-									<div className="whitespace-pre-wrap">{msg.content}</div>
-								</div>
-							</div>
-							);
-						})}
-						{streamingNeedsPlaceholder ? (
-							<div className="flex flex-col gap-1">
-								<span
-									className={
-										technical
-											? "font-mono text-[11px] uppercase text-[#858585]"
-											: "text-[12px] text-[#858585]"
-									}
-								>
-									{technical ? `${assistantShort.toUpperCase()} (streaming)` : `${assistantShort} is replying…`}
-								</span>
-								<div className="flex items-center gap-2 border border-[#3c3c3c] bg-[#252526] p-3">
-									<div className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#858585]" />
-									<div
-										className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#858585]"
-										style={{ animationDelay: "150ms" }}
-									/>
-									<div
-										className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#858585]"
-										style={{ animationDelay: "300ms" }}
-									/>
-								</div>
-							</div>
-						) : null}
-						<div ref={endRef} />
+							) : null}
+							<div ref={endRef} />
+						</div>
 					</div>
 				)}
 				{teamPaneOpen && !agentsLoading && teamNames.length > 0 && pulseTeam && pulseMembers.length > 0 ? (
@@ -922,10 +924,10 @@ export function ChatPanel({
 						onClick={() => setQueueModalOpen(true)}
 						disabled={!connected}
 						className="mb-2 w-full rounded border border-[#ea580c]/35 bg-[#ea580c]/10 px-2 py-1.5 text-left font-mono text-[10px] text-[#fdba74] transition-colors hover:bg-[#ea580c]/20 disabled:cursor-not-allowed disabled:opacity-50"
-						title="View, edit, remove, or prioritize queued messages"
+						title={t("chat.viewEditRemovePrioritizeQueuedMessages")}
 					>
-						{pending} message{pending === 1 ? "" : "s"} queued — will run after the current reply.
-						<span className="mt-0.5 block text-[9px] font-normal text-[#fdba74]/80">Click to manage queue</span>
+						{pending} {t("chat.messageQueued", { count: pending })}
+						<span className="mt-0.5 block text-[9px] font-normal text-[#fdba74]/80">{t("chat.manageQueue")}</span>
 					</button>
 				) : null}
 				{queueModalOpen ? (
@@ -945,18 +947,18 @@ export function ChatPanel({
 					<p className="mb-2 font-mono text-[11px] text-[#ce9178]">
 						{attachErr}{" "}
 						<button type="button" className="underline" onClick={() => setAttachErr(null)}>
-							Dismiss
+							{t("chat.dismiss")}
 						</button>
 					</p>
 				) : null}
 				{attachment ? (
 					<div className="mb-2 flex items-center justify-between rounded border border-[#ea580c]/40 bg-[#ea580c]/10 px-2 py-1.5 font-mono text-[11px] text-[#fed7aa]">
-						<span className="truncate">Attached: {attachment.name}</span>
+						<span className="truncate">{t("chat.attached")}: {attachment.name}</span>
 						<button
 							type="button"
 							onClick={() => setAttachment(null)}
 							className="shrink-0 rounded p-1 hover:bg-[#ea580c]/20"
-							aria-label="Remove attachment"
+							aria-label={t("chat.removeAttachment")}
 						>
 							<X size={14} />
 						</button>
@@ -965,8 +967,7 @@ export function ChatPanel({
 				{planNudgeOpen && technical ? (
 					<div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded border border-[#c586c0]/40 bg-[#c586c0]/10 px-2 py-1.5 font-mono text-[10px] text-[#e9d5ff]">
 						<span className="min-w-0 flex-1">
-							That message looked multi-step. <strong>Plan mode</strong> adds planner-style instructions before the next
-							reply.
+							{t("chat.planModeMultiStep")}
 						</span>
 						<div className="flex shrink-0 gap-1">
 							<button
@@ -978,14 +979,14 @@ export function ChatPanel({
 									setPlanNudgeOpen(false);
 								}}
 							>
-								Switch to Plan
+								{t("chat.switchToPlan")}
 							</button>
 							<button
 								type="button"
 								className="rounded border border-[#555] px-2 py-0.5 text-[#cccccc] hover:bg-[#3c3c3c]"
 								onClick={() => setPlanNudgeOpen(false)}
 							>
-								Dismiss
+								{t("chat.dismiss")}
 							</button>
 						</div>
 					</div>
@@ -1006,7 +1007,7 @@ export function ChatPanel({
 							<ul
 								className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-52 overflow-auto rounded border border-[#ea580c]/35 bg-[#1e1e1e] py-1 shadow-lg"
 								role="listbox"
-								aria-label="Slash commands"
+								aria-label={t("chat.slashCommands")}
 							>
 								{slashMenu.filtered.map((c, i) => (
 									<li key={c.id}>
@@ -1088,17 +1089,17 @@ export function ChatPanel({
 							placeholder={
 							!connected
 								? technical
-									? "> Not connected — type here; Send when the server WebSocket is up"
-									: "Not connected — type here; Send when the server is up"
+									? `> ${t("chat.notConnectedTypeHereWebsocket")}`
+									: `${t("chat.notConnectedTypeHere")}`
 								: technical && chatMode === "plan"
-									? `> Plan: goal, constraints, files — save as ${examplePlanPathForToday()} — Enter to send`
+									? `> ${t("chat.planMode", { examplePlanPath: examplePlanPathForToday() })}`
 										: technical
 										? streaming
-											? "> Queue next message (Enter) — runs when the assistant finishes"
-											: "> Message (Enter to send, Shift+Enter newline, Shift+Tab Plan/Build)"
+											? `> ${t("chat.queueNextMessage")}`
+											: `> ${t("chat.typeMessageTechnical")}`
 										: streaming
-											? "Queue next message (Enter) — runs when the assistant finishes"
-											: "Type a message… (Enter to send, Shift+Enter for new line)"
+											? `${t("chat.queueNextMessage")}`
+											: `${t("chat.typeMessage")}`
 						}
 							className="max-h-48 min-h-[60px] w-full resize-none bg-transparent p-3 pr-10 pb-9 font-mono text-[13px] text-[#cccccc] outline-none placeholder:text-[#858585]"
 						/>
@@ -1121,8 +1122,8 @@ export function ChatPanel({
 										value={handoffPath ?? planFiles[0]!.path}
 										onChange={(e) => setHandoffPath(e.target.value)}
 										className="min-w-0 max-w-[220px] shrink cursor-pointer truncate rounded border border-[#3c3c3c] bg-[#1e1e1e] px-1.5 py-0.5 font-mono text-[9px] text-[#c586c0] outline-none focus:border-[#c586c0]/60 disabled:opacity-40"
-										title="Plan file for From plan / Review plan (saved per workspace)"
-										aria-label="Plan file"
+										title={t("chat.planFileForHandoff")}
+										aria-label={t("chat.planFile")}
 									>
 										{planFiles.map((f) => (
 											<option key={f.path} value={f.path} title={f.path}>
@@ -1133,7 +1134,7 @@ export function ChatPanel({
 								) : null}
 								{handoffSummary ? (
 									<span className="shrink-0 font-mono text-[9px] text-[#858585]" title={handoffSummary.path}>
-										{handoffSummary.doneTodos} done · {handoffSummary.openTodos} open
+										{handoffSummary.doneTodos} {t("common.done")} · {handoffSummary.openTodos} {t("common.open")}
 									</span>
 								) : null}
 							</div>
@@ -1143,18 +1144,18 @@ export function ChatPanel({
 									disabled={streaming || !connected || !planCatalogReady || !handoffPath}
 									onClick={() => applyPlanHandoff("implement")}
 									className="rounded border border-[#3c3c3c] bg-[#1e1e1e] px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-[#cccccc] hover:border-[#ea580c]/50 disabled:opacity-40"
-									title="Insert a Build handoff for the selected plan file"
+									title={t("chat.insertBuildHandoff")}
 								>
-									From plan
+									{t("chat.fromPlan")}
 								</button>
 								<button
 									type="button"
 									disabled={streaming || !connected || !planCatalogReady || !handoffPath}
 									onClick={() => applyPlanHandoff("review")}
 									className="rounded border border-[#3c3c3c] bg-[#1e1e1e] px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-[#cccccc] hover:border-[#c586c0]/50 disabled:opacity-40"
-									title="Open the selected plan in the editor and insert a short review prompt"
+									title={t("chat.openPlanForReview")}
 								>
-									Review plan
+									{t("chat.reviewPlan")}
 								</button>
 							</div>
 						</div>
@@ -1166,8 +1167,8 @@ export function ChatPanel({
 								onClick={() => fileRef.current?.click()}
 								disabled={!connected}
 								className="shrink-0 p-1.5 text-[#858585] hover:text-[#cccccc] disabled:opacity-40"
-								aria-label="Attach file"
-								title="Attach a text file (appended to your message, same as Simple UI)"
+								aria-label={t("chat.attachFile")}
+								title={t("chat.attachFileDescription")}
 							>
 								<Paperclip size={14} />
 							</button>
@@ -1175,14 +1176,14 @@ export function ChatPanel({
 								<select
 									value={chatAgentName ?? ""}
 									disabled={!connected || streaming || agentsLoading}
-									title="Orchestrator = session lead. Pick an agent to load its `.md` on every turn. Phrase-dispatch can still merge a specialist for a single reply without moving this picker."
+									title={t("chat.orchestratorSessionLead")}
 									onChange={(e) => {
 										const v = e.target.value;
 										onChatAgentChange(v === "" ? null : v);
 									}}
 									className="min-w-0 max-w-[min(180px,45%)] shrink rounded border border-[#3c3c3c] bg-[#1e1e1e] px-1 py-0.5 text-[9px] text-[#cccccc] outline-none focus:border-[#ea580c] disabled:opacity-40"
 								>
-								<option value="">Orchestrator (session lead)</option>
+								<option value="">{t("chat.orchestratorSessionLead")}</option>
 								{pickerAgents.map((a) => (
 									<option key={a.name} value={a.name} title={a.description || a.relativePath}>
 										{workspaceAgentDisplayName(a.name)}
@@ -1193,9 +1194,9 @@ export function ChatPanel({
 										key={`roster-${name}`}
 										value={name}
 										disabled
-										title="In teams.yaml but no matching agent `.md` yet."
+										title={t("chat.noMd")}
 									>
-										{workspaceAgentDisplayName(name)} (no .md)
+										{workspaceAgentDisplayName(name)} ({t("chat.noMd")})
 									</option>
 								))}
 								</select>
@@ -1203,23 +1204,23 @@ export function ChatPanel({
 							<button
 								type="button"
 								onClick={() => setTeamPaneOpen((o) => !o)}
-								title="Workspace team roster (Pi agent-team / teams.yaml)"
+								title={t("chat.workspaceTeamRoster")}
 								className={`shrink-0 rounded border px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wide transition-colors ${
 									teamPaneOpen
 										? "border-[#ea580c] bg-[#ea580c]/15 text-[#fed7aa]"
 										: "border-[#3c3c3c] bg-[#1e1e1e] text-[#858585] hover:border-[#555555] hover:text-[#cccccc]"
 								}`}
 							>
-								Team
+								{t("chat.team")}
 							</button>
 							{technical && onOpenAgentTeamInPane ? (
 								<button
 									type="button"
 									onClick={() => onOpenAgentTeamInPane()}
-									title="Show the agent panel (if hidden) and expand Team here — roster beside the editor, like Cursor’s agent sidebar"
+									title={t("chat.showAgentPanelExpandTeam")}
 									className="shrink-0 rounded border border-[#3c3c3c] bg-[#1e1e1e] px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wide text-[#858585] hover:border-[#555555] hover:text-[#cccccc]"
 								>
-									Pane team
+									{t("chat.paneTeam")}
 								</button>
 							) : null}
 						</div>
@@ -1227,7 +1228,7 @@ export function ChatPanel({
 							{technical && chatMode && onChatModeChange && !teamPaneOpen ? (
 								<div
 									className="flex shrink-0 rounded border border-[#3c3c3c] bg-[#1e1e1e] p-0.5"
-									title="Build vs Plan — saved locally; the server applies it when the chat WebSocket is connected. Shift+Tab in the input toggles mode when not in slash completion."
+									title={t("chat.buildVsPlanTooltip")}
 								>
 									<button
 										type="button"
@@ -1237,7 +1238,7 @@ export function ChatPanel({
 											chatMode === "build" ? "bg-[#ea580c] text-white" : "text-[#858585] hover:text-[#cccccc]"
 										} disabled:opacity-40`}
 									>
-										Build
+										{t("chat.build")}
 									</button>
 									<button
 										type="button"
@@ -1247,7 +1248,7 @@ export function ChatPanel({
 											chatMode === "plan" ? "bg-[#c586c0]/90 text-white" : "text-[#858585] hover:text-[#cccccc]"
 										} disabled:opacity-40`}
 									>
-										Plan
+										{t("chat.plan")}
 									</button>
 								</div>
 							) : null}
@@ -1255,19 +1256,19 @@ export function ChatPanel({
 								<button
 									type="button"
 									onClick={onStop}
-									aria-label="Stop generation"
+									aria-label={t("chat.stopGeneration")}
 									className={`flex items-center gap-1 border border-[#ef4444] bg-[#450a0a] px-2 py-0.5 font-bold uppercase tracking-wide text-[#fecaca] hover:bg-[#7f1d1d] font-mono text-[10px]`}
 								>
-									<Square size={10} className="shrink-0" fill="currentColor" /> Stop
+									<Square size={10} className="shrink-0" fill="currentColor" /> {t("common.stop")}
 								</button>
 							) : (
 								<button
 									type="submit"
 									disabled={(!input.trim() && !attachment) || !connected}
-									aria-label="Send message"
+									aria-label={t("chat.sendMessage")}
 									className={`flex items-center gap-1 bg-[#c2410c] px-2 py-0.5 font-bold uppercase tracking-wide text-[#d4d4d4] hover:bg-[#9a3412] disabled:opacity-50 font-mono text-[10px]`}
 								>
-									<Send size={10} className="shrink-0 text-[#d4d4d4]" /> Send
+									<Send size={10} className="shrink-0 text-[#d4d4d4]" /> {t("chat.send")}
 								</button>
 							)}
 						</div>

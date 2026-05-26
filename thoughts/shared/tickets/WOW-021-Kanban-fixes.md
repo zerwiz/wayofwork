@@ -23,12 +23,11 @@ The Kanban system is currently incomplete and suffers from several usability iss
 - [x] Ensure tasks assigned to specific workers are correctly reflected in their workboards.
 
 ## Acceptance Criteria
-- Modal interfaces are fully responsive and scrollable.
-- Card covers support image uploads, gradients, and custom colors.
-- Assignee picker shows and correctly assigns real users from the system database.
-- Logged time is accurately displayed on Kanban cards.
-- Workers see their assigned tasks correctly in their workboards.
-
+- [x] Modal interfaces are fully responsive and scrollable.
+- [x] Card covers support image uploads, gradients, and custom colors.
+- [x] Assignee picker shows and correctly assigns real users from the system database.
+- [x] Logged time is accurately displayed on Kanban cards.
+- [x] Workers see their assigned tasks correctly in their workboards.
 ## Meta
 **Created**: 2026-05-24
 **Priority**: High

@@ -7,9 +7,9 @@ Implement a mechanism for private vs. shared access control for Kanban boards, d
 Currently, data visibility is primarily tenant-scoped. We need to introduce finer-grained permissions to allow users to create "private" boards/files that can be explicitly shared with other users or teams.
 
 ## Proposed Requirements
-- [ ] **Data Model Change**: Introduce a `visibility` attribute to Kanban boards, `tasks`, `documents`, and `workspace_files` (e.g., `private`, `shared`, `tenant_wide`).
-- [ ] **Sharing Mechanism**: Implement a `shares` table (or similar) to track explicit read/write access permissions per user/team.
-- [ ] **Access Control Layer**: Update backend route handlers (workspace files, kanban service, docs API) to evaluate these new visibility rules alongside the existing `tenant_id` check.
+- [x] **Data Model Change**: Introduce a `visibility` attribute to Kanban boards, `tasks`, `documents`, and `workspace_files` (e.g., `private`, `shared`, `tenant_wide`).
+- [x] **Sharing Mechanism**: Implement a `shares` table (or similar) to track explicit read/write access permissions per user/team.
+- [x] **Access Control Layer**: Update backend route handlers (workspace files, kanban service, docs API) to evaluate these new visibility rules alongside the existing `tenant_id` check.
 - [ ] **UI Integration**:
     - Add UI controls for "Make Private" / "Share" on Kanban boards and file/document panels.
     - Update dashboards to distinguish between private and shared content.

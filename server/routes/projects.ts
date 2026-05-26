@@ -1,7 +1,8 @@
 import { json } from "../utils";
-import { db } from "../db";
+import { db, createResourcePermission } from "../db";
 import type { Router } from "../router";
 import { auditLog } from "../audit-logger";
+import { checkResourceAccess } from "../accessControl";
 
 export function registerProjectRoutes(router: Router) {
 	// GET /api/projects - List projects (isolated for workers)
@@ -10,28 +11,46 @@ export function registerProjectRoutes(router: Router) {
 		try {
 			const isWorker = auth.role === "WORKER";
 			const isClient = auth.role === "CLIENT";
-			let projects: any[];
-			const starredSubquery = `(SELECT 1 FROM project_stars WHERE project_id = p.id AND user_id = ?) AS starred`;
+			const isLeader = auth.role === "LEADER";
+
+			let baseQuery = `
+				SELECT
+					p.*,
+					rp.owner_id,
+					rp.visibility,
+					(SELECT 1 FROM project_stars WHERE project_id = p.id AND user_id = ?) AS starred
+				FROM
+					projects p
+				LEFT JOIN
+					resource_permissions rp ON p.resource_permission_id = rp.resource_id
+			`;
+
+			const queryParams: (string | number)[] = [auth.userId]; // For starred subquery
+
+			const whereClauses: string[] = ["p.tenant_id = ?"];
+			queryParams.push(auth.tenantId);
 
 			if (isWorker) {
-				projects = db.query(`
-					SELECT p.*, ${starredSubquery} FROM projects p
-					JOIN project_members pm ON p.id = pm.project_id
-					WHERE p.tenant_id = ? AND pm.user_id = ?
-				`).all(auth.userId, auth.tenantId, auth.userId) as any[];
+				baseQuery += ` JOIN project_members pm ON p.id = pm.project_id `;
+				whereClauses.push("pm.user_id = ?");
+				queryParams.push(auth.userId);
 			} else if (isClient) {
-				projects = db.query(`
-					SELECT p.*, ${starredSubquery} FROM projects p
-					WHERE p.tenant_id = ? AND p.status != 'draft'
-					ORDER BY p.created_at DESC
-				`).all(auth.userId, auth.tenantId) as any[];
-			} else {
-				// ADMIN, LEADER, SUPER_ADMIN
-				projects = db.query(`SELECT p.*, ${starredSubquery} FROM projects p WHERE p.tenant_id = ? ORDER BY p.created_at DESC`).all(auth.userId, auth.tenantId) as any[];
+				whereClauses.push("p.status != 'draft'");
 			}
 
+			// Add resource permission checks
+			whereClauses.push(`(
+				rp.owner_id = ? OR                                  -- User is the owner
+				rp.visibility = 'tenant' OR                         -- Visible to all in tenant
+				EXISTS(SELECT 1 FROM resource_shares rs WHERE rs.resource_id = p.resource_permission_id AND rs.shared_with_id = ?) -- Explicitly shared
+			)`);
+			queryParams.push(auth.userId, auth.userId);
+
+			const fullQuery = `${baseQuery} WHERE ${whereClauses.join(" AND ")} ORDER BY p.created_at DESC`;
+			
+			let projects = db.query(fullQuery).all(...queryParams) as any[];
+
 			// Economics shield: Hide budget info from workers, clients, and leaders
-			const isLeader = auth.role === "LEADER";
 			if (isWorker || isClient || isLeader) {
 				projects = projects.map(p => {
 					const { budget_allocated, budget_spent, budget, ...rest } = p;
@@ -53,33 +72,47 @@ export function registerProjectRoutes(router: Router) {
 	router.get("/api/projects/:id", async (req, params, auth) => {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
 		try {
-			const isWorker = auth.role === "WORKER";
-			const isClient = auth.role === "CLIENT";
+			const projectId = params.id;
 			
+			// Check access using the new helper function
+			const hasAccess = await checkResourceAccess(projectId, 'kanban_board', auth);
+			if (!hasAccess) {
+				auditLog({
+					tenantId: auth.tenantId,
+					userId: auth.userId,
+					action: "ACCESS_DENIED",
+					resourceType: "project",
+					resourceId: projectId,
+					summary: `User attempted to access project without permission`
+				});
+				return json({ error: "Forbidden" }, 403);
+			}
+
 			const project = db.query("SELECT * FROM projects WHERE id = ? AND tenant_id = ?")
-				.get(params.id, auth.tenantId) as any;
+				.get(projectId, auth.tenantId) as any;
 			
 			if (!project) return json({ error: "Project not found" }, 404);
-
-			if (isWorker) {
-				const isMember = db.query("SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?")
-					.get(params.id, auth.userId);
-				if (!isMember) {
-					auditLog({
-						tenantId: auth.tenantId,
-						userId: auth.userId,
-						action: "ACCESS_DENIED",
-						resourceType: "project",
-						resourceId: params.id,
-						summary: `Worker attempted to access project they are not a member of`
-					});
-					return json({ error: "Forbidden" }, 403);
-				}
-			}
+            
+            // Existing worker check is now largely redundant but kept for specific audit logging
+			// if (auth.role === "WORKER") {
+			// 	const isMember = db.query("SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?")
+			// 		.get(projectId, auth.userId);
+			// 	if (!isMember) {
+			// 		auditLog({
+			// 			tenantId: auth.tenantId,
+			// 			userId: auth.userId,
+			// 			action: "ACCESS_DENIED",
+			// 			resourceType: "project",
+			// 			resourceId: projectId,
+			// 			summary: `Worker attempted to access project they are not a member of`
+			// 		});
+			// 		return json({ error: "Forbidden" }, 403);
+			// 	}
+			// }
 
 			// Economics shield
 			const isLeader = auth.role === "LEADER";
-			if (isWorker || isClient || isLeader) {
+			if (auth.role === "WORKER" || auth.role === "CLIENT" || isLeader) {
 				const { budget_allocated, budget_spent, budget, ...rest } = project;
 				return json(rest);
 			}
@@ -90,7 +123,7 @@ export function registerProjectRoutes(router: Router) {
 				userId: auth.userId,
 				action: "VIEW_ECONOMICS",
 				resourceType: "project",
-				resourceId: params.id,
+				resourceId: projectId,
 				summary: `Admin viewed project economics data`
 			});
 
@@ -115,10 +148,12 @@ export function registerProjectRoutes(router: Router) {
 
 		try {
 			const id = `proj_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+			createResourcePermission(id, 'kanban_board', auth.userId); // Create permission first to get the resource_permission_id
+
 			db.query(`
-				INSERT INTO projects (id, tenant_id, name, description, budget_allocated, status, created_by, settings_json)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-			`).run(id, auth.tenantId, body.name, body.description || null, body.budget_allocated || 0, body.status || "active", auth.userId, body.settings_json || null);
+				INSERT INTO projects (id, tenant_id, name, description, budget_allocated, status, created_by, settings_json, resource_permission_id)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`).run(id, auth.tenantId, body.name, body.description || null, body.budget_allocated || 0, body.status || "active", auth.userId, body.settings_json || null, id);
 			
 			const project = db.query("SELECT * FROM projects WHERE id = ?").get(id);
 			return json(project);
@@ -249,7 +284,7 @@ export function registerProjectRoutes(router: Router) {
 				ON CONFLICT(project_id, user_id) DO UPDATE SET role = excluded.role
 			`).run(auth.tenantId, params.id, body.userId, body.role || "WORKER");
 			return json({ ok: true });
-		} catch (e) {
+		}  catch (e) {
 			return json({ error: "Failed to add project member" }, 500);
 		}
 	});
@@ -272,8 +307,55 @@ export function registerProjectRoutes(router: Router) {
 	router.get("/api/notes", async (_req, _params, auth) => {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
 		try {
-			const notes = db.query("SELECT * FROM notes WHERE tenant_id = ? ORDER BY updated_at DESC").all(auth.tenantId) as any[];
-			return json(notes || []);
+			const queryParams: (string | number)[] = [];
+			const whereClauses: string[] = ["n.tenant_id = ?"];
+			queryParams.push(auth.tenantId);
+
+			if (auth.role !== "ADMIN" && auth.role !== "SUPER_ADMIN") {
+				whereClauses.push(`(
+					rp.owner_id = ? OR                                  -- User is the owner
+					rp.visibility = 'tenant' OR                         -- Visible to all in tenant
+					EXISTS(SELECT 1 FROM resource_shares rs WHERE rs.resource_id = n.resource_permission_id AND rs.shared_with_id = ?) -- Explicitly shared
+				)`);
+				queryParams.push(auth.userId, auth.userId);
+			}
+
+			const fullQuery = `
+				SELECT 
+					n.*,
+					rp.resource_id AS rp_resource_id,
+					rp.resource_type AS rp_resource_type,
+					rp.owner_id AS rp_owner_id,
+					rp.visibility AS rp_visibility,
+					rp.created_at AS rp_created_at,
+					rp.updated_at AS rp_updated_at
+				FROM notes n
+				LEFT JOIN resource_permissions rp ON n.resource_permission_id = rp.resource_id
+				WHERE ${whereClauses.join(" AND ")}
+				ORDER BY n.updated_at DESC
+			`;
+
+			const notes = db.query(fullQuery).all(...queryParams) as any[];
+			
+			// Map results to include resourcePermission object
+			const formattedNotes = notes.map(note => {
+				const { 
+					rp_resource_id, rp_resource_type, rp_owner_id, rp_visibility, rp_created_at, rp_updated_at, 
+					...rest 
+				} = note;
+				return {
+					...rest,
+					resourcePermission: rp_resource_id ? {
+						resource_id: rp_resource_id,
+						resource_type: rp_resource_type,
+						owner_id: rp_owner_id,
+						visibility: rp_visibility,
+						created_at: rp_created_at,
+						updated_at: rp_updated_at,
+					} : undefined,
+				};
+			});
+			return json(formattedNotes || []);
 		} catch (e) {
 			return json({ error: "Failed to fetch notes" }, 500);
 		}
@@ -290,14 +372,72 @@ export function registerProjectRoutes(router: Router) {
 		if (!body.title) return json({ error: "Title required" }, 400);
 		try {
 			const id = `note_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+			createResourcePermission(id, 'document', auth.userId); // Create permission first
+
 			db.query(`
-				INSERT INTO notes (id, tenant_id, project_id, title, content, created_by)
-				VALUES (?, ?, ?, ?, ?, ?)
-			`).run(id, auth.tenantId, body.project_id || null, body.title, body.content || null, auth.userId);
+				INSERT INTO notes (id, tenant_id, project_id, title, content, created_by, resource_permission_id)
+				VALUES (?, ?, ?, ?, ?, ?, ?)
+			`).run(id, auth.tenantId, body.project_id || null, body.title, body.content || null, auth.userId, id);
 			const note = db.query("SELECT * FROM notes WHERE id = ?").get(id);
 			return json(note);
 		} catch (e) {
 			return json({ error: "Failed to create note" }, 500);
+		}
+	});
+
+	router.get("/api/notes/:id", async (_req, params, auth) => {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		try {
+			const noteId = params.id;
+
+			const hasAccess = await checkResourceAccess(noteId, 'document', auth);
+			if (!hasAccess) {
+				auditLog({
+					tenantId: auth.tenantId,
+					userId: auth.userId,
+					action: "ACCESS_DENIED",
+					resourceType: "note",
+					resourceId: noteId,
+					summary: `User attempted to access note without permission`
+				});
+				return json({ error: "Forbidden" }, 403);
+			}
+
+			const note = db.query(`
+				SELECT 
+					n.*,
+					rp.resource_id AS rp_resource_id,
+					rp.resource_type AS rp_resource_type,
+					rp.owner_id AS rp_owner_id,
+					rp.visibility AS rp_visibility,
+					rp.created_at AS rp_created_at,
+					rp.updated_at AS rp_updated_at
+				FROM notes n
+				LEFT JOIN resource_permissions rp ON n.resource_permission_id = rp.resource_id
+				WHERE n.id = ? AND n.tenant_id = ?
+			`).get(noteId, auth.tenantId) as any;
+			
+			if (!note) return json({ error: "Note not found" }, 404);
+
+			const { 
+				rp_resource_id, rp_resource_type, rp_owner_id, rp_visibility, rp_created_at, rp_updated_at, 
+				...rest 
+			} = note;
+			
+			const formattedNote = {
+				...rest,
+				resourcePermission: rp_resource_id ? {
+					resource_id: rp_resource_id,
+					resource_type: rp_resource_type,
+					owner_id: rp_owner_id,
+					visibility: rp_visibility,
+					created_at: rp_created_at,
+					updated_at: rp_updated_at,
+				} : undefined,
+			};
+			return json(formattedNote);
+		} catch (e) {
+			return json({ error: "Failed to fetch note" }, 500);
 		}
 	});
 

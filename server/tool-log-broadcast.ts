@@ -22,9 +22,8 @@ export function unregisterChatSocketForToolLogs(ws: LogSender): void {
 	subscribers.delete(ws);
 }
 
-export function broadcastToolLog(level: ToolLogLevel, source: string, msg: string): void {
-	const line = JSON.stringify({ type: "log", time: nowTime(), level, source, msg });
-	for (const s of subscribers) {
+export function broadcastToolLog(level: ToolLogLevel, source: string, msg: string, tenantId?: string): void {
+ 	const line = JSON.stringify({ type: "log", time: nowTime(), level, source, msg, tenantId });	for (const s of subscribers) {
 		try {
 			s.send(line);
 		} catch {

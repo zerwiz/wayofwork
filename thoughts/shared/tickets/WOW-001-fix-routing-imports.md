@@ -134,14 +134,13 @@ The app cannot build or start. Unclear which server routes are dead code vs. fut
 - [x] Server recreates fresh DB on next start via server/db.ts
 
 ### P5 — Dead code & routing cleanup
-- [ ] Decide fate of menu files excluded from tsconfig (`FileMenu.tsx`, `EditMenu.tsx`, etc.) — delete or keep excluded
-- [ ] Add missing server endpoints: `PUT /api/portal/me`, `POST /api/portal/change-pin`
+- [x] Decide fate of menu files excluded from tsconfig (`FileMenu.tsx`, `EditMenu.tsx`, etc.) — delete or keep excluded
+- [x] Add missing server endpoints: `PUT /api/portal/me`, `POST /api/portal/change-pin`
 - [x] Wire `WorkerPortal.tsx` real API calls (uncomment `GET /api/portal/me`, tasks, files)
-- [ ] Fix `/admin` → `GET /api/admin/stats` gating (allow ADMIN role too)
-- [ ] Decide fate of `"technical"` uiMode — remove it or give it a route
-- [ ] Clean up `Dashboard.tsx` — remove or add to routing
+- [x] Fix `/admin` → `GET /api/admin/stats` gating (allow ADMIN role too)
+- [x] Decide fate of `"technical"` uiMode — remove it or give it a route
+- [x] Clean up `Dashboard.tsx` — remove or add to routing
 - [ ] Audit server routes with no frontend consumer: keep, wire, or remove
-
 ## Technical Notes
 
 ### Wo Agent context

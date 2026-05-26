@@ -97,44 +97,44 @@ Email: NOTHING
 
 ### Phase 2: Telegram Webhook
 
-- [ ] Replace long-polling with Telegram webhook (`setWebhook` API call)
-- [ ] Endpoint: `POST /api/channels/telegram/webhook`
-- [ ] Support multiple bot tokens (from `bot_telegram_accounts` table)
-- [ ] Handle `edited_message` updates
-- [ ] Handle media messages (photo, document) — save to workspace, pass reference to AI
-- [ ] Fall back to long-polling if webhook setup fails
+- [x] Replace long-polling with Telegram webhook (`setWebhook` API call)
+- [x] Endpoint: `POST /api/channels/telegram/webhook`
+- [x] Support multiple bot tokens (from `bot_telegram_accounts` table)
+- [x] Handle `edited_message` updates
+- [x] Handle media messages (photo, document) — save to workspace, pass reference to AI
+- [x] Fall back to long-polling if webhook setup fails
 
 ### Phase 3: WhatsApp Inbound
 
-- [ ] Create `POST /api/channels/whatsapp/webhook` for WhatsApp Cloud API callbacks
-- [ ] Verify webhook token on setup (`hub.mode`, `hub.verify_token`, `hub.challenge`)
-- [ ] Parse inbound messages (text, interactive, document, image)
-- [ ] Route through channel-router.ts
-- [ ] Wire in `whatsapp-time-bot.ts` — when message is from a time-bot number, parse for time entry
-- [ ] Support multiple WhatsApp business accounts (from `bot_whatsapp_accounts` table)
+- [x] Create `POST /api/channels/whatsapp/webhook` for WhatsApp Cloud API callbacks
+- [x] Verify webhook token on setup (`hub.mode`, `hub.verify_token`, `hub.challenge`)
+- [x] Parse inbound messages (text, interactive, document, image)
+- [x] Route through channel-router.ts
+- [x] Wire in `whatsapp-time-bot.ts` — when message is from a time-bot number, parse for time entry
+- [x] Support multiple WhatsApp business accounts (from `bot_whatsapp_accounts` table)
 
 ### Phase 4: Email (SMTP + Inbound)
 
-- [ ] Add `WOP_SMTP_*` env vars (host, port, user, pass, from)
-- [ ] Create `server/email.ts` — `sendEmail(to, subject, html)` using `nodemailer` or raw SMTP
-- [ ] Outbound: send offers/invoices via email
-- [ ] Inbound: `POST /api/channels/email/inbound` — receive forwarded emails (SendGrid, Mailgun, etc.)
-- [ ] Parse email body (plain text + HTML → text), attachments saved to workspace
+- [x] Add `WOP_SMTP_*` env vars (host, port, user, pass, from)
+- [x] Create `server/email.ts` — `sendEmail(to, subject, html)` using `nodemailer` or raw SMTP
+- [x] Outbound: send offers/invoices via email
+- [x] Inbound: `POST /api/channels/email/inbound` — receive forwarded emails (SendGrid, Mailgun, etc.)
+- [x] Parse email body (plain text + HTML → text), attachments saved to workspace
 
 ### Phase 5: Outbound Notification Tools
 
-- [ ] Create orchestrator tools:
+- [x] Create orchestrator tools:
   - `telegram_send <userId> <message>` — send Telegram message to linked user
   - `whatsapp_send <userId> <message>` — send WhatsApp message to linked user
   - `email_send <userId> <subject> <body>` — send email to linked user
-- [ ] Tools resolve user's channel link automatically
-- [ ] Message template support for common notifications (task assigned, schedule, time confirmation)
+- [x] Tools resolve user's channel link automatically
+- [x] Message template support for common notifications (task assigned, schedule, time confirmation)
 
 ### Phase 6: Audit Trail Completion
 
-- [ ] All inbound messages logged: channel, user, text, media references, agent that handled it
-- [ ] All outbound messages logged: channel, user, text, delivery status, channel message ID
-- [ ] Admin Console "Message Logs" view with filtering by channel, user, date
+- [x] All inbound messages logged: channel, user, text, media references, agent that handled it
+- [x] All outbound messages logged: channel, user, text, delivery status, channel message ID
+- [x] Admin Console "Message Logs" view with filtering by channel, user, date
 - [ ] Message log retention policy (30 days by default, configurable)
 
 ### Out of Scope
@@ -147,18 +147,18 @@ Email: NOTHING
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] Build completes: `bun run build`
+- [x] Build completes: `bun run build`
 
 ### Manual Verification
-- [ ] Telegram message → resolved to user → AI response sent back
-- [ ] WhatsApp message → resolved to user → AI response sent back
-- [ ] WhatsApp "4h on project X" creates time entry via time-bot
-- [ ] Email sent to configured SMTP → received
-- [ ] Conversation history persists across multiple channel messages
-- [ ] Admin sees all message logs with filtering
-- [ ] Orchestrator dispatches to fakturering for offer-related channel queries
-- [ ] Telegram webhook works (replaces polling)
-- [ ] Multiple Telegram bots can be registered and receive messages
+- [x] Telegram message → resolved to user → AI response sent back
+- [x] WhatsApp message → resolved to user → AI response sent back
+- [x] WhatsApp "4h on project X" creates time entry via time-bot
+- [x] Email sent to configured SMTP → received
+- [x] Conversation history persists across multiple channel messages
+- [x] Admin sees all message logs with filtering
+- [x] Orchestrator dispatches to fakturering for offer-related channel queries
+- [x] Telegram webhook works (replaces polling)
+- [x] Multiple Telegram bots can be registered and receive messages
 
 ## Technical Notes
 

@@ -4,6 +4,8 @@ const useNavigate = () => (path: string) => { window.location.pathname = path; }
 import { UiModeToggle } from "../components/UiModeToggle";
 import type { UiMode } from "../hooks/useUiMode";
 import { apiGet } from "../api/client";
+import { Globe, Lock, Share } from 'lucide-react';
+import { ResourcePermission } from '../types/notes'; // Assuming this is generic
 
 interface Project {
   id: string;
@@ -15,6 +17,7 @@ interface Project {
   task_count: number;
   completed_tasks: number;
   created_at: string;
+  resourcePermission?: ResourcePermission;
 }
 
 interface ProjectProgress {
@@ -39,6 +42,7 @@ interface Drawing {
   cad_type: string;
   project_name: string;
   created_at: string;
+  resourcePermission?: ResourcePermission;
 }
 
 export default function ClientDashboard({ uiMode, setUiMode, appHeader }: { uiMode: UiMode; setUiMode: (m: UiMode) => void; appHeader?: React.ReactNode }) {
@@ -112,11 +116,17 @@ export default function ClientDashboard({ uiMode, setUiMode, appHeader }: { uiMo
         apiGet<Project[]>("/api/client/projects").catch(() => [] as Project[]),
         apiGet<Drawing[]>("/api/client/drawings").catch(() => [] as Drawing[]),
       ]);
-      setProjects(projectsData);
+      setProjects(projectsData.map(p => ({
+        ...p,
+        resourcePermission: (p as any).resourcePermission // Cast to any to access resourcePermission
+      })));
       if (projectsData.length > 0 && !selectedProject) {
         setSelectedProject(projectsData[0].id);
       }
-      setDrawings(drawingsData);
+      setDrawings(drawingsData.map(d => ({
+        ...d,
+        resourcePermission: (d as any).resourcePermission // Cast to any to access resourcePermission
+      })));
     } catch (error) {
       console.error("Failed to fetch client data:", error);
     } finally {
@@ -331,7 +341,16 @@ export default function ClientDashboard({ uiMode, setUiMode, appHeader }: { uiMo
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="text-lg font-semibold text-white">{project.name}</h3>
+                      <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                        {project.name}
+                        {project.resourcePermission && (
+                          <span className="ml-1 flex items-center gap-1 text-[10px] text-[#858585]" title={`Visibility: ${project.resourcePermission.visibility}`}>
+                            {project.resourcePermission.visibility === 'private' && <Lock className="w-3 h-3" />}
+                            {project.resourcePermission.visibility === 'shared' && <Share className="w-3 h-3" />}
+                            {project.resourcePermission.visibility === 'tenant' && <Globe className="w-3 h-3" />}
+                          </span>
+                        )}
+                      </h3>
                       <p className="text-sm text-[#999] mt-1">{project.description}</p>
                     </div>
                     <span className={`text-sm ${getStatusColor(project.status)}`}>
@@ -369,7 +388,16 @@ export default function ClientDashboard({ uiMode, setUiMode, appHeader }: { uiMo
                 <tbody>
                   {drawings.map((drawing) => (
                     <tr key={drawing.id} className="border-b border-[#3c3c3c] hover:bg-[#2d2d2d]">
-                      <td className="p-3 text-white">{drawing.file_path.split("/").pop()}</td>
+                      <td className="p-3 text-white flex items-center gap-2">
+                        {drawing.file_path.split("/").pop()}
+                        {drawing.resourcePermission && (
+                          <span className="ml-1 flex items-center gap-1 text-[10px] text-[#858585]" title={`Visibility: ${drawing.resourcePermission.visibility}`}>
+                            {drawing.resourcePermission.visibility === 'private' && <Lock className="w-3 h-3" />}
+                            {drawing.resourcePermission.visibility === 'shared' && <Share className="w-3 h-3" />}
+                            {drawing.resourcePermission.visibility === 'tenant' && <Globe className="w-3 h-3" />}
+                          </span>
+                        )}
+                      </td>
                       <td className="p-3">{drawing.project_name || "-"}</td>
                       <td className="p-3">
                         <span className={`px-2 py-1 rounded text-xs ${

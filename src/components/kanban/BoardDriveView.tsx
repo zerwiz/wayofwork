@@ -5,10 +5,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Folder, File, Link2, Search, X, HardDrive, ChevronRight } from 'lucide-react';
+import { Folder, File, Link2, Search, X, HardDrive, ChevronRight, Globe, Lock, Share } from 'lucide-react';
 import type { Board, BoardCard } from '../../types/kanban';
 import { driveService } from '../../services/driveService';
 import type { DriveFile } from '../../types/drive';
+import { ResourceShareModal } from '../../components/common/ResourceShareModal';
+import { getAuth } from '../../utils/auth';
 
 interface BoardDriveViewProps {
   board: Board;
@@ -33,6 +35,10 @@ export const BoardDriveView: React.FC<BoardDriveViewProps> = ({
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [isLinkingMode, setIsLinkingMode] = useState(false);
   const [folderPath, setFolderPath] = useState<DriveFile[]>([]);
+  const [showFileShareModal, setShowFileShareModal] = useState(false);
+  const [selectedFileForSharing, setSelectedFileForSharing] = useState<DriveFile | null>(null);
+
+  const currentUserId = getAuth()?.userId || '';
 
   useEffect(() => {
     loadFiles();
@@ -277,7 +283,25 @@ export const BoardDriveView: React.FC<BoardDriveViewProps> = ({
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <File className="w-5 h-5 text-orange-400 flex-shrink-0" />
                           <h5 className="text-sm font-medium text-gray-100 truncate">{file.name}</h5>
+                          {file.resourcePermission && (
+                            <span className="ml-2 flex items-center gap-1 text-sm text-[#858585]" title={`Visibility: ${file.resourcePermission.visibility}`}>
+                              {file.resourcePermission.visibility === 'private' && <Lock className="w-4 h-4" />}
+                              {file.resourcePermission.visibility === 'shared' && <Share className="w-4 h-4" />}
+                              {file.resourcePermission.visibility === 'tenant' && <Globe className="w-4 h-4" />}
+                            </span>
+                          )}
                         </div>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFileForSharing(file);
+                                setShowFileShareModal(true);
+                            }}
+                            className="p-1 text-[#858585] hover:text-white transition-colors"
+                            title="Share File"
+                        >
+                            <Share className="w-4 h-4" />
+                        </button>
                       </div>
 
                       <div className="text-xs text-[#858585] mb-3">
@@ -343,7 +367,25 @@ export const BoardDriveView: React.FC<BoardDriveViewProps> = ({
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <File className="w-5 h-5 text-[#858585] flex-shrink-0" />
                         <h5 className="text-sm font-medium text-gray-100 truncate">{file.name}</h5>
+                        {file.resourcePermission && (
+                          <span className="ml-2 flex items-center gap-1 text-sm text-[#858585]" title={`Visibility: ${file.resourcePermission.visibility}`}>
+                            {file.resourcePermission.visibility === 'private' && <Lock className="w-4 h-4" />}
+                            {file.resourcePermission.visibility === 'shared' && <Share className="w-4 h-4" />}
+                            {file.resourcePermission.visibility === 'tenant' && <Globe className="w-4 h-4" />}
+                          </span>
+                        )}
                       </div>
+                      <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFileForSharing(file);
+                                setShowFileShareModal(true);
+                            }}
+                            className="p-1 text-[#858585] hover:text-white transition-colors"
+                            title="Share File"
+                        >
+                            <Share className="w-4 h-4" />
+                        </button>
                     </div>
 
                     <div className="text-xs text-[#858585] mb-3">
@@ -393,6 +435,20 @@ export const BoardDriveView: React.FC<BoardDriveViewProps> = ({
           </div>
         )}
       </div>
+
+      {selectedFileForSharing && (
+        <ResourceShareModal
+          resourceId={selectedFileForSharing.id}
+          resourceType="workspace_file"
+          currentUserId={currentUserId}
+          isOpen={showFileShareModal}
+          onClose={() => setShowFileShareModal(false)}
+          onUpdated={() => {
+            loadFiles(); // Reload files to reflect permission changes
+            loadFolders(); // Reload folders to reflect permission changes
+          }}
+        />
+      )}
     </div>
   );
 };

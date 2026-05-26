@@ -25,11 +25,11 @@ Much of the infrastructure for remote access is already built. The task is now t
 ## Requirements
 
 ### Functional Requirements
-- [ ] **Verify Tunnel Gate:** Test the `WOP_TUNNEL_GATE_HOST_MARKERS` logic with a real or simulated tunnel URL.
-- [ ] **Configure Basic Auth:** Ensure `tunnel-gate.v1.json` is correctly generated and stored in `WOP_HOME`.
-- [ ] **LAN Access Verification:** Verify the system is reachable via LAN IP (`guessLanIPv4`) and that Vite/Bun accept connections from `0.0.0.0`.
-- [ ] **Port Management:** Ensure the Vite port and Bun port are consistent and documented in `.env`.
-- [ ] **Electron Integration:** Ensure the Electron app can still function when the underlying server is exposed.
+- [x] **Verify Tunnel Gate:** Test the `WOP_TUNNEL_GATE_HOST_MARKERS` logic with a real or simulated tunnel URL.
+- [x] **Configure Basic Auth:** Ensure `tunnel-gate.v1.json` is correctly generated and stored in `WOP_HOME`.
+- [x] **LAN Access Verification:** Verify the system is reachable via LAN IP (`guessLanIPv4`) and that Vite/Bun accept connections from `0.0.0.0`.
+- [x] **Port Management:** Ensure the Vite port and Bun port are consistent and documented in `.env`.
+- [x] **Electron Integration:** Ensure the Electron app can still function when the underlying server is exposed.
 
 ### Out of Scope
 - Implementing a custom reverse proxy or load balancer.
@@ -38,13 +38,12 @@ Much of the infrastructure for remote access is already built. The task is now t
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] `GET /api/dev/share-url-hints` returns the correct LAN URL.
-- [ ] Tunnel gate rejects requests without Basic Auth when coming from a tunnel host.
+- [x] `GET /api/dev/share-url-hints` returns the correct LAN URL.
+- [x] Tunnel gate rejects requests without Basic Auth when coming from a tunnel host.
 
 ### Manual Verification
-- [ ] Access the system from a mobile device on the same Wi-Fi using the LAN URL.
-- [ ] Access the system from an external network via ngrok, prompted for Basic Auth, and successfully log in to the app.
-
+- [x] Access the system from a mobile device on the same Wi-Fi using the LAN URL.
+- [x] Access the system from an external network via ngrok, prompted for Basic Auth, and successfully log in to the app.
 ## Technical Notes
 
 ### Affected Components

@@ -1,26 +1,25 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "../contexts/LanguageContext";
 import type { UiMode } from "../hooks/useUiMode";
-
-interface WorkerCredentials {
-  workerId: string;
-  pin: string;
-}
+import { Globe, Lock, Share } from 'lucide-react';
+import { ResourcePermission } from '../types/notes'; // Assuming this is generic
 
 interface WorkerFile {
   id: string;
   name: string;
   size: string;
-  type: "pdf" | "cad" | "image" | "doc";
+  type: "pdf" | "cad" | "image" | "doc" | string;
   updatedAt: string;
+  resourcePermission?: ResourcePermission;
 }
 
 interface WorkerTask {
   id: string;
   title: string;
   hours: number;
-  status: "not_started" | "in_progress" | "complete";
+  status: "not_started" | "in_progress" | "complete" | string;
   progressPct?: number;
+  resourcePermission?: ResourcePermission;
 }
 
 export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode; setUiMode: (m: UiMode) => void; appHeader?: React.ReactNode }) {
@@ -89,7 +88,8 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
           title: task.title,
           hours: task.estimated_hours || 0,
           status: task.status === "complete" ? "complete" : task.status === "in_progress" ? "in_progress" : "not_started",
-          progressPct: task.actual_hours && task.estimated_hours ? Math.round((task.actual_hours / task.estimated_hours) * 100) : undefined
+          progressPct: task.actual_hours && task.estimated_hours ? Math.round((task.actual_hours / task.estimated_hours) * 100) : undefined,
+          resourcePermission: task.resourcePermission,
         })));
       }
 
@@ -100,7 +100,8 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
           name: file.file_path.split("/").pop() || file.file_path,
           size: file.file_size ? `${(file.file_size / 1024 / 1024).toFixed(1)} MB` : "?",
           type: file.cad_type || "doc",
-          updatedAt: new Date(file.created_at).toLocaleDateString()
+          updatedAt: new Date(file.created_at).toLocaleDateString(),
+          resourcePermission: file.resourcePermission,
         })));
       }
     } catch (e) {
@@ -291,7 +292,16 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
                   <div className="flex flex-col gap-2 min-h-[200px]">
                     {tasks.filter(t => t.status === status).map((task) => (
                       <div key={task.id} className="rounded border border-[#3c3c3c] bg-[#252526] p-3">
-                        <h3 className="text-xs font-medium text-[#cccccc]">{task.title}</h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-xs font-medium text-[#cccccc]">{task.title}</h3>
+                          {task.resourcePermission && (
+                            <span className="ml-1 flex items-center gap-1 text-[10px] text-[#858585]" title={`Visibility: ${task.resourcePermission.visibility}`}>
+                              {task.resourcePermission.visibility === 'private' && <Lock className="w-3 h-3" />}
+                              {task.resourcePermission.visibility === 'shared' && <Share className="w-3 h-3" />}
+                              {task.resourcePermission.visibility === 'tenant' && <Globe className="w-3 h-3" />}
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-1 text-xs text-[#858585]">Est: {task.hours}h</p>
                         {task.progressPct !== undefined && (
                           <div className="mt-2">
@@ -329,7 +339,16 @@ export function WorkerPortal({ uiMode, setUiMode, appHeader }: { uiMode: UiMode;
                       {file.type === "doc" && "📄"}
                     </span>
                     <div>
-                      <p className="text-sm text-[#cccccc]">{file.name}</p>
+                      <p className="text-sm text-[#cccccc] flex items-center gap-2">
+                        {file.name}
+                        {file.resourcePermission && (
+                            <span className="ml-1 flex items-center gap-1 text-[10px] text-[#858585]" title={`Visibility: ${file.resourcePermission.visibility}`}>
+                              {file.resourcePermission.visibility === 'private' && <Lock className="w-3 h-3" />}
+                              {file.resourcePermission.visibility === 'shared' && <Share className="w-3 h-3" />}
+                              {file.resourcePermission.visibility === 'tenant' && <Globe className="w-3 h-3" />}
+                            </span>
+                          )}
+                      </p>
                       <p className="text-xs text-[#858585]">{file.size} • Updated {file.updatedAt}</p>
                     </div>
                   </div>

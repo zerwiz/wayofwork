@@ -90,8 +90,8 @@ Based on industry standards (ISY Road, Bluebeam), the module will use a hybrid w
 - [x] Digital library of TDOK 2024:0043 sketches.
 - [x] Validation engine `src/utils/ta-validation.ts` for automated safety checks.
 - [x] Database support via `ta_plans` table (already added to schema).
-- [ ] **Visual Integration:** Implement map-based planning (Leaflet/OpenStreetMap), drag-and-drop signage/cones, and automated screenshot capture of the plan canvas.
-- [ ] **Detail View**: Enable opening plans to view the generated map overlay.
+- [x] **Visual Integration:** Implement map-based planning (Leaflet/OpenStreetMap), drag-and-drop signage/cones, and automated screenshot capture of the plan canvas.
+- [x] **Detail View**: Enable opening plans to view the generated map overlay.
 
 ## References & Web Sources
 
@@ -123,12 +123,12 @@ Based on industry standards (ISY Road, Bluebeam), the module will use a hybrid w
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] Build completes: `bun run build`
+- [x] Build completes: `bun run build`
 - [ ] Unit tests for `ta-validation.ts` cover key TMA and safety distance rules.
 
 ### Manual Verification
-- [ ] Successfully fetch road data for a given road number/coordinate.
-- [ ] Validation engine correctly flags a 100 km/h road as requiring a TMA vehicle.
+- [x] Successfully fetch road data for a given road number/coordinate.
+- [x] Validation engine correctly flags a 100 km/h road as requiring a TMA vehicle.
 - [ ] Risk assessment PDF/JSON can be generated.
 
 ## Technical Notes

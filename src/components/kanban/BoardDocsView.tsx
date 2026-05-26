@@ -5,10 +5,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { FileText, Link2, Search, Plus, X } from 'lucide-react';
+import { FileText, Link2, Search, Plus, X, Globe, Lock, Share } from 'lucide-react';
 import type { Board, BoardCard } from '../../types/kanban';
 import { notesService } from '../../services/notesService';
 import type { Note } from '../../types/notes';
+import { ResourceShareModal } from '../../components/common/ResourceShareModal';
+import { getAuth } from '../../utils/auth';
 
 interface BoardDocsViewProps {
   board: Board;
@@ -27,6 +29,10 @@ export const BoardDocsView: React.FC<BoardDocsViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [isLinkingMode, setIsLinkingMode] = useState(false);
+  const [showNoteShareModal, setShowNoteShareModal] = useState(false);
+  const [selectedNoteForSharing, setSelectedNoteForSharing] = useState<Note | null>(null);
+
+  const currentUserId = getAuth()?.userId || '';
 
   useEffect(() => {
     loadDocuments();
@@ -146,7 +152,25 @@ export const BoardDocsView: React.FC<BoardDocsViewProps> = ({
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <FileText className="w-5 h-5 text-orange-400 flex-shrink-0" />
                           <h5 className="text-sm font-medium text-gray-100 truncate">{doc.title || 'Untitled'}</h5>
+                          {doc.resourcePermission && (
+                            <span className="ml-2 flex items-center gap-1 text-sm text-[#858585]" title={`Visibility: ${doc.resourcePermission.visibility}`}>
+                              {doc.resourcePermission.visibility === 'private' && <Lock className="w-4 h-4" />}
+                              {doc.resourcePermission.visibility === 'shared' && <Share className="w-4 h-4" />}
+                              {doc.resourcePermission.visibility === 'tenant' && <Globe className="w-4 h-4" />}
+                            </span>
+                          )}
                         </div>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedNoteForSharing(doc);
+                                setShowNoteShareModal(true);
+                            }}
+                            className="p-1 text-[#858585] hover:text-white transition-colors"
+                            title="Share Note"
+                        >
+                            <Share className="w-4 h-4" />
+                        </button>
                       </div>
 
                       {doc.content && (
@@ -211,12 +235,29 @@ export const BoardDocsView: React.FC<BoardDocsViewProps> = ({
                     }}
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <FileText className="w-5 h-5 text-[#858585] flex-shrink-0" />
-                        <h5 className="text-sm font-medium text-gray-100 truncate">{doc.title || 'Untitled'}</h5>
-                      </div>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <FileText className="w-5 h-5 text-[#858585] flex-shrink-0" />
+                      <h5 className="text-sm font-medium text-gray-100 truncate">{doc.title || 'Untitled'}</h5>
+                      {doc.resourcePermission && (
+                        <span className="ml-2 flex items-center gap-1 text-sm text-[#858585]" title={`Visibility: ${doc.resourcePermission.visibility}`}>
+                          {doc.resourcePermission.visibility === 'private' && <Lock className="w-4 h-4" />}
+                          {doc.resourcePermission.visibility === 'shared' && <Share className="w-4 h-4" />}
+                          {doc.resourcePermission.visibility === 'tenant' && <Globe className="w-4 h-4" />}
+                        </span>
+                      )}
                     </div>
-
+                    <button
+                          onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedNoteForSharing(doc);
+                              setShowNoteShareModal(true);
+                          }}
+                          className="p-1 text-[#858585] hover:text-white transition-colors"
+                          title="Share Note"
+                      >
+                          <Share className="w-4 h-4" />
+                      </button>
+                    </div>
                     {doc.content && (
                       <p className="text-xs text-[#858585] mb-3 line-clamp-2">
                         {doc.content.substring(0, 100)}...
@@ -266,6 +307,17 @@ export const BoardDocsView: React.FC<BoardDocsViewProps> = ({
           </div>
         )}
       </div>
+
+      {selectedNoteForSharing && (
+        <ResourceShareModal
+          resourceId={selectedNoteForSharing.id}
+          resourceType="document"
+          currentUserId={currentUserId}
+          isOpen={showNoteShareModal}
+          onClose={() => setShowNoteShareModal(false)}
+          onUpdated={loadDocuments}
+        />
+      )}
     </div>
   );
 };

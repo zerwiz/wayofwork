@@ -10,7 +10,7 @@ import { kanbanService } from '../../services/kanbanService';
 import { notesService } from '../../services/notesService';
 import { tasksService } from '../../services/tasksService';
 import { driveService } from '../../services/driveService';
-import { calendarService } from '../../services/mockCalendarService';
+import { calendarService } from '../../services/calendarService';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import DevelopmentWorkflowSelector from '../development/DevelopmentWorkflowSelector';

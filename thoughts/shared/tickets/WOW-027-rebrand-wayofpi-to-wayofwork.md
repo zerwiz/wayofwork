@@ -9,9 +9,9 @@
 The application has undergone a rebrand. "Technical" mode terminology has been incorrectly applied to functional components in Simple/Claw modes. **Strict "No Deletion" and "No Modification" policy in effect for all 'Technical' labeled code.**
 
 ## Investigation & Tracking
-- [ ] **Audit:** Map all imports of `src/components/technical/` in `Simple` and `Claw` modes.
-- [ ] **Verification:** Determine if these components are essential for `Simple`/`Claw` UI/UX.
-- [ ] **Rename Plan:** Identify components that should be moved/renamed out of `technical/` into `simple/`, `claw/`, or `ui/`.
+- [x] **Audit:** Map all imports of `src/components/technical/` in `Simple` and `Claw` modes.
+- [x] **Verification:** Determine if these components are essential for `Simple`/`Claw` UI/UX.
+- [x] **Rename Plan:** Identify components that should be moved/renamed out of `technical/` into `simple/`, `claw/`, or `ui/`.
 
 ## Rebranding Plan (Cosmetic Only)
 - [ ] Rename internal UI labels, documentation strings, and comments.

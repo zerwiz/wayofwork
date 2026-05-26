@@ -35,6 +35,29 @@ export const driveService = {
     return await res.json();
   },
 
+  uploadFile: async (file: File, projectId?: string) => {
+    const token = localStorage.getItem('wop_token');
+    const formData = new FormData();
+    formData.append('file', file);
+    if (projectId) {
+      formData.append('project_id', projectId);
+    }
+
+    const res = await fetch('/api/portal/files/upload', {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${token}`
+        // 'Content-Type': 'multipart/form-data' is automatically set by browser for FormData
+      },
+      body: formData
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to upload file');
+    }
+    return await res.json();
+  },
+
   deleteFile: async (id: string) => {
     const token = localStorage.getItem('wop_token');
     const res = await fetch(`/api/portal/files/${id}`, {

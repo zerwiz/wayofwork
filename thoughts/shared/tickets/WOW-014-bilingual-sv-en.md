@@ -59,14 +59,14 @@ These are Swedish legal/regulatory references that must always be included regar
 ### Functional Requirements
 
 #### Phase 1: i18n Infrastructure
-- [ ] Add language selection to user settings (profile page or settings modal)
-- [ ] Store language preference in user profile (`language` column in `users` table)
-- [ ] Create i18n key-value store (JSON files in `shared/locales/` or similar)
-- [ ] Add `useTranslation()` hook for React components
-- [ ] Server-side language detection from user profile or `Accept-Language` header
+- [x] Add language selection to user settings (profile page or settings modal)
+- [x] Store language preference in user profile (`language` column in `users` table)
+- [x] Create i18n key-value store (JSON files in `shared/locales/` or similar)
+- [x] Add `useTranslation()` hook for React components
+- [x] Server-side language detection from user profile or `Accept-Language` header
 
 #### Phase 2: UI Translation
-- [ ] Translate all Admin Console tab labels:
+- [x] Translate all Admin Console tab labels:
   - "Prislistor" ↔ "Price Lists"
   - "Godkännandekö" ↔ "Approval Queue"
   - "Arbetare" ↔ "Workers"
@@ -78,9 +78,9 @@ These are Swedish legal/regulatory references that must always be included regar
 - [ ] Settings/profile UI in both languages
 
 #### Phase 3: Agent Language Awareness
-- [ ] Agent system prompt includes user's language preference
-- [ ] Chat greeting is in user's language
-- [ ] Agent responses in user's language by default (user can ask to switch)
+- [x] Agent system prompt includes user's language preference
+- [x] Chat greeting is in user's language
+- [x] Agent responses in user's language by default (user can ask to switch)
 - [ ] Swedish legal skill content is always appended in Swedish regardless of language
 - [ ] Agent `.md` files have language-appropriate prompts
 
@@ -100,18 +100,17 @@ These are Swedish legal/regulatory references that must always be included regar
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] Build completes: `bun run build`
+- [x] Build completes: `bun run build`
 
 ### Manual Verification
 - [ ] User can switch language in settings → UI updates to Swedish/English
-- [ ] "Prislistor" shows as "Price Lists" in English mode
-- [ ] "Godkännandekö" shows as "Approval Queue" in English mode
-- [ ] Agent greets in user's language
+- [x] "Prislistor" shows as "Price Lists" in English mode
+- [x] "Godkännandekö" shows as "Approval Queue" in English mode
+- [x] Agent greets in user's language
 - [ ] Swedish legal content (AB 04, etc.) appears in agent system prompt in Swedish even in English mode
-- [ ] Chat history and agent responses are in user's language
-- [ ] Language preference persists across sessions (stored in DB)
-- [ ] New users default to Swedish (for Sweden production launch)
-
+- [x] Chat history and agent responses are in user's language
+- [x] Language preference persists across sessions (stored in DB)
+- [x] New users default to Swedish (for Sweden production launch)
 ## Technical Notes
 
 ### i18n Approach

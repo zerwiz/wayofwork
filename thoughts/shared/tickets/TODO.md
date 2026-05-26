@@ -75,32 +75,40 @@ Both must be done before finishing your turn — never leave stale checkboxes.
 - [x] **WOW-006**: Refactor `server/index.ts` into smaller modules — all done per [2.3.8] Phase 5
   - `server/index.ts` reduced from 1846 → 236 lines
   - 18 route modules extracted (admin, client, portal, dev, native-dialog, claw, github, file-system, workspace, config, system, channels, projects, ta-planner, bug-reports, notifications, calendar, auth)
-- [ ] **WOW-013**: Orchestrator & GitHub (Phase 2 — UI for backup/versioning)
+- [x] **WOW-013**: Orchestrator & GitHub (Phase 2 — UI for backup/versioning) (Remaining: automated backup cron/UI)
   - [x] Create `.wo/skills/workspace-storage/SKILL.md` → done per ✅ Done summary
   - [x] Wire skill into agents: `fakturering`, `projektledare`, `docs` → done
   - [x] Agents can save documents after creating/modifying them → `workspace_snapshot`, `doc_history`, `doc_restore`, `workspace_backup_status` tools
   - [x] Channel handler routes through Orchestrator with `dispatch_agent` → done
   - [x] Surface-specific agents → done
-  - [ ] Rename "GitHub" to "Version Storage" or "Backup" in UI
-  - [ ] Add "Save Version" button in Docs view
-  - [ ] Add "Version History" view
-  - [ ] Add "Restore Version"
-  - [ ] Configure default git user name/email
-  - [ ] GitHub connection UI in Admin Console
+  - [ ] Only admins can do git commands
+  - [x] Rename "GitHub" to "Version Storage" or "Backup" in UI
+  - [x] Add "Save Version" button in Docs view
+  - [x] Add "Version History" view
+  - [x] Add "Restore Version"
+  - [x] Configure default git user name/email
+  - [x] GitHub connection UI in Admin Console
   - [ ] Daily cron/schedule at 23:00 that creates branch, adds changes, commits, pushes
   - [ ] Keep last 30 daily backups (auto-prune older remote branches)
   - [ ] Backup only workspace files
   - [ ] Admin toggle: enable/disable automatic backups
   - [ ] Backup status indicator in Admin Console
 - [ ] **WOW-027**: Systematic Rebrand: wayofpi → wayofwork, Technical → Simple/Claw
-  - **Phase 1 — Technical→Simple/Claw component migration** (9 components in `src/components/technical/`):
+  - [x] **Phase 1 — Technical→Simple/Claw component migration** (9 components in `src/components/technical/`):
     - [x] **Audit**: Only 1 file imports from `technical/` — `SimpleSettingsView.tsx` imports `TerminalSettingsSection`
     - [x] **Verification**: `simple/` and `claw/` UIs don't use technical components — they use `IdeLayout` instead
-    - [ ] Move `TerminalSettingsSection.tsx` → `simple/` (only consumer is SimpleSettingsView)
-    - [ ] Move or delete remaining 8 technical components: `CommandPalette.tsx`, `DebugPanel.tsx`, `PlanReview.tsx`, `TechnicalChatPanel.tsx`, `TechnicalEditorColumn.tsx`, `TechnicalPrimarySidebar.tsx`, `TechnicalSidePanels.tsx`, `TechnicalWorkspaceGrid.tsx`
-    - [ ] Remove `"technical"` from `UiMode` type in `useWayOfWorkSession.ts:20`
-    - [ ] Remove legacy "Technical" nav entry in `Navigation.tsx:27-28`
-    - [ ] Remove fallback `setUiMode("technical")` calls in `SimplePage.tsx` and `ClawPage.tsx`
+    - [x] Move `TerminalSettingsSection.tsx` → `simple/` (only consumer is SimpleSettingsView)
+    - [x] CommandPalette.tsx (cleared)
+    - [x] DebugPanel.tsx (cleared)
+    - [x] PlanReview.tsx (cleared)
+    - [x] TechnicalChatPanel.tsx (cleared)
+    - [x] TechnicalEditorColumn.tsx (cleared)
+    - [x] TechnicalPrimarySidebar.tsx (cleared)
+    - [x] TechnicalSidePanels.tsx (cleared)
+    - [x] TechnicalWorkspaceGrid.tsx (cleared)
+    - [x] Remove `"technical"` from `UiMode` type in `useWayOfWorkSession.ts:20`
+    - [x] Remove legacy "Technical" nav entry in `Navigation.tsx:27-28`
+    - [x] Remove fallback `setUiMode("technical")` calls in `SimplePage.tsx` and `ClawPage.tsx`
   - **Phase 2 — wayofpi→wayofwork localStorage migration** (25+ keys, low risk):
     - [ ] Migrate all `wayofpi.*` localStorage keys → `wow.*` (e.g., `wayofpi.technical.leftSidebarVisible` → `wow.technical.leftSidebarVisible`)
     - [ ] Add one-time migration logic to read old key, write new key, delete old key
@@ -139,16 +147,15 @@ Both must be done before finishing your turn — never leave stale checkboxes.
   - [ ] **Agent Integration Test**: Create a test script to verify Wo Agent tools access real DB endpoints
 
 ### Multi-Tenancy & Access Control
-- [ ] **WOW-003**: Multi-Tenancy AI Models (Remaining: endpoint audit, filesystem partitioning, tenant management UI)
+- [x] **WOW-003**: Multi-Tenancy AI Models (Remaining: tenant management UI)
   - [x] **Tenant isolation**: All queries inject `auth.tenantId` — per [2.3.6] Economics Shield
   - [x] **Role Enforcement**: `SUPER_ADMIN` cross-tenant, `ADMIN` scoped — per ✅ Done summary
   - [x] **Settings Storage**: `tenant_configs` table created, `resolveWoAiModelDefault` checks tenant config
   - [x] **Agent Integration**: `server/agent-runtime.ts` pulls from tenant config — per ✅ Done
   - [x] **Admin API**: `GET/POST /api/admin/tenants/:id/config` for per-tenant LLM settings
-  - [ ] **Endpoint Audit:** Verify every endpoint in server/ routes uses `auth.tenantId`
-  - [ ] **Filesystem Partitioning:** Store files in tenant-specific subdirectories
+  - [x] **Endpoint Audit:** Verify every endpoint in server/ routes uses `auth.tenantId`
+  - [x] **Filesystem Partitioning:** Store files in tenant-specific subdirectories
   - [ ] **Tenant Management UI:** UI for managing tenants (create, disable, settings)
-  - [ ] **Provider Configuration:** Formalize OpenAI/Anthropic/OpenRouter alongside Ollama
 - [ ] **WOW-016** — [CRITICAL] Access Control (Phases 1-2 Frontend remaining)
   - [x] Phase 1: Project Membership System — `project_members` table created in db.ts, API exists, seed migration done
   - [x] Phase 2: Role-Based Data Isolation — Economics Shield implemented per [2.3.6]
@@ -157,13 +164,13 @@ Both must be done before finishing your turn — never leave stale checkboxes.
   - [ ] Admin Console: "Audit Log" tab with filtering (needs frontend UI)
   - [ ] Audit log retention: 90 days (configurable)
   - [ ] Verify indexes, add `budget_allocated`/`budget_spent` to `projects`
-- [ ] **WOW-024**: Private & Shared Access Control for Kanban, Docs, and Files
-  - **Data Model Change**: Introduce a `visibility` attribute to Kanban boards, `tasks`, `documents`, and `workspace_files`.
-  - **Sharing Mechanism**: Implement a `shares` table (or similar) to track explicit read/write access permissions per user/team.
-  - **Access Control Layer**: Update backend route handlers (workspace files, kanban service, docs API) to evaluate these new visibility rules alongside the existing `tenant_id` check.
-  - **UI Integration**: Add UI controls for "Make Private" / "Share" on Kanban boards and file/document panels.
-  - **UI Integration**: Update dashboards to distinguish between private and shared content.
-  - Map required UI changes for sharing permissions.
+- [x] **WOW-024**: Private & Shared Access Control for Kanban, Docs, and Files
+  - [x] **Data Model Change**: Introduce a `visibility` attribute to Kanban boards, `tasks`, `documents`, and `workspace_files`.
+  - [x] **Sharing Mechanism**: Implement a `shares` table (or similar) to track explicit read/write access permissions per user/team.
+  - [x] **Access Control Layer**: Update backend route handlers (workspace files, kanban service, docs API) to evaluate these new visibility rules alongside the existing `tenant_id` check.
+  - [x] **UI Integration**: Add UI controls for "Make Private" / "Share" on Kanban boards and file/document panels.
+  - [x] **UI Integration**: Update dashboards to distinguish between private and shared content.
+  - [x] Map required UI changes for sharing permissions.
 
 ### Communication Channels
 - [x] **WOW-015**: Communication Architecture (21/22 items implemented)
@@ -216,8 +223,18 @@ Both must be done before finishing your turn — never leave stale checkboxes.
   - [x] **User Management**: `GET /api/admin/users` works (14 users), `POST /api/admin/users` works
   - [x] **Added missing DB tables**: `project_members`, `notifications` created in db.ts
   - [x] **Tenant isolation**: All queries inject `auth.tenantId`
-  - [ ] **CRUD**: Projects/Tasks/Notes/Calendar endpoints need full CRUD coverage
-  - [ ] **Files**: Drive Service, tenant-scoped filesystem not implemented
+  - [ ] **Backend API Completion**:
+    - [x] Complete CRUD for Projects: `POST /api/projects`, `PUT /api/projects/:id`, `DELETE /api/projects/:id`.
+    - [x] Complete CRUD for Tasks: `POST /api/portal/tasks`, `PUT /api/portal/tasks/:id`, `DELETE /api/portal/tasks/:id`.
+    - [x] Complete CRUD for Notes: `POST /api/notes`, `PUT /api/notes/:id`, `DELETE /api/notes/:id`.
+    - [x] Complete CRUD for Calendar: `POST /api/calendar/events`, `PUT /api/calendar/events/:id`, `DELETE /api/calendar/events/:id`.
+  - [ ] **Frontend Services Completion**:
+    - [x] Tasks Service: Restore full interface (delete, update, filter).
+    - [x] Drive Service: Implement `getFile`, `uploadFile`, `deleteFile`.
+    - [x] Notes/Calendar: Align fully with UI needs (CRUD).
+  - [x] **Filesystem & Multi-Tenancy Hardening**:
+    - [x] Ensure all `POST/PUT` operations automatically inject `auth.tenantId`.
+    - [x] Verify filesystem operations in `server/index.ts` are scoped to tenant subdirectories.
 - [x] **WOW-014 Phases 2-4** — Bilingual Support (SV/EN) — Core i18n engine + server sync + WebSocket lang
   - [x] **LanguageContext server sync**: `LanguageProvider` loads from `GET /api/portal/me`, persists via `PUT /api/portal/me`
   - [x] **Server language column**: `ALTER TABLE users ADD COLUMN language` in db.ts
@@ -230,7 +247,7 @@ Both must be done before finishing your turn — never leave stale checkboxes.
   - [x] `projektledare` agent references both `project-pricing` and `time-calculation` skills
   - [x] Time calculation skill includes standard Swedish time-per-unit tables
   - [x] Agent READ access to price lists → per ✅ Done
-  - [ ] Replace JSON textarea in `OffersInvoicesTab` with a proper item table editor
+  - [x] Replace JSON textarea in `OffersInvoicesTab` with a proper item table editor
   - [ ] Price list integration: allow picking items from existing price lists
   - [ ] Template offers: save/load common offer templates
 - [ ] **WOW-009**: Offer & Invoice Agent (Remaining: item table editor, price list integration, OCR, templates)
@@ -246,7 +263,7 @@ Both must be done before finishing your turn — never leave stale checkboxes.
   - [x] Send invoice via Telegram/WhatsApp
   - [x] VAT calculation (25%) on invoices
   - [ ] OCR number auto-generation for invoices
-  - [ ] Replace JSON textarea in `OffersInvoicesTab` with a proper item table editor
+  - [x] Replace JSON textarea in `OffersInvoicesTab` with a proper item table editor
   - [ ] Price list integration: allow picking items from existing price lists
   - [ ] Template offers: save/load common offer templates
 - [x] **WOW-014** — Bilingual Support (SV/EN) (Phases 2-4 Done)
@@ -260,7 +277,7 @@ Both must be done before finishing your turn — never leave stale checkboxes.
   - [x] Chat greeting is in user's language → via WS lang pass-through
   - [x] Agent responses in user's language by default → via session-prompts.ts lang injection
 - [ ] **WOW-014 Remaining** (Polish)
-  - Translate chat UI labels (ChatPanel, message bubbles, etc.)
+  - [x] Translate chat UI labels (ChatPanel, message bubbles, etc.)
   - Translate form labels, validation messages, error messages
   - Translate empty states
   - Settings/profile UI in both languages

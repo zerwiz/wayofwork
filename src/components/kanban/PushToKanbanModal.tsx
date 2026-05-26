@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { kanbanService } from '../../services/kanbanService';
 import { tasksService } from '../../services/tasksService';
-import { calendarService } from '../../services/mockCalendarService';
+import { calendarService } from '../../services/calendarService';
 import { developmentWorkflowService } from '../../services/mockDevelopmentWorkflowService';
 import { notesService } from '../../services/notesService';
 import { useToast } from '../../contexts/ToastContext';

@@ -12,6 +12,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import BugReportsAdmin from "../components/admin/BugReportsAdmin";
+import { VersionStorageManageSettingsCard } from "../components/VersionStorageManageSettingsCard";
 
 // ... rest of the interfaces ...
 
@@ -40,7 +41,7 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
   const [clients, setClients] = useState<Worker[]>([]);
   const [stats, setStats] = useState<AdminStats>({ workers: 0, clients: 0, projects: 0, tasks: 0, time_entries: 0, priceLists: 0, pendingChanges: 0 });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"workers" | "clients" | "channels" | "llm" | "pricing" | "approvals" | "offers" | "bugs">("workers");
+  const [activeTab, setActiveTab] = useState<"workers" | "clients" | "channels" | "llm" | "pricing" | "approvals" | "offers" | "bugs" | "version-storage">("workers");
   const [showAddWorker, setShowAddWorker] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
   const [newWorker, setNewWorker] = useState({ username: "", full_name: "", pin: "1234" });
@@ -323,6 +324,16 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
             }`}
           >
             {t("admin.bug_reports")}
+          </button>
+          <button
+            onClick={() => setActiveTab("version-storage")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "version-storage"
+                ? "border-b-2 border-[#ea580c] text-[#ea580c]"
+                : "text-[#858585] hover:text-[#cccccc]"
+            }`}
+          >
+            Version Storage
           </button>
         </div>
 
@@ -806,6 +817,10 @@ export default function AdminDashboard({ uiMode, setUiMode }: { uiMode: string; 
 
         {activeTab === "bugs" && (
           <BugReportsAdmin />
+        )}
+
+        {activeTab === "version-storage" && (
+          <VersionStorageManageSettingsCard appearanceDark={true} />
         )}
       </div>
     </div>
@@ -1539,20 +1554,58 @@ function OffersInvoicesTab() {
   const [items, setItems] = useState<{ name: string; description: string; quantity: number; unit: string; unit_price: number; total: number }[]>([]);
   const [sending, setSending] = useState<string | null>(null);
   const [users, setUsers] = useState<any[]>([]);
+  const [availablePriceLists, setAvailablePriceLists] = useState<any[]>([]);
+  const [templateName, setTemplateName] = useState("");
 
   const h = () => ({ Authorization: `Bearer ${localStorage.getItem("wop_token")}` });
+
+  const handleSaveAsTemplate = async () => {
+    if (!templateName.trim()) return;
+
+    try {
+      const res = await fetch("/api/price-lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...h() },
+        body: JSON.stringify({
+          name: templateName,
+          items_json: JSON.stringify(items.map(i => ({
+            name: i.name,
+            description: i.description,
+            quantity: 1, // For templates, quantity should typically be 1 or a default for estimation
+            unit: i.unit,
+            unit_price: i.unit_price,
+            category: "" // Default category for now
+          }))),
+          active: 1
+        }),
+      });
+      if (res.ok) {
+        setTemplateName(""); // Clear template name input
+        fetchData(); // Refresh price lists to show new template
+        alert("Offer template saved successfully!");
+      } else {
+        const err = await res.json();
+        alert(`Error saving template: ${err.error || "Unknown error"}`);
+      }
+    } catch (e) {
+      console.error("Failed to save template:", e);
+      alert("Failed to save template.");
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [offersRes, invoicesRes, usersRes] = await Promise.all([
+      const [offersRes, invoicesRes, usersRes, priceListsRes] = await Promise.all([
         fetch("/api/offers", { headers: h() }),
         fetch("/api/invoices", { headers: h() }),
         fetch("/api/admin/users", { headers: h() }),
+        fetch("/api/price-lists", { headers: h() }),
       ]);
       if (offersRes.ok) setOffers(await offersRes.json());
       if (invoicesRes.ok) setInvoices(await invoicesRes.json());
       if (usersRes.ok) setUsers(await usersRes.json());
+      if (priceListsRes.ok) setAvailablePriceLists(await priceListsRes.json());
     } catch (e) {
       console.error("Failed to fetch offers/invoices:", e);
     } finally {
@@ -1775,6 +1828,37 @@ function OffersInvoicesTab() {
                 }} className="w-full bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm" />
               </div>
               <div className="col-span-2">
+                <label className="block text-[#999] text-xs mb-1">Load Price List</label>
+                <select
+                  onChange={(e) => {
+                    const selectedList = availablePriceLists.find(pl => pl.id === e.target.value);
+                    if (selectedList) {
+                      try {
+                        const parsedPriceListItems = JSON.parse(selectedList.items_json);
+                        // Appending items from selected price list
+                        setItems(prevItems => [...prevItems, ...parsedPriceListItems.map((i: any) => ({
+                          name: i.name || "",
+                          description: i.description || "",
+                          quantity: 1,
+                          unit: i.unit || "st",
+                          unit_price: i.unit_price || 0,
+                          total: 0
+                        }))]);
+                        // Reset select to default option
+                        e.target.value = "";
+                      } catch (error) {
+                        console.error("Failed to parse price list items_json:", error);
+                      }
+                    }
+                  }}
+                  className="w-full bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm mb-4"
+                  defaultValue="" // Use defaultValue to allow resetting
+                >
+                  <option value="">Select a price list to load items...</option>
+                  {availablePriceLists.map((list: any) => (
+                    <option key={list.id} value={list.id}>{list.name}</option>
+                  ))}
+                </select>
                 <label className="block text-[#999] text-xs mb-1">Items</label>
                 <div className="bg-[#1e1e1e] border border-[#3c3c3c] rounded overflow-hidden">
                   <table className="w-full text-sm">
@@ -1843,7 +1927,21 @@ function OffersInvoicesTab() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 mt-4">
+              <input
+                type="text"
+                placeholder="Template name"
+                value={templateName}
+                onChange={e => setTemplateName(e.target.value)}
+                className="bg-[#1e1e1e] border border-[#3c3c3c] rounded px-3 py-2 text-sm"
+              />
+              <button
+                onClick={handleSaveAsTemplate}
+                disabled={!templateName.trim()}
+                className="px-4 py-2 bg-[#059669] hover:bg-[#047857] rounded text-white text-sm disabled:opacity-50"
+              >
+                Save as Template
+              </button>
               <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-[#3c3c3c] hover:bg-[#4a4a4a] rounded text-sm">{t("common.cancel")}</button>
               <button onClick={saveForm} className="px-4 py-2 bg-[#ea580c] hover:bg-[#d45309] rounded text-white text-sm">{editing ? t("common.save") : t("common.create")}</button>
             </div>

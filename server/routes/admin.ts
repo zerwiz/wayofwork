@@ -53,13 +53,34 @@ export function registerAdminRoutes(router: Router) {
 	router.get("/api/admin/stats", async (_req, _params, auth) => {
 		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
 		try {
+			const isSuperAdmin = auth?.role === "SUPER_ADMIN";
+			const tenantId = auth!.tenantId; // Assured to be present by adminGuard
+
 			const stats = {
-				tenants: (db.query("SELECT COUNT(*) as count FROM tenants").get() as any).count,
-				users: (db.query("SELECT COUNT(*) as count FROM users").get() as any).count,
-				clients: (db.query("SELECT COUNT(*) as count FROM users WHERE role = 'CLIENT'").get() as any).count,
-				projects: (db.query("SELECT COUNT(*) as count FROM projects").get() as any).count,
-				tasks: (db.query("SELECT COUNT(*) as count FROM tasks").get() as any).count,
-				timeEntries: (db.query("SELECT COUNT(*) as count FROM time_entries").get() as any).count,
+				tenants: (db.query(isSuperAdmin ? 
+					`SELECT COUNT(*) as count FROM tenants` : 
+					`SELECT COUNT(*) as count FROM tenants WHERE id = ?`
+				).get(isSuperAdmin ? [] : [tenantId]) as any).count,
+				users: (db.query(isSuperAdmin ? 
+					`SELECT COUNT(*) as count FROM users` : 
+					`SELECT COUNT(*) as count FROM users WHERE tenant_id = ?`
+				).get(isSuperAdmin ? [] : [tenantId]) as any).count,
+				clients: (db.query(isSuperAdmin ? 
+					`SELECT COUNT(*) as count FROM users WHERE role = 'CLIENT'` : 
+					`SELECT COUNT(*) as count FROM users WHERE role = 'CLIENT' AND tenant_id = ?`
+				).get(isSuperAdmin ? [] : [tenantId]) as any).count,
+				projects: (db.query(isSuperAdmin ? 
+					`SELECT COUNT(*) as count FROM projects` : 
+					`SELECT COUNT(*) as count FROM projects WHERE tenant_id = ?`
+				).get(isSuperAdmin ? [] : [tenantId]) as any).count,
+				tasks: (db.query(isSuperAdmin ? 
+					`SELECT COUNT(*) as count FROM tasks` : 
+					`SELECT COUNT(*) as count FROM tasks WHERE tenant_id = ?`
+				).get(isSuperAdmin ? [] : [tenantId]) as any).count,
+				timeEntries: (db.query(isSuperAdmin ? 
+					`SELECT COUNT(*) as count FROM time_entries` : 
+					`SELECT COUNT(*) as count FROM time_entries WHERE tenant_id = ?`
+				).get(isSuperAdmin ? [] : [tenantId]) as any).count,
 				system: {
 					memoryUsage: process.memoryUsage(),
 					uptime: process.uptime(),
@@ -310,7 +331,7 @@ export function registerAdminRoutes(router: Router) {
 		const { channel, channelUserId } = params;
         const sessionKey = `channel-${channel}-${channelUserId}`;
 		try {
-			const messages = await loadWoSessionMessages(sessionKey, channel);
+			const messages = await loadWoSessionMessages(sessionKey, channel, auth!.tenantId);
 			return json(messages);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);

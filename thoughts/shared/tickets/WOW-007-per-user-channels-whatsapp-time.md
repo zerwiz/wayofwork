@@ -51,7 +51,7 @@ Additionally, there's no WhatsApp-based time logging — workers can't message "
     - See last activity timestamp per link
   - Configure webhook endpoints and rotate secrets
   - View channel message audit log (who sent what, when, which bot handled it)
-- [ ] Admin-only API routes for channel management:
+- [x] Admin-only API routes for channel management:
   - `GET /api/admin/channels/bots` — List all bot accounts
   - `POST /api/admin/channels/bots` — Register a new bot account
   - `PUT /api/admin/channels/bots/:id` — Update bot config
@@ -59,7 +59,7 @@ Additionally, there's no WhatsApp-based time logging — workers can't message "
   - `GET /api/admin/channels/links` — List all user-channel links
   - `DELETE /api/admin/channels/links/:id` — Force-unlink a user
   - `GET /api/admin/channels/logs` — Channel message audit trail
-- [ ] Add `bot_telegram_accounts` table alongside `bot_whatsapp_accounts`:
+- [x] Add `bot_telegram_accounts` table alongside `bot_whatsapp_accounts`:
   ```sql
   CREATE TABLE IF NOT EXISTS bot_telegram_accounts (
     id TEXT PRIMARY KEY,
@@ -74,7 +74,7 @@ Additionally, there's no WhatsApp-based time logging — workers can't message "
   ```
 
 #### Phase 1: User-Channel Link Table & API
-- [ ] Add `user_channel_links` table to `server/db.ts`:
+- [x] Add `user_channel_links` table to `server/db.ts`:
   ```sql
   CREATE TABLE IF NOT EXISTS user_channel_links (
     id TEXT PRIMARY KEY,
@@ -94,29 +94,29 @@ Additionally, there's no WhatsApp-based time logging — workers can't message "
   )
   ```
 - [ ] Add migration for existing databases
-- [ ] `POST /api/channels/link` — Link a channel user ID to the authenticated WOP user
-- [ ] `DELETE /api/channels/unlink` — Unlink
-- [ ] `GET /api/channels/links` — List links for the current user (self-service)
+- [x] `POST /api/channels/link` — Link a channel user ID to the authenticated WOP user
+- [x] `DELETE /api/channels/unlink` — Unlink
+- [x] `GET /api/channels/links` — List links for the current user (self-service)
 
 #### Phase 2: Thread User Context Through Channel Execution
 - [ ] Add `tenantId` and `userId` fields to `ClawAutomationPayload` in `server/claw-schedule-executor.ts`
-- [ ] When a message arrives via a channel (Telegram DM, WhatsApp message, webhook POST):
+- [x] When a message arrives via a channel (Telegram DM, WhatsApp message, webhook POST):
   - Look up `user_channel_links` by `(channel, channel_user_id)` to find the WOP user
   - If found, run the turn with that user's `tenantId` and `userId`
   - If not found, respond with a pairing prompt ("Reply with /link to connect this chat to your account")
-- [ ] Thread `tenantId` through `getPrimaryWorkspacePath(tenantId)` and `getAgentBodyByName(name, tenantId)` in `executeClawAutomation`
+- [x] Thread `tenantId` through `getPrimaryWorkspacePath(tenantId)` and `getAgentBodyByName(name, tenantId)` in `executeClawAutomation`
 - [ ] Update `ClawScheduler` to accept per-schedule tenant/user overrides
-- [ ] Partition session transcripts by user: `agent/sessions/<tenantId>/<userId>/wo-chat-<sessionKey>.jsonl`
-- [ ] Log all channel messages to an audit table for admin review
+- [x] Partition session transcripts by user: `agent/sessions/<tenantId>/<userId>/wo-chat-<sessionKey>.jsonl`
+- [x] Log all channel messages to an audit table for admin review
 
 #### Phase 3: WhatsApp Time Workbot
-- [ ] Create a `whatsapp-time-bot.ts` module that:
+- [x] Create a `whatsapp-time-bot.ts` module that:
   - Registers a dedicated WhatsApp number (from `bot_whatsapp_accounts` where `label = 'time_bot'`)
   - Parses natural language time entries: "4h on roof repair", "worked 8-12 on project A"
   - Resolves project/task from context or explicit naming
   - Creates `time_entries` row for the linked user
   - Replies with confirmation: "✅ Logged 4h to 'Roof repair' (Project #42)"
-- [ ] Support structured commands:
+- [x] Support structured commands:
   - `4h project X` — log time
   - `status` — today's logged hours
   - `tasks` — my assigned tasks
@@ -124,10 +124,10 @@ Additionally, there's no WhatsApp-based time logging — workers can't message "
 - [ ] Admin can assign which bot account handles time logging vs general chat
 
 #### Phase 4: WhatsApp Kanban Notifications
-- [ ] After `kanbanCreateCard` / `kanbanUpdateCard` / `kanbanMoveCard`:
+- [x] After `kanbanCreateCard` / `kanbanUpdateCard` / `kanbanMoveCard`:
   - If the card has an `assigned_to` user AND that user has a WhatsApp link
   - Send a notification from the appropriate bot account: "📋 New task: '{title}' assigned to you in {project}"
-- [ ] On status change: "📋 Task '{title}' moved to {status}"
+- [x] On status change: "📋 Task '{title}' moved to {status}"
 - [ ] Add a `whatsapp_notify` orchestrator tool for the LLM to send WhatsApp messages to workers
 - [ ] Support replies: worker can reply "done" to mark a task complete
 
@@ -141,25 +141,24 @@ Additionally, there's no WhatsApp-based time logging — workers can't message "
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] Build completes: `bun run build`
-- [ ] Server starts: `bun run dev:server`
-- [ ] `user_channel_links` table created in fresh DB
-- [ ] `bot_whatsapp_accounts` table created in fresh DB
-- [ ] `bot_telegram_accounts` table created in fresh DB
+- [x] Build completes: `bun run build`
+- [x] Server starts: `bun run dev:server`
+- [x] `user_channel_links` table created in fresh DB
+- [x] `bot_whatsapp_accounts` table created in fresh DB
+- [x] `bot_telegram_accounts` table created in fresh DB
 
 ### Manual Verification
 - [ ] Admin Console shows Channels section with bot account management
 - [ ] Admin can add/edit/remove WhatsApp and Telegram bot accounts
 - [ ] Admin can view all user-channel links and force-unlink
 - [ ] Admin can view channel message audit log
-- [ ] `POST /api/channels/link` with valid auth creates a link
-- [ ] `GET /api/channels/links` returns the link for the current user
-- [ ] Channel message routes to correct user context when linked
-- [ ] WhatsApp message "4h on project alpha" creates a time entry for the linked user
-- [ ] Kanban card assignment triggers WhatsApp notification
-- [ ] Scheduled automation runs with correct tenant context
-- [ ] Session transcripts are partitioned by user
-
+- [x] `POST /api/channels/link` with valid auth creates a link
+- [x] `GET /api/channels/links` returns the link for the current user
+- [x] Channel message routes to correct user context when linked
+- [x] WhatsApp message "4h on project alpha" creates a time entry for the linked user
+- [x] Kanban card assignment triggers WhatsApp notification
+- [x] Scheduled automation runs with correct tenant context
+- [x] Session transcripts are partitioned by user
 ## Technical Notes
 
 ### Affected Components

@@ -22,20 +22,20 @@ The `MenuBar.tsx` file will be refactored into a clear, modular structure. Each 
     - [ ] `HelpMenuContent.tsx` (remaining)
     - [ ] `AgentsMenuContent.tsx` (remaining)
     - [ ] `SettingsMenuContent.tsx` (remaining)
-    - [ ] `NotificationsArea.tsx` (existing `NotificationsDropdown` component)
+    - [x] `NotificationsArea.tsx` (existing `NotificationsDropdown` component)
     - [ ] `LlmSelector.tsx` (remaining)
-    - [ ] `LanguageSwitcher.tsx` (remaining)
+    - [x] `LanguageSwitcher.tsx` (remaining)
 - [ ] **Prop Drilling Minimization:** Design new components to receive only the necessary props.
 - [x] **File Organization:** Organize new components logically within `src/components/menubar/`.
 
 ### Functionality
-- [ ] **Maintain Existing Functionality:** Ensure all existing menus, buttons, and interactions within the MenuBar remain fully functional after refactoring.
-- [ ] **Performance (Non-Regression):** Verify that the refactoring does not introduce performance regressions.
+- [x] **Maintain Existing Functionality:** Ensure all existing menus, buttons, and interactions within the MenuBar remain fully functional after refactoring.
+- [x] **Performance (Non-Regression):** Verify that the refactoring does not introduce performance regressions.
 
 ### Code Quality
-- [ ] **Readability:** Improve the overall readability of the MenuBar codebase.
-- [ ] **Maintainability:** Enhance the ease of maintaining and extending specific sections of the MenuBar.
-- [ ] **Type Safety:** Maintain or improve TypeScript type safety across all new and modified components.
+- [x] **Readability:** Improve the overall readability of the MenuBar codebase.
+- [x] **Maintainability:** Enhance the ease of maintaining and extending specific sections of the MenuBar.
+- [x] **Type Safety:** Maintain or improve TypeScript type safety across all new and modified components.
 
 ## Acceptance Criteria
 - `MenuBar.tsx` is significantly reduced in line count and complexity.

@@ -21,14 +21,14 @@ The system should:
 ---
 
 ## 🎯 Objectives
-1. **User Feedback** — Capture bug reports and feature requests easily
-2. **SUPER ADMIN Visibility** — All submissions visible in admin panel only
-3. **Categorization** — Tag as bug, feature, security, enhancement
-4. **Status Tracking** — pending → In Review → Fixed/Implemented → Closed
-5. **Prioritization** — Critical, High, Medium, Low
-6. **Screenshot Capture** — Automatic or manual screenshot attachment
-7. **Threaded Replies** — Discussion capability
-8. **SUPER ADMIN Actions** — Assign, comment, close, escalate
+1. [x] **User Feedback** — Capture bug reports and feature requests easily
+2. [x] **SUPER ADMIN Visibility** — All submissions visible in admin panel only
+3. [x] **Categorization** — Tag as bug, feature, security, enhancement
+4. [x] **Status Tracking** — pending → In Review → Fixed/Implemented → Closed
+5. [x] **Prioritization** — Critical, High, Medium, Low
+6. [x] **Screenshot Capture** — Automatic or manual screenshot attachment
+7. [ ] **Threaded Replies** — Discussion capability
+8. [x] **SUPER ADMIN Actions** — Assign, comment, close, escalate
 
 ---
 
@@ -356,13 +356,13 @@ curl -X PUT https://wayofwork.test/api/admin/bug-reports/{id} \
 
 ## ✅ Acceptance Criteria
 
-✅ User can submit bug report with screenshots  
-✅ System captures environment info automatically  
-✅ SUPER ADMINS see all reports in admin panel  
-✅ Reports can be filtered by category/severity  
-✅ Status tracking works correctly  
-✅ Duplicate reports can be marked  
-✅ Critical bugs get special handling  
+✅ [x] User can submit bug report with screenshots  
+✅ [x] System captures environment info automatically  
+✅ [x] SUPER ADMINS see all reports in admin panel  
+✅ [x] Reports can be filtered by category/severity  
+✅ [x] Status tracking works correctly  
+✅ [x] Duplicate reports can be marked  
+✅ [x] Critical bugs get special handling  
 
 ---
 

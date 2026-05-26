@@ -20,12 +20,12 @@ export function sanitizeSessionKey(raw: string): string {
 	return t.length > 0 ? t : "session";
 }
 
-export function agentSessionsDir(): string {
-	return join(getWorkspaceRoot(), "agent", "sessions");
+export function agentSessionsDir(tenantId: string = "default"): string {
+	return join(getWorkspaceRoot(tenantId), "agent", "sessions");
 }
 
-export function channelSessionsDir(channel: string): string {
-	return join(agentSessionsDir(), "channel", channel);
+export function channelSessionsDir(channel: string, tenantId: string = "default"): string {
+	return join(agentSessionsDir(tenantId), "channel", channel);
 }
 
 export function woSessionBasename(sessionKey: string, surface?: string): string {
@@ -33,27 +33,27 @@ export function woSessionBasename(sessionKey: string, surface?: string): string 
 	return `${prefix}${sanitizeSessionKey(sessionKey)}.jsonl`;
 }
 
-export function woSessionAbsPath(sessionKey: string, surface?: string): string {
+export function woSessionAbsPath(sessionKey: string, surface?: string, tenantId: string = "default"): string {
 	if (sessionKey.startsWith("channel-")) {
 		const parts = sessionKey.split("-"); // channel-telegram-12345
 		if (parts.length >= 3) {
 			const channel = parts[1];
 			const userId = parts.slice(2).join("-");
-			return join(channelSessionsDir(channel), `${userId}.jsonl`);
+			return join(channelSessionsDir(channel, tenantId), `${userId}.jsonl`);
 		}
 	}
-	return join(agentSessionsDir(), woSessionBasename(sessionKey, surface));
+	return join(agentSessionsDir(tenantId), woSessionBasename(sessionKey, surface));
 }
 
-export async function ensureAgentSessionsDir(sessionKey?: string): Promise<void> {
+export async function ensureAgentSessionsDir(sessionKey?: string, tenantId: string = "default"): Promise<void> {
 	if (sessionKey?.startsWith("channel-")) {
 		const parts = sessionKey.split("-");
 		if (parts.length >= 3) {
-			await mkdir(channelSessionsDir(parts[1]), { recursive: true });
+			await mkdir(channelSessionsDir(parts[1], tenantId), { recursive: true });
 			return;
 		}
 	}
-	await mkdir(agentSessionsDir(), { recursive: true });
+	await mkdir(agentSessionsDir(tenantId), { recursive: true });
 }
 
 export type WoSessionHeader = {
@@ -80,8 +80,8 @@ function trimContent(s: string): string {
 }
 
 /** Read **user** / **assistant** turns in order. */
-export async function loadWoSessionMessages(sessionKey: string, surface: string): Promise<ChatMessage[]> {
-	const abs = woSessionAbsPath(sessionKey, surface);
+export async function loadWoSessionMessages(sessionKey: string, surface: string, tenantId: string = "default"): Promise<ChatMessage[]> {
+	const abs = woSessionAbsPath(sessionKey, surface, tenantId);
 	try {
 		const st = await stat(abs);
 		if (!st.isFile() || st.size > MAX_FILE_BYTES) return [];
@@ -113,6 +113,7 @@ export async function syncWoSessionFile(
 	sessionKey: string,
 	messages: ChatMessage[],
 	surface: string,
+	tenantId: string = "default",
 ): Promise<void> {
 	const key = sanitizeSessionKey(sessionKey);
 	const userAsst: Array<{ role: "user" | "assistant"; content: string }> = [];
@@ -143,16 +144,16 @@ export async function syncWoSessionFile(
 		};
 		lines.push(JSON.stringify(row));
 	}
-	await ensureAgentSessionsDir(key);
-	const abs = woSessionAbsPath(key, surface);
+	await ensureAgentSessionsDir(key, tenantId);
+	const abs = woSessionAbsPath(key, surface, tenantId);
 	const tmp = `${abs}.tmp`;
 	const body = `${lines.join("\n")}\n`;
 	await writeFile(tmp, body, "utf8");
 	await rename(tmp, abs);
 }
 
-async function ensureSessionHeaderExists(sessionKey: string, surface: string): Promise<void> {
-	const abs = woSessionAbsPath(sessionKey, surface);
+async function ensureSessionHeaderExists(sessionKey: string, surface: string, tenantId: string = "default"): Promise<void> {
+	const abs = woSessionAbsPath(sessionKey, surface, tenantId);
 	if (!existsSync(abs)) {
 		const key = sanitizeSessionKey(sessionKey);
 		const header: WoSessionHeader = {
@@ -163,7 +164,7 @@ async function ensureSessionHeaderExists(sessionKey: string, surface: string): P
 			createdAt: new Date().toISOString(),
 			engine: "wo-bun-chat",
 		};
-		await ensureAgentSessionsDir(key);
+		await ensureAgentSessionsDir(key, tenantId);
 		await writeFile(abs, `${JSON.stringify(header)}\n`, "utf8");
 	}
 }
@@ -174,10 +175,11 @@ export async function appendWoSessionMessage(
 	role: "user" | "assistant",
 	content: string,
 	surface: string,
+	tenantId: string = "default",
 ): Promise<void> {
 	const key = sanitizeSessionKey(sessionKey);
-	await ensureSessionHeaderExists(key, surface);
-	const abs = woSessionAbsPath(key, surface);
+	await ensureSessionHeaderExists(key, surface, tenantId);
+	const abs = woSessionAbsPath(key, surface, tenantId);
 	const row: WoMessageLine = {
 		type: "message",
 		message: {

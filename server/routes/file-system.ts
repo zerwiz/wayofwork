@@ -14,6 +14,7 @@ import { buildWorkspaceTree } from "../tree";
 import { broadcastToolLog } from "../tool-log-broadcast";
 import { workspaceSwitchAllowed, getFrozenInitialWorkspacePath, listWorkspaceFolders } from "../workspace-state";
 import type { Router } from "../router";
+import { db, createResourcePermission } from "../db";
 
 export function registerFileSystemRoutes(router: Router) {
 	router.get("/api/tree", async (_req, _params, auth) => {
@@ -66,15 +67,15 @@ export function registerFileSystemRoutes(router: Router) {
 			const imageMime = imageMimeFromPath(readRel);
 			if (imageMime) {
 				const buf = await readFile(abs);
-				broadcastToolLog("INFO", "read", `read ${readRel} (image, ${buf.length} bytes)`);
+				broadcastToolLog("INFO", "read", `read ${readRel} (image, ${buf.length} bytes)`, auth.tenantId);
 				return json({ path: readRel, encoding: "base64", mimeType: imageMime, content: buf.toString("base64") });
 			}
 			const buf = await readFile(abs);
 			if (buf.includes(0)) {
-				broadcastToolLog("INFO", "read", `read ${readRel} (binary, ${buf.length} bytes)`);
+				broadcastToolLog("INFO", "read", `read ${readRel} (binary, ${buf.length} bytes)`, auth.tenantId);
 				return json({ path: readRel, encoding: "base64", mimeType: "application/octet-stream", content: buf.toString("base64") });
 			}
-			broadcastToolLog("INFO", "read", `read ${readRel} (${buf.length} chars utf8)`);
+			broadcastToolLog("INFO", "read", `read ${readRel} (${buf.length} chars utf8)`, auth.tenantId);
 			return json({ path: readRel, content: buf.toString("utf8") });
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
@@ -105,11 +106,11 @@ export function registerFileSystemRoutes(router: Router) {
 				}
 				if (buf.length > MAX_FILE_BYTES) return json({ error: "Content too large" }, 413);
 				await writeFile(abs, buf);
-				broadcastToolLog("INFO", "write", `write ${rel} (binary, ${buf.length} bytes)`);
+				broadcastToolLog("INFO", "write", `write ${rel} (binary, ${buf.length} bytes)`, auth.tenantId);
 			} else {
 				if (Buffer.byteLength(raw, "utf8") > MAX_FILE_BYTES) return json({ error: "Content too large" }, 413);
 				await writeFile(abs, raw, "utf8");
-				broadcastToolLog("INFO", "write", `write ${rel} (${Buffer.byteLength(raw, "utf8")} bytes utf8)`);
+				broadcastToolLog("INFO", "write", `write ${rel} (${Buffer.byteLength(raw, "utf8")} bytes utf8)`, auth.tenantId);
 			}
 			return json({ ok: true, path: rel });
 		} catch (e) {
@@ -163,7 +164,7 @@ export function registerFileSystemRoutes(router: Router) {
 		if (existsSync(destAbs)) return json({ error: "A file with that name already exists in the target folder" }, 409);
 		try {
 			await rename(fromAbs, destAbs);
-			broadcastToolLog("INFO", "mv", `mv ${fromRel} → ${destRel}`);
+			broadcastToolLog("INFO", "mv", `mv ${fromRel} → ${destRel}`, auth.tenantId);
 			return json({ ok: true, to: destRel });
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
@@ -189,11 +190,11 @@ export function registerFileSystemRoutes(router: Router) {
 		try {
 			if (kind === "dir") {
 				await mkdir(abs, { recursive: true });
-				broadcastToolLog("INFO", "mkdir", `mkdir ${rel}`);
+				broadcastToolLog("INFO", "mkdir", `mkdir ${rel}`, auth.tenantId);
 			} else {
 				await mkdir(dirname(abs), { recursive: true });
 				await writeFile(abs, "", "utf8");
-				broadcastToolLog("INFO", "write", `touch ${rel}`);
+				broadcastToolLog("INFO", "write", `touch ${rel}`, auth.tenantId);
 			}
 			return json({ ok: true, path: rel });
 		} catch (e) {
@@ -216,7 +217,7 @@ export function registerFileSystemRoutes(router: Router) {
 		if (!abs) return json({ error: "Invalid path" }, 400);
 		try {
 			await rm(abs, { recursive: true, force: true });
-			broadcastToolLog("INFO", "rm", `rm ${rel}`);
+			broadcastToolLog("INFO", "rm", `rm ${rel}`, auth.tenantId);
 			return json({ ok: true as const, path: rel });
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);

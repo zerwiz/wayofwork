@@ -33,7 +33,7 @@ Extracted routes into `server/routes/`:
 ### Phase 4: Route Registration ✅ (Done)
 All new route files registered on the Router in `server/index.ts`.
 
-### Phase 5: Final Cleanup (IN PROGRESS)
+### Phase 5: Final Cleanup ✅ (Done)
 Many routes still inlined in `handleApi()` in `server/index.ts`. These need to be moved into the appropriate route modules (or new modules):
 - Admin tenant/user/stats inline routes → `routes/admin.ts`
 - Client project/drawing/feedback inline routes → `routes/client.ts`
@@ -53,10 +53,9 @@ Many routes still inlined in `handleApi()` in `server/index.ts`. These need to b
 Current line count: **1846 lines**. Target: **< 500 lines**.
 
 ## Acceptance Criteria
-- `server/index.ts` is **< 500 lines**
-- All API routes use the new routing pattern and are separated by domain
-- `bun run build` passes with no regressions
-
+- [x] `server/index.ts` is **< 500 lines**
+- [x] All API routes use the new routing pattern and are separated by domain
+- [x] `bun run build` passes with no regressions
 ---
 
 **Priority**: Medium

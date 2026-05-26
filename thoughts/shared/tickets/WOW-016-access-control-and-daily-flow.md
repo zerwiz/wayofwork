@@ -48,7 +48,7 @@ A secure, role-isolated platform where:
 
 The single most critical missing piece. Without this, NO access control is possible.
 
-- [ ] Create `project_members` table:
+- [x] Create `project_members` table:
   ```sql
   CREATE TABLE project_members (
     id TEXT PRIMARY KEY,
@@ -64,52 +64,49 @@ The single most critical missing piece. Without this, NO access control is possi
     UNIQUE(project_id, user_id)
   );
   ```
-- [ ] Create API endpoints:
+- [x] Create API endpoints:
   - `POST /api/projects/:id/members` — Add member (ADMIN only)
   - `DELETE /api/projects/:id/members/:userId` — Remove member (ADMIN only)
   - `GET /api/projects/:id/members` — List members (ADMIN, LEADER)
   - `GET /api/projects/mine` — List projects where current user is a member
-- [ ] Migrate all existing project queries to filter by membership:
+- [x] Migrate all existing project queries to filter by membership:
   - `GET /api/projects` → if WORKER, only return projects where user is member
   - `GET /api/portal/tasks` → if WORKER, only return tasks in member projects
   - `GET /api/projects/:id` → verify membership (or ADMIN bypass)
-- [ ] Frontend: Wire up `BoardMembers.tsx` to real API (currently returns `[]`)
-- [ ] Frontend: "My Projects" view for workers that only shows their assigned boards
-- [ ] Seed migration: Add all existing users as members of all existing projects in their tenant (backwards compat)
+- [x] Frontend: Wire up `BoardMembers.tsx` to real API (currently returns `[]`)
+- [x] Frontend: "My Projects" view for workers that only shows their assigned boards
+- [x] Seed migration: Add all existing users as members of all existing projects in their tenant (backwards compat)
 
 ### Phase 2: Role-Based Data Isolation
 
 #### Economics Shield
 
-- [ ] Audit ALL API endpoints for economics data exposure:
+- [x] Audit ALL API endpoints for economics data exposure:
   - `GET /api/projects/:id` — Strip `budget_allocated` for non-ADMIN
   - `GET /api/portal/tasks` — Strip `estimated_hours * hourly_rate` calculations
   - `GET /api/price-lists` — BLOCK for non-ADMIN (403)
   - `GET /api/offers` — BLOCK for non-ADMIN
   - `GET /api/invoices` — BLOCK for non-ADMIN
   - `GET /api/admin/stats` — BLOCK for non-ADMIN
-- [ ] Create `isEconomicsRoute(path)` helper that returns 403 for WORKER/LEADER
-- [ ] Create `stripEconomicsData(obj)` helper that removes budget/cost/price fields
-- [ ] Add `SUPER_ADMIN` bypass for cross-tenant economics access
-- [ ] Agent level: Add economics isolation to ALL agent system prompts
-- [ ] Agent level: When agent queries data for a WORKER user, NEVER include project budget, price lists, costs
-
+- [x] Create `isEconomicsRoute(path)` helper that returns 403 for WORKER/LEADER
+- [x] Create `stripEconomicsData(obj)` helper that removes budget/cost/price fields
+- [x] Add `SUPER_ADMIN` bypass for cross-tenant economics access
+- [x] Agent level: Add economics isolation to ALL agent system prompts
+- [x] Agent level: When agent queries data for a WORKER user, NEVER include project budget, price lists, costs
 #### Worker Data Isolation
 
-- [ ] `GET /api/portal/tasks` — WORKER sees ONLY tasks WHERE `assigned_to = auth.userId`
-- [ ] `GET /api/time_entries` — WORKER sees ONLY their own entries
-- [ ] `GET /api/time_blocks` — WORKER sees ONLY their own blocks
-- [ ] `GET /api/projects` — WORKER sees ONLY projects where they are a member (via Phase 1)
-- [ ] `GET /api/portal/time` — WORKER sees ONLY their own time
-- [ ] All list endpoints: Add `auth.role === 'WORKER' ? user_id = auth.userId` filter
-
+- [x] `GET /api/portal/tasks` — WORKER sees ONLY tasks WHERE `assigned_to = auth.userId`
+- [x] `GET /api/time_entries` — WORKER sees ONLY their own entries
+- [x] `GET /api/time_blocks` — WORKER sees ONLY their own blocks
+- [x] `GET /api/projects` — WORKER sees ONLY projects where they are a member (via Phase 1)
+- [x] `GET /api/portal/time` — WORKER sees ONLY their own time
+- [x] All list endpoints: Add `auth.role === 'WORKER' ? user_id = auth.userId` filter
 #### Leader Scope
 
-- [ ] `LEADER` sees: All tasks/projects in their tenant (but NO economics)
-- [ ] `LEADER` sees: All workers' time entries for their projects
-- [ ] `LEADER` can: Assign tasks, update status, review time
-- [ ] `LEADER` cannot: Access price lists, offers, invoices, budgets
-
+- [x] `LEADER` sees: All tasks/projects in their tenant (but NO economics)
+- [x] `LEADER` sees: All workers' time entries for their projects
+- [x] `LEADER` can: Assign tasks, update status, review time
+- [x] `LEADER` cannot: Access price lists, offers, invoices, budgets
 ### Phase 3: Per-User Channel Session Persistence [DONE]
 
 Currently, Telegram bot processes each message independently with no session continuity. This means:
@@ -154,7 +151,7 @@ function handleInboundChannelMessage(channel, channelUserId, text):
   - Each bot runs independently with its own `lastUpdateId`
   - Bot registration uses the bot's actual tenant from `bot_telegram_accounts`
 - [x] Remove hardcoded `tenant_id = 'default'` in bot registration (synced env token uses 'default', others use provided tenant)
-- [ ] Webhook mode: Each bot gets its own webhook URL: `/api/channels/telegram/webhook/:botId`
+- [x] Webhook mode: Each bot gets its own webhook URL: `/api/channels/telegram/webhook/:botId`
 - [ ] Admin Console: "Channel Bots" tab showing all bots with status (online/offline)
 - [x] WhatsApp: Support multiple business accounts (API and DB table implemented)
 
@@ -284,51 +281,48 @@ This is the end-to-end workflow the system now supports via automated schedules:
 
 ### Frontend Changes
 
-- [ ] **BoardMembers.tsx**: Wire to real `POST /api/projects/:id/members` API
-- [ ] **Project list**: For WORKER role, show only "My Projects" (filtered by membership)
-- [ ] **Task list**: For WORKER role, show only assigned tasks
-- [ ] **Economics tabs**: Hide "Prislistor", "Offert", "Faktura" from non-ADMIN users
-- [ ] **Time entries**: For WORKER, show only own entries
-- [ ] **Admin Dashboard**: Show ECONOMICS only for ADMIN users
-- [ ] **Worker Portal**: No economics data AT ALL — only tasks, time, schedule
+- [x] **BoardMembers.tsx**: Wire to real `POST /api/projects/:id/members` API
+- [x] **Project list**: For WORKER role, show only "My Projects" (filtered by membership)
+- [x] **Task list**: For WORKER role, show only assigned tasks
+- [x] **Economics tabs**: Hide "Prislistor", "Offert", "Faktura" from non-ADMIN users
+- [x] **Time entries**: For WORKER, show only own entries
+- [x] **Admin Dashboard**: Show ECONOMICS only for ADMIN users
+- [x] **Worker Portal**: No economics data AT ALL — only tasks, time, schedule
 - [ ] **Channel Bots Admin UI**: Manage Telegram/WhatsApp bots per tenant
-
 ### Database Schema Changes
 
-- [ ] Add `project_members` table (see Phase 1)
-- [ ] Create actual `audit_logs` table (exists in schema.sql, missing in db.ts)
-- [ ] Fix schema drift: add missing columns to `tasks` in db.ts (`kanban_card_id`, `kanban_board_id`, `actual_hours`)
+- [x] Add `project_members` table (see Phase 1)
+- [x] Create actual `audit_logs` table (exists in schema.sql, missing in db.ts)
+- [x] Fix schema drift: add missing columns to `tasks` in db.ts (`kanban_card_id`, `kanban_board_id`, `actual_hours`)
 - [ ] Add `budget_allocated` and `budget_spent` to `projects` in db.ts (exist in schema.sql)
-- [ ] Add index on `tasks(assigned_to)` for worker queries
-- [ ] Add index on `project_members(project_id, user_id)` for membership lookups
-
+- [x] Add index on `tasks(assigned_to)` for worker queries
+- [x] Add index on `project_members(project_id, user_id)` for membership lookups
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] Build completes: `bun run build`
+- [x] Build completes: `bun run build`
 
 ### Security Verification
-- [ ] WORKER calls `GET /api/price-lists` → 403 Forbidden
-- [ ] WORKER calls `GET /api/offers` → 403 Forbidden
-- [ ] WORKER calls `GET /api/projects` → ONLY member projects returned
-- [ ] WORKER calls `GET /api/portal/tasks` → ONLY assigned tasks returned
-- [ ] WORKER views another worker's time via bot → "Cannot view other users' data"
-- [ ] LEADER calls `GET /api/price-lists` → 403 Forbidden
-- [ ] LEADER can view all team tasks (no economics)
-- [ ] ADMIN can view everything including economics
-- [ ] Unlinked Telegram user messages bot → "Link your account" message
-- [ ] Linked Telegram user → session persists across messages
+- [x] WORKER calls `GET /api/price-lists` → 403 Forbidden
+- [x] WORKER calls `GET /api/offers` → 403 Forbidden
+- [x] WORKER calls `GET /api/projects` → ONLY member projects returned
+- [x] WORKER calls `GET /api/portal/tasks` → ONLY assigned tasks returned
+- [x] WORKER views another worker's time via bot → "Cannot view other users' data"
+- [x] LEADER calls `GET /api/price-lists` → 403 Forbidden
+- [x] LEADER can view all team tasks (no economics)
+- [x] ADMIN can view everything including economics
+- [x] Unlinked Telegram user messages bot → "Link your account" message
+- [x] Linked Telegram user → session persists across messages
 
 ### Workflow Verification
-- [ ] Admin creates project + adds members → members see project
-- [ ] Admin assigns worker to card → worker sees card in their view
-- [ ] Morning dispatch sends personalized messages to each worker
-- [ ] Worker "4.5h on [card]" via Telegram → time entry created
-- [ ] Worker "Done with [card]" → status changes, admin notified
-- [ ] Evening variance report generated
-- [ ] Admin approves next day's schedule
-- [ ] Next morning dispatch uses approved schedule
-
+- [x] Admin creates project + adds members → members see project
+- [x] Admin assigns worker to card → worker sees card in their view
+- [x] Morning dispatch sends personalized messages to each worker
+- [x] Worker "4.5h on [card]" via Telegram → time entry created
+- [x] Worker "Done with [card]" → status changes, admin notified
+- [x] Evening variance report generated
+- [x] Admin approves next day's schedule
+- [x] Next morning dispatch uses approved schedule
 ## Architectural Notes
 
 ### Agent→Skill→Surface Mapping (Definitive)

@@ -27,14 +27,14 @@ A generic `pending_changes` system where AI only creates **suggestions/drafts**.
 ## Requirements
 
 ### Functional Requirements
-- [ ] `pending_changes` DB table: tenant_id, change_type, status (pending/approved/rejected), proposed_data (JSON), current_data (JSON), summary, suggested_by, approved_by, approved_at
-- [ ] `POST /api/pending-changes` — AI creates a suggestion (status: pending)
-- [ ] `GET /api/admin/pending-changes` — Admin sees all pending suggestions
-- [ ] `POST /api/admin/pending-changes/:id/approve` — Admin approves → data written to live table
-- [ ] `POST /api/admin/pending-changes/:id/reject` — Admin rejects with reason
-- [ ] Admin Console tab "Approval Queue" with diff view (before/after)
-- [ ] Price list API changed: AI can only create pending_changes, not update directly
-- [ ] Planning, schedules, batch messages use the same mechanism
+- [x] `pending_changes` DB table: tenant_id, change_type, status (pending/approved/rejected), proposed_data (JSON), current_data (JSON), summary, suggested_by, approved_by, approved_at
+- [x] `POST /api/pending-changes` — AI creates a suggestion (status: pending)
+- [x] `GET /api/admin/pending-changes` — Admin sees all pending suggestions
+- [x] `POST /api/admin/pending-changes/:id/approve` — Admin approves → data written to live table
+- [x] `POST /api/admin/pending-changes/:id/reject` — Admin rejects with reason
+- [x] Admin Console tab "Approval Queue" with diff view (before/after)
+- [x] Price list API changed: AI can only create pending_changes, not update directly
+- [x] Planning, schedules, batch messages use the same mechanism
 
 ### Out of Scope
 - Automatic approval based on rules — future
@@ -44,16 +44,15 @@ A generic `pending_changes` system where AI only creates **suggestions/drafts**.
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] Build completes: `bun run build`
+- [x] Build completes: `bun run build`
 
 ### Manual Verification
-- [ ] AI suggests price change → visible in admin queue as "pending"
-- [ ] Admin sees diff: "Excavator: 700 → 750 SEK/h"
-- [ ] Admin clicks Approve → price list updated
-- [ ] Admin clicks Reject → no change, status becomes "rejected"
-- [ ] All agents (`forskare`, `projektledare`, `fakturering`) instructed to only create suggestions
-- [ ] Existing `PUT /api/price-lists/:id` requires admin role (not agent)
-
+- [x] AI suggests price change → visible in admin queue as "pending"
+- [x] Admin sees diff: "Excavator: 700 → 750 SEK/h"
+- [x] Admin clicks Approve → price list updated
+- [x] Admin clicks Reject → no change, status becomes "rejected"
+- [x] All agents (`forskare`, `projektledare`, `fakturering`) instructed to only create suggestions
+- [x] Existing `PUT /api/price-lists/:id` requires admin role (not agent)
 ## Technical Notes
 
 ### Architecture

@@ -15,17 +15,16 @@ A set of miscellaneous tasks is listed in `TODO.md`, spanning multi-tenancy audi
 - [x] **Multi-Tenancy Audit**: Verify Tenant A → Tenant B data isolation in key endpoints (projects, tickets, price lists). 
     - *Note*: Confirmed isolation for `projects` table using cross-tenant database audit script.
 - [ ] **Agent Integration Test**: Create a test script to verify Wo Agent tools access real DB endpoints.
-- [ ] **WOW-008 Verification**: Manually trigger `projektledare` agent to read price lists and estimate project cost.
-- [ ] **WOW-009 Verification**: End-to-end test of offer/invoice sending via TG/WA (use mock channel/log).
+- [x] **WOW-008 Verification**: Manually trigger `projektledare` agent to read price lists and estimate project cost.
+- [x] **WOW-009 Verification**: End-to-end test of offer/invoice sending via TG/WA (use mock channel/log).
 - [x] **Claw Workspace Onboarding**: Implement logic to detect if the Claw workspace (SOUL.md, AGENTS.md, etc.) is missing. If missing, automatically trigger the onboarding modal to prompt the user to initialize the workspace.
 
 ## Acceptance Criteria
 ### Manual Verification
 - [x] Multi-tenancy isolation confirmed for projects.
 - [ ] Agent integration tests pass using a test script.
-- [ ] `projektledare` reads price lists successfully.
-- [ ] Offer/invoice sending triggered and logged successfully.
-
+- [x] `projektledare` reads price lists successfully.
+- [x] Offer/invoice sending triggered and logged successfully.
 ## Technical Notes
 ### Test Plan
 1. **Multi-tenancy**: Use two different `WOP_AUTH_SECRET` or login tokens for Tenant A and Tenant B, attempt to access Tenant A's projects with Tenant B's token.

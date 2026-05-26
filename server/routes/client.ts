@@ -34,10 +34,10 @@ export function registerClientRoutes(router: Router) {
 				.get(projectId, auth.tenantId) as any;
 			if (!project) return json({ error: "Project not found" }, 404);
 
-			const tasks = db.query("SELECT * FROM tasks WHERE project_id = ?").all(projectId) as any[];
+			const tasks = db.query("SELECT * FROM tasks WHERE project_id = ? AND tenant_id = ?").all(projectId, auth.tenantId) as any[];
 			const totalTasks = tasks.length;
 			const completedTasks = tasks.filter(t => t.status === 'done').length;
-			const totalHours = (db.query("SELECT SUM(hours) as total FROM time_entries WHERE project_id = ?").get(projectId) as any)?.total || 0;
+			const totalHours = (db.query("SELECT SUM(hours) as total FROM time_entries WHERE project_id = ? AND tenant_id = ?").get(projectId, auth.tenantId) as any)?.total || 0;
 
 			const resp: any = {
 				project: project.name,

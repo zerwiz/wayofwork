@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } fr
 import type { PiModelConfigPath } from "../constants/piModelConfigPaths";
 import { PI_MODEL_CONFIG_ENTRIES } from "../constants/piModelConfigPaths";
 import { apiGet, apiPostJson, apiPutJson } from "../api/client";
-import { GithubManageSettingsCard } from "./GithubManageSettingsCard";
+import { VersionStorageManageSettingsCard } from "./VersionStorageManageSettingsCard";
 import type { ServerConfig } from "../hooks/useServerConfig";
 import { useWebManifest } from "../hooks/useWebManifest";
 import { TerminalSettingsSection } from "./TerminalSettingsSection";
@@ -934,7 +934,7 @@ export function SettingsSidePanel({
 				<div className="mb-2 text-[10px] font-bold uppercase text-[#858585]">Workspace</div>
 				<div className="mb-4 break-all text-[#9cdcfe]">{workspaceRoot || "—"}</div>
 				<div className="mb-4">
-					<GithubManageSettingsCard appearanceDark compact />
+					<VersionStorageManageSettingsCard appearanceDark compact />
 				</div>
 				<TerminalSettingsSection config={config} compact />
 				<div className="mb-2 mt-4 text-[10px] font-bold uppercase text-[#858585]">LLM (server)</div>

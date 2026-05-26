@@ -23,13 +23,13 @@ Construction companies need to base offers on real unit prices. Without this, al
 ## Requirements
 
 ### Functional Requirements
-- [ ] Admin can create price lists with name + validity dates in Admin Console
-- [ ] Admin can add/remove/edit line items (name, unit, unit_price, category) per price list
-- [ ] Active price lists are visible in the stats overview (count)
-- [ ] Price lists are tenant-isolated per the existing multi-tenant model
-- [ ] `projektledare` agent can read price lists and use them for cost calculations
-- [ ] `projektledare` agent references both `project-pricing` and `time-calculation` skills
-- [ ] Time calculation skill includes standard Swedish time-per-unit tables
+- [x] Admin can create price lists with name + validity dates in Admin Console
+- [x] Admin can add/remove/edit line items (name, unit, unit_price, category) per price list
+- [x] Active price lists are visible in the stats overview (count)
+- [x] Price lists are tenant-isolated per the existing multi-tenant model
+- [x] `projektledare` agent can read price lists and use them for cost calculations
+- [x] `projektledare` agent references both `project-pricing` and `time-calculation` skills
+- [x] Time calculation skill includes standard Swedish time-per-unit tables
 
 ### Out of Scope
 - Actual project cost calculation engine (API route to compute offer from list + quantities) — future
@@ -39,18 +39,17 @@ Construction companies need to base offers on real unit prices. Without this, al
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] Build completes: `bun run build`
+- [x] Build completes: `bun run build`
 
 ### Manual Verification
-- [ ] Login as admin → Admin Console → "Prislistor" tab visible
-- [ ] Can create a new price list with name
-- [ ] Can add items with name, unit, unit_price, category
-- [ ] Can edit existing items inline
-- [ ] Can remove individual items
-- [ ] Can delete (deactivate) entire price list
-- [ ] Stats card shows Price Lists count
-- [ ] Price list data persists in SQLite `price_lists` table
-
+- [x] Login as admin → Admin Console → "Prislistor" tab visible
+- [x] Can create a new price list with name
+- [x] Can add items with name, unit, unit_price, category
+- [x] Can edit existing items inline
+- [x] Can remove individual items
+- [x] Can delete (deactivate) entire price list
+- [x] Stats card shows Price Lists count
+- [x] Price list data persists in SQLite `price_lists` table
 ## Technical Notes
 
 ### What Was Implemented

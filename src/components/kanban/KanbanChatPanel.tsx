@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Square, MessageSquare, X } from "lucide-react";
 import { useWayOfWorkSession } from "../../hooks/useWayOfWorkSession";
+import { useTranslation } from "../../contexts/LanguageContext";
 
 interface KanbanChatPanelProps {
   open: boolean;
@@ -8,6 +9,7 @@ interface KanbanChatPanelProps {
 }
 
 export default function KanbanChatPanel({ open, onToggle }: KanbanChatPanelProps) {
+  const { t } = useTranslation();
   const {
     rows,
     streaming,
@@ -52,12 +54,12 @@ export default function KanbanChatPanel({ open, onToggle }: KanbanChatPanelProps
       <div className="flex items-center justify-between border-b border-[#333333] bg-[#252526] px-3 py-2">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-orange-500" />
-          <span className="text-sm font-semibold text-[#cccccc]">Kanban Chat</span>
+          <span className="text-sm font-semibold text-[#cccccc]">{t("kanban.kanbanChat")}</span>
         </div>
         <button
           onClick={onToggle}
           className="rounded p-1 text-[#858585] hover:bg-[#3c3c3c] hover:text-[#cccccc]"
-          title="Close chat"
+          title={t("common.closeChat")}
         >
           <X className="h-4 w-4" />
         </button>
@@ -66,10 +68,10 @@ export default function KanbanChatPanel({ open, onToggle }: KanbanChatPanelProps
       <div className="flex-1 overflow-y-auto p-3">
         {rows.length === 0 ? (
           <div className="mt-8 text-center text-sm text-[#6e6e6e]">
-            <p>Ask about boards, cards,</p>
-            <p>time tracking, or workers.</p>
+            <p>{t("kanban.askAboutBoardsCards")}</p>
+            <p>{t("kanban.timeTrackingOrWorkers")}</p>
             <p className="mt-4 text-xs text-[#858585]">
-              {connected ? "Connected" : "Connecting..."}
+              {connected ? t("common.connected") : t("common.connecting")}
             </p>
           </div>
         ) : (
@@ -84,11 +86,11 @@ export default function KanbanChatPanel({ open, onToggle }: KanbanChatPanelProps
                 }`}
               >
                 <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#858585]">
-                  {row.role === "user" ? "You" : row.assistantPersona ?? "Kanban"}
+                  {row.role === "user" ? t("chat.user") : row.assistantPersona ?? t("kanban.kanban")}
                 </div>
                 {row.reasoning?.trim() ? (
                   <div className="mb-2 rounded border border-[#6366f1]/30 bg-[#1e1b4b]/35 p-2">
-                    <div className="mb-0.5 text-[9px] uppercase tracking-wide text-[#a5b4fc]">Thinking</div>
+                    <div className="mb-0.5 text-[9px] uppercase tracking-wide text-[#a5b4fc]">{t("chat.thinking")}</div>
                     <div className="whitespace-pre-wrap text-[11px] leading-relaxed text-[#c7d2fe]">{row.reasoning}</div>
                   </div>
                 ) : null}
@@ -105,7 +107,7 @@ export default function KanbanChatPanel({ open, onToggle }: KanbanChatPanelProps
       <div className="shrink-0 border-t border-[#333333] bg-[#252526] p-3">
         {!connected ? (
           <div className="text-center text-xs text-[#858585]">
-            Connecting to server...
+            {t("chat.connectingToServer")}
           </div>
         ) : (
           <div className="flex flex-col gap-2">
@@ -113,21 +115,21 @@ export default function KanbanChatPanel({ open, onToggle }: KanbanChatPanelProps
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about boards, cards..."
+              placeholder={t("kanban.askAboutBoardsCardsPlaceholder")}
               rows={2}
               className="w-full resize-none rounded-lg border border-[#3c3c3c] bg-[#1e1e1e] px-3 py-2 text-[13px] text-[#cccccc] placeholder-[#858585] focus:outline-none focus:border-orange-500"
               disabled={streaming}
             />
             <div className="flex items-center justify-between">
               <span className="text-[10px] text-[#858585]">
-                {streaming ? "Generating..." : "Ready"}
+                {streaming ? t("common.generating") : t("common.ready")}
               </span>
               {streaming ? (
                 <button
                   onClick={stop}
                   className="flex items-center gap-1 rounded bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
                 >
-                  <Square className="h-3 w-3" /> Stop
+                  <Square className="h-3 w-3" /> {t("common.stop")}
                 </button>
               ) : (
                 <button
@@ -135,7 +137,7 @@ export default function KanbanChatPanel({ open, onToggle }: KanbanChatPanelProps
                   disabled={!input.trim()}
                   className="flex items-center gap-1 rounded bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-700 disabled:bg-[#3c3c3c] disabled:text-[#666666]"
                 >
-                  <Send className="h-3 w-3" /> Send
+                  <Send className="h-3 w-3" /> {t("common.send")}
                 </button>
               )}
             </div>

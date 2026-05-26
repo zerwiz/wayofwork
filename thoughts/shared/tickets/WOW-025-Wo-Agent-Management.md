@@ -26,10 +26,9 @@ The current system retains references to "Pi" agents and their `.pi/agents` conf
 - [x] **Configuration UI:** Update `TechnicalSidePanels` and `HostDoctorModal` to correctly locate and manage `.wo/` configuration files.
 
 ## Acceptance Criteria
-- "My AI Team" tab in Simple mode correctly lists available "Wo" agents.
-- Creating a new agent or team functions as expected for "Wo" agents.
-- No visible "Pi" agent terminology in the agent management UI.
-
+- [x] "My AI Team" tab in Simple mode correctly lists available "Wo" agents.
+- [x] Creating a new agent or team functions as expected for "Wo" agents.
+- [x] No visible "Pi" agent terminology in the agent management UI.
 ## Meta
 **Created**: 2026-05-23
 **Priority**: High

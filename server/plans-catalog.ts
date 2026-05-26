@@ -40,11 +40,11 @@ async function readPlanTodoCounts(absPath: string): Promise<{ openTodos: number;
 	}
 }
 
-export async function listPlansCatalog(): Promise<{
+export async function listPlansCatalog(tenantId: string): Promise<{
 	files: PlansCatalogFile[];
 	latest: PlansCatalogLatest | null;
 }> {
-	const root = getWorkspaceRoot();
+	const root = getWorkspaceRoot(tenantId);
 	const dir = join(root, "plans");
 	if (!existsSync(dir)) {
 		return { files: [], latest: null };

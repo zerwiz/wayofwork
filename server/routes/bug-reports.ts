@@ -12,12 +12,26 @@ export function registerBugReportRoutes(router: Router) {
 	router.get("/api/admin/bug-reports", async (_req, _params, auth) => {
 		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
 		try {
-			const reports = db.query(`
-				SELECT br.*, COALESCE(u.full_name, u.username, br.username) as submitter_name
-				FROM bug_reports br
-				LEFT JOIN users u ON br.user_id = u.id
-				ORDER BY br.created_at DESC
-			`).all() as any[];
+			const isSuperAdmin = auth?.role === "SUPER_ADMIN";
+			const tenantId = auth!.tenantId;
+
+			let reports;
+			if (isSuperAdmin) {
+				reports = db.query(`
+					SELECT br.*, COALESCE(u.full_name, u.username, br.username) as submitter_name
+					FROM bug_reports br
+					LEFT JOIN users u ON br.user_id = u.id
+					ORDER BY br.created_at DESC
+				`).all() as any[];
+			} else {
+				reports = db.query(`
+					SELECT br.*, COALESCE(u.full_name, u.username, br.username) as submitter_name
+					FROM bug_reports br
+					LEFT JOIN users u ON br.user_id = u.id
+					WHERE br.tenant_id = ?
+					ORDER BY br.created_at DESC
+				`).all(tenantId) as any[];
+			}
 			return json(reports);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
@@ -28,12 +42,26 @@ export function registerBugReportRoutes(router: Router) {
 	// GET /api/admin/bug-reports/:id — single report detail
 	router.get("/api/admin/bug-reports/:id", async (_req, params, auth) => {
 		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
-		const row = db.query(`
-			SELECT br.*, COALESCE(u.full_name, u.username, br.username) as submitter_name
-			FROM bug_reports br
-			LEFT JOIN users u ON br.user_id = u.id
-			WHERE br.id = ?
-		`).get(params.id) as any;
+		const isSuperAdmin = auth?.role === "SUPER_ADMIN";
+		const tenantId = auth!.tenantId;
+
+		let row;
+		if (isSuperAdmin) {
+			row = db.query(`
+				SELECT br.*, COALESCE(u.full_name, u.username, br.username) as submitter_name
+				FROM bug_reports br
+				LEFT JOIN users u ON br.user_id = u.id
+				WHERE br.id = ?
+			`).get(params.id) as any;
+		} else {
+			row = db.query(`
+				SELECT br.*, COALESCE(u.full_name, u.username, br.username) as submitter_name
+				FROM bug_reports br
+				LEFT JOIN users u ON br.user_id = u.id
+				WHERE br.id = ? AND br.tenant_id = ?
+			`).get(params.id, tenantId) as any;
+		}
+		
 		if (!row) return json({ error: "Not found" }, 404);
 		// Parse JSON fields for display
 		try { row.steps_to_reproduce = JSON.parse(row.steps_to_reproduce || "[]"); } catch { row.steps_to_reproduce = []; }
@@ -47,13 +75,23 @@ export function registerBugReportRoutes(router: Router) {
 	// PATCH /api/admin/bug-reports/:id — update status, assign, mark duplicate
 	router.put("/api/admin/bug-reports/:id", async (req, params, auth) => {
 		if (!adminGuard(auth)) return json({ error: "Forbidden" }, 403);
+		const isSuperAdmin = auth?.role === "SUPER_ADMIN";
+		const tenantId = auth!.tenantId;
+
 		let body: any;
 		try {
 			body = await req.json();
 		} catch {
 			return json({ error: "Invalid JSON" }, 400);
 		}
-		const existing = db.query("SELECT * FROM bug_reports WHERE id = ?").get(params.id) as any;
+		
+		let existing;
+		if (isSuperAdmin) {
+			existing = db.query("SELECT * FROM bug_reports WHERE id = ?").get(params.id) as any;
+		} else {
+			existing = db.query("SELECT * FROM bug_reports WHERE id = ? AND tenant_id = ?").get(params.id, tenantId) as any;
+		}
+		
 		if (!existing) return json({ error: "Not found" }, 404);
 
 		const now = new Date().toISOString().replace("T", " ").slice(0, 19);
@@ -91,9 +129,14 @@ export function registerBugReportRoutes(router: Router) {
 
 		if (updates.length === 1) return json({ error: "No fields to update" }, 400);
 
-		values.push(params.id);
-		db.query(`UPDATE bug_reports SET ${updates.join(", ")} WHERE id = ?`).run(...values);
-
+		if (isSuperAdmin) {
+			values.push(params.id);
+			db.query(`UPDATE bug_reports SET ${updates.join(", ")} WHERE id = ?`).run(...values);
+		} else {
+			values.push(params.id, tenantId);
+			db.query(`UPDATE bug_reports SET ${updates.join(", ")} WHERE id = ? AND tenant_id = ?`).run(...values);
+		}
+		
 		const updated = db.query("SELECT * FROM bug_reports WHERE id = ?").get(params.id) as any;
 		return json(updated);
 	});

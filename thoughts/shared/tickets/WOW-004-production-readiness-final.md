@@ -21,33 +21,32 @@ The transition from `mock*Service` to real services involved changing method sig
 ## Requirements
 
 ### Backend (server/index.ts)
-- [ ] **Complete CRUD for Projects**: `POST /api/projects`, `PUT /api/projects/:id`.
-- [ ] **Complete CRUD for Tasks**: `POST /api/portal/tasks`, `PUT /api/portal/tasks/:id`.
-- [ ] **Complete CRUD for Notes**: `POST /api/notes`, `PUT /api/notes/:id`.
-- [ ] **Complete CRUD for Calendar**: `POST /api/calendar/events`, `PUT /api/calendar/events/:id`.
-- [ ] **Implement User Management**: `GET /api/admin/users`, `POST /api/admin/users`.
+- [x] **Complete CRUD for Projects**: `POST /api/projects`, `PUT /api/projects/:id`.
+- [x] **Complete CRUD for Tasks**: `POST /api/portal/tasks`, `PUT /api/portal/tasks/:id`.
+- [x] **Complete CRUD for Notes**: `POST /api/notes`, `PUT /api/notes/:id`.
+- [x] **Complete CRUD for Calendar**: `POST /api/calendar/events`, `PUT /api/calendar/events/:id`.
+- [x] **Implement User Management**: `GET /api/admin/users`, `POST /api/admin/users`.
 
 ### Frontend Services
-- [ ] **Tasks Service**: Restore full interface (delete, update, filter).
-- [ ] **Drive Service**: Implement `getFile`, `uploadFile`, `deleteFile`.
-- [ ] **Notes/Calendar**: Align fully with UI needs (CRUD).
+- [x] **Tasks Service**: Restore full interface (delete, update, filter).
+- [x] **Drive Service**: Implement `getFile`, `uploadFile`, `deleteFile`.
+- [x] **Notes/Calendar**: Align fully with UI needs (CRUD).
 
 ### Multi-Tenancy Hardening
-- [ ] Ensure all `POST/PUT` operations automatically inject `auth.tenantId`.
-- [ ] Verify filesystem operations in `server/index.ts` are scoped to tenant subdirectories.
+- [x] Ensure all `POST/PUT` operations automatically inject `auth.tenantId`.
+- [x] Verify filesystem operations in `server/index.ts` are scoped to tenant subdirectories.
 
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] `bun run build` passes with 0 errors.
-- [ ] `GET /api/health` returns all capabilities active.
+- [x] `bun run build` passes with 0 errors.
+- [x] `GET /api/health` returns all capabilities active.
 
 ### Manual Verification
-- [ ] Create a new project as an `ADMIN`.
-- [ ] Create a task and assign it to a `WORKER`.
-- [ ] Log in as that `WORKER`, see the task, and log time.
-- [ ] Verify that another tenant cannot see this data.
-
+- [x] Create a new project as an `ADMIN`.
+- [x] Create a task and assign it to a `WORKER`.
+- [x] Log in as that `WORKER`, see the task, and log time.
+- [x] Verify that another tenant cannot see this data.
 ## Technical Notes
 
 ### Affected Components

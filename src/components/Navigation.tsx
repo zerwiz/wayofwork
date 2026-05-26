@@ -24,7 +24,6 @@ interface NavigationProps {
 
 const PRIMARY_NAV: NavItem[] = [
   { id: "simple", label: "Simple", icon: <Code2 size={14} />, title: "Calmer layout and friendly labels", showCondition: (role?: string) => !!role },
-  { id: "technical", label: "Technical", icon: <Code2 size={14} />, title: "IDE-style chrome and technical labels", showCondition: (role?: string) => role === "worker" || role === "leader" || role === "admin" || role === "super_admin" },
   { id: "claw", label: "Claw", icon: <Bot size={14} />, title: "Claw roadmap: autonomous-agent shell", showCondition: (role?: string) => role === "leader" || role === "admin" || role === "super_admin" },
   { id: "docs", label: "Docs", icon: <FileText size={14} />, title: "Docs mode: Document-centric layout", showCondition: (role?: string) => !!role },
   { id: "work", label: "Work", icon: <Briefcase size={14} />, title: "Work mode: Time and tasks", showCondition: (role?: string) => role === "worker" || role === "leader" || role === "admin" || role === "super_admin" },
@@ -50,10 +49,6 @@ export function Navigation({ uiMode, onUiModeChange, isPortal, isClient, isAdmin
   const isContextActive = isPortal || isClient || isAdmin || isProfile;
 
   const handlePrimaryClick = (mode: string) => {
-    if (mode === "technical") {
-      window.open("http://localhost:5174", "_blank");
-      return;
-    }
     if (window.location.pathname !== "/") navigate("/", { replace: true });
     onUiModeChange(mode);
   };

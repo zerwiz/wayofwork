@@ -35,6 +35,7 @@ import { registerGithubRoutes } from "./routes/github";
 import { registerFileSystemRoutes } from "./routes/file-system";
 import { registerConfigRoutes } from "./routes/config";
 import { registerNotificationRoutes } from "./routes/notifications";
+import { registerAccessRoutes } from "./routes/access";
 import { db } from "./db";
 
 // Integrated terminal: in production (`NODE_ENV=production`) keep opt-in via WOP_ALLOW_TERMINAL only.
@@ -75,6 +76,7 @@ registerGithubRoutes(apiRouter);
 registerFileSystemRoutes(apiRouter);
 registerConfigRoutes(apiRouter);
 registerNotificationRoutes(apiRouter);
+registerAccessRoutes(apiRouter);
 
 async function handleApi(url: URL, req: Request): Promise<Response> {
 	const authHeader = req.headers.get("Authorization");

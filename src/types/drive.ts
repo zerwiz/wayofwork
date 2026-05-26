@@ -1,3 +1,5 @@
+import { ResourcePermission } from '../types/notes';
+
 export interface DriveFile {
   id: string;
   name: string;
@@ -8,4 +10,5 @@ export interface DriveFile {
   mimeType?: string;
   kanbanBoardId?: string;
   kanbanCardId?: string;
+  resourcePermission?: ResourcePermission;
 }

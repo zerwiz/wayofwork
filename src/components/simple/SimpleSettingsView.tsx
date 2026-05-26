@@ -1,7 +1,7 @@
 import type { SimpleColorMode } from "../../hooks/useSimplePreferences";
 import type { ServerConfig } from "../../hooks/useServerConfig";
-import { GithubManageSettingsCard, ConstructionGithubCard } from "../GithubManageSettingsCard";
-import { TerminalSettingsSection } from "../technical/TerminalSettingsSection";
+import { VersionStorageManageSettingsCard, ConstructionVersionStorageCard } from "../VersionStorageManageSettingsCard";
+import { TerminalSettingsSection } from "./TerminalSettingsSection";
 import { NotificationInbox } from "../NotificationInbox";
 
 export type ClawWorkspaceSettingsActions = {
@@ -100,8 +100,8 @@ export function SimpleSettingsView({
 				<p className={`mb-8 font-medium ${sub}`}>Simple UI preferences (stored in this browser).</p>
 
 				<div className="space-y-4">
-					<GithubManageSettingsCard appearanceDark={appearanceDark} />
-					<ConstructionGithubCard appearanceDark={appearanceDark} />
+					<VersionStorageManageSettingsCard appearanceDark={appearanceDark} />
+					<ConstructionVersionStorageCard appearanceDark={appearanceDark} />
 
 					<NotificationInbox appearanceDark={appearanceDark} />
 

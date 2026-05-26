@@ -61,7 +61,8 @@ CREATE TABLE IF NOT EXISTS projects (
     status TEXT DEFAULT 'active',         -- 'draft', 'active', 'paused', 'completed'
     created_by TEXT REFERENCES users(id),
     created_at TEXT DEFAULT (datetime('now')),
-    settings_json TEXT DEFAULT '{}'          -- Gantt chart settings, milestones
+    settings_json TEXT DEFAULT '{}',          -- Gantt chart settings, milestones
+    resource_permission_id TEXT REFERENCES resource_permissions(resource_id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_projects_tenant ON projects(tenant_id);
@@ -86,7 +87,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     depends_on TEXT,                       -- JSON array of task IDs
     cad_file_paths TEXT,                   -- JSON array of .dwg/.rvt paths
     created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
+    updated_at TEXT DEFAULT (datetime('now')),
+    resource_permission_id TEXT REFERENCES resource_permissions(resource_id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_tasks_tenant ON tasks(tenant_id);
@@ -130,7 +132,8 @@ CREATE TABLE IF NOT EXISTS workspace_files (
     uploaded_by TEXT REFERENCES users(id),
     download_count INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
-    UNIQUE(tenant_id, file_path)              -- Prevent path conflicts
+    UNIQUE(tenant_id, file_path),              -- Prevent path conflicts
+    resource_permission_id TEXT REFERENCES resource_permissions(resource_id) ON DELETE CASCADE
 );
 
 -- ============================================
@@ -176,7 +179,8 @@ CREATE TABLE IF NOT EXISTS notes (
     content TEXT,
     created_by TEXT REFERENCES users(id),
     created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
+    updated_at TEXT DEFAULT (datetime('now')),
+    resource_permission_id TEXT REFERENCES resource_permissions(resource_id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_notes_tenant ON notes(tenant_id);

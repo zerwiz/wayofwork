@@ -38,7 +38,7 @@ export function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId || !pin) {
-      setError("User ID and PIN required");
+      setError(t("auth.userIdAndPinRequired"));
       return;
     }
 
@@ -54,7 +54,7 @@ export function LoginPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || "Login failed. Check your ID and PIN.");
+        setError(data.error || t("auth.loginFailed"));
         return;
       }
 
@@ -62,7 +62,7 @@ export function LoginPage() {
       localStorage.setItem("wop_token", data.token);
       redirectAfterLogin(data.user.role);
     } catch (err) {
-      setError("Failed to connect to server. Is the backend running?");
+      setError(t("auth.failedToConnectToServer"));
     } finally {
       setLoading(false);
     }
@@ -91,7 +91,7 @@ export function LoginPage() {
               type="text"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              placeholder="Enter your ID"
+              placeholder={t("auth.enterYourId")}
               className="w-full rounded-md border border-[#3c3c3c] bg-[#1e1e1e] px-4 py-3 text-sm text-[#cccccc] placeholder-[#585858] focus:border-[#ea580c] focus:ring-1 focus:ring-[#ea580c] focus:outline-none transition-all"
               autoFocus
             />
@@ -103,7 +103,7 @@ export function LoginPage() {
               type="password"
               value={pin}
               onChange={(e) => setPin(e.target.value)}
-              placeholder="••••"
+              placeholder={t("auth.pinPlaceholder")}
               maxLength={4}
               className="w-full rounded-md border border-[#3c3c3c] bg-[#1e1e1e] px-4 py-3 text-sm text-[#cccccc] placeholder-[#585858] tracking-[0.5em] focus:border-[#ea580c] focus:ring-1 focus:ring-[#ea580c] focus:outline-none transition-all"
             />
@@ -127,7 +127,7 @@ export function LoginPage() {
       
 
       <p className="mt-4 text-xs text-[#444] font-medium tracking-tight">
-        &copy; 2026 Way of Work. All rights reserved.
+        &copy; 2026 {t("common.wayOfWork")}. {t("common.allRightsReserved")}.
       </p>
     </div>
   );

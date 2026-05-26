@@ -17,7 +17,7 @@ export enum ChatSessionError {
 	StreamingError = "streaming-error",
 }
 
-export type UiMode = "simple" | "technical" | "claw" | "docs" | "work" | "admin" | "super_admin" | "profile" | "portal" | "client";
+export type UiMode = "simple" | "claw" | "docs" | "work" | "admin" | "super_admin" | "profile" | "portal" | "client";
 
 export interface ChatRow {
   id: string;

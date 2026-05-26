@@ -25,39 +25,39 @@ The construction industry is highly segmented. A "Project Manager" (`projektleda
 
 ### 1. New Specialized Agents (`.wo/agents/`)
 
-- [ ] **`skyddsombud` (Safety Representative / Inspector)**
+- [x] **`skyddsombud` (Safety Representative / Inspector)**
   - **Purpose:** Focuses exclusively on site safety, AFS compliance, and risk assessments.
   - **Skills:** `safety`, `swedish-building-laws`, `incident-reporting` (new).
   - **Use Case:** "Generate a risk assessment for working at heights on block C."
 
-- [ ] **`maskinchef` (Equipment & Logistics Manager)**
+- [x] **`maskinchef` (Equipment & Logistics Manager)**
   - **Purpose:** Manages heavy machinery, tool rentals, and material deliveries.
   - **Skills:** `logistics` (new), `project-pricing`.
   - **Use Case:** "We need an excavator for next week. Find the daily rate and schedule the delivery."
 
-- [ ] **`kalkylator` (Estimator / Cost Engineer)**
+- [x] **`kalkylator` (Estimator / Cost Engineer)**
   - **Purpose:** Deep financial analysis, creating detailed project budgets, and analyzing profit margins. Offloads financial heavy-lifting from `fakturering`.
   - **Skills:** `cost-estimation` (new), `project-pricing`, `time-calculation`.
   - **Use Case:** "Analyze the variance report from yesterday. Are we over budget on the TA plan implementation?"
 
 ### 2. New Cross-Cutting Skills (`.wo/skills/`)
 
-- [ ] **`incident-reporting`**
+- [x] **`incident-reporting`**
   - Instructions on how to structure a formal incident report (Tillbud/Olycka) for the Swedish Work Environment Authority (Arbetsmiljöverket).
-- [ ] **`logistics`**
+- [x] **`logistics`**
   - Guidelines for scheduling deliveries, managing lead times, and tracking rented equipment costs.
-- [ ] **`cost-estimation`**
+- [x] **`cost-estimation`**
   - Advanced methodologies for bottom-up and top-down cost estimating, incorporating risk buffers and indirect costs.
 
 ### 3. Orchestrator Enhancements
 
-- [ ] **Multi-Agent Handoff:** Update the `dispatch-agent` skill so the Orchestrator can coordinate sequential tasks.
+- [x] **Multi-Agent Handoff:** Update the `dispatch-agent` skill so the Orchestrator can coordinate sequential tasks.
   - *Example:* User says "Create a TA plan and invoice the client." -> Orchestrator dispatches to `projektledare` (for the plan) and THEN to `fakturering` (for the invoice).
-- [ ] **Ambiguity Resolution:** Improve the Orchestrator's prompt to ask clarifying multiple-choice questions when the user's intent spans multiple agents.
+- [x] **Ambiguity Resolution:** Improve the Orchestrator's prompt to ask clarifying multiple-choice questions when the user's intent spans multiple agents.
 
 ### 4. Integration with New Features
 
-- [ ] **TA-Planner Integration:** Ensure the `tma-planner` or `projektledare` agent is explicitly instructed to use the new `ta_plans` database schema via the `pending-changes` queue (following WOW-017 completion).
+- [x] **TA-Planner Integration:** Ensure the `tma-planner` or `projektledare` agent is explicitly instructed to use the new `ta_plans` database schema via the `pending-changes` queue (following WOW-017 completion).
 
 ## Acceptance Criteria
 - [x] New agent markdown files exist in `.wo/agents/` with correct YAML frontmatter.

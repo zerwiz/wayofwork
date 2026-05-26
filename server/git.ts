@@ -1,5 +1,6 @@
 import { existsSync, realpathSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
+import { db } from "./db"; // Import db
 
 function syncRealpath(abs: string): string {
 	try {
@@ -373,5 +374,63 @@ export async function gitLog(absPath: string, limit = 20): Promise<GitLogEntry[]
 		});
 	} catch (e) {
 		return { error: String(e) };
+	}
+}
+
+/**
+ * Configure git user name/email for the repository containing `absPath`.
+ */
+export async function gitConfig(
+	absPath: string,
+	key: string,
+	value: string,
+	tenantId: string, // Need to pass tenantId to store in db
+): Promise<GitStageResult> {
+	// First, save to our internal database (git_configs)
+	try {
+		db.run(
+			"INSERT INTO git_configs (tenant_id, config_key, config_value) VALUES (?, ?, ?) ON CONFLICT(tenant_id, config_key) DO UPDATE SET config_value = excluded.config_value, updated_at = datetime('now')",
+			[tenantId, key, value]
+		);
+	} catch (e) {
+		return { ok: false, error: `Failed to save git config to DB: ${String(e)}` };
+	}
+
+	// Then, apply to the actual git repository
+	const topProc = Bun.spawn(["git", "-C", dirname(absPath), "rev-parse", "--show-toplevel"], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const topOut = await new Response(topProc.stdout).text();
+	if ((await topProc.exited) !== 0) return { ok: false, error: "Not a git repository" };
+	const repoTop = syncRealpath(topOut.trim());
+
+	const proc = Bun.spawn(["git", "-C", repoTop, "config", key, value], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const err = await new Response(proc.stderr).text();
+	const code = await proc.exited;
+	if (code !== 0) {
+		return { ok: false, error: err.trim() || `git config exited with code ${code}` };
+	}
+	return { ok: true };
+}
+
+/**
+ * Get the git user name and email from the internal database for a given tenant.
+ */
+export async function getGitConfig(tenantId: string): Promise<{ name: string | null; email: string | null }> {
+	try {
+		const nameEntry = db.query("SELECT config_value FROM git_configs WHERE tenant_id = ? AND config_key = 'user.name'").get(tenantId) as { config_value: string } | undefined;
+		const emailEntry = db.query("SELECT config_value FROM git_configs WHERE tenant_id = ? AND config_key = 'user.email'").get(tenantId) as { config_value: string } | undefined;
+
+		return {
+			name: nameEntry?.config_value || null,
+			email: emailEntry?.config_value || null,
+		};
+	} catch (e) {
+		console.error("Failed to get Git config from DB:", e);
+		return { name: null, email: null };
 	}
 }

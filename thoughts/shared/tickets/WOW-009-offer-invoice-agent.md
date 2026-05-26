@@ -25,19 +25,19 @@ Construction companies need to send professional offers and invoices to clients.
 ## Requirements
 
 ### Functional Requirements
-- [ ] Create offers with line items (name, quantity, unit, unit_price)
-- [ ] Auto-generated offer numbers (`ANB-YYYY-NNN`) per tenant
-- [ ] Offer status workflow: draft → sent → accepted → rejected → invoiced
-- [ ] Generate HTML document for offer (printable to PDF)
-- [ ] Send offer to client via Telegram (if linked)
-- [ ] Send offer to client via WhatsApp (if linked + env vars configured)
-- [ ] Create invoice from accepted offer
-- [ ] Auto-generated invoice numbers (`INV-YYYY-NNN`) per tenant
-- [ ] Invoice status workflow: draft → sent → paid → overdue → cancelled
-- [ ] Generate HTML document for invoice (printable to PDF)
-- [ ] Send invoice via Telegram/WhatsApp
-- [ ] OCR number auto-generation for invoices
-- [ ] VAT calculation (25%) on invoices
+- [x] Create offers with line items (name, quantity, unit, unit_price)
+- [x] Auto-generated offer numbers (`ANB-YYYY-NNN`) per tenant
+- [x] Offer status workflow: draft → sent → accepted → rejected → invoiced
+- [x] Generate HTML document for offer (printable to PDF)
+- [x] Send offer to client via Telegram (if linked)
+- [x] Send offer to client via WhatsApp (if linked + env vars configured)
+- [x] Create invoice from accepted offer
+- [x] Auto-generated invoice numbers (`INV-YYYY-NNN`) per tenant
+- [x] Invoice status workflow: draft → sent → paid → overdue → cancelled
+- [x] Generate HTML document for invoice (printable to PDF)
+- [x] Send invoice via Telegram/WhatsApp
+- [x] OCR number auto-generation for invoices
+- [x] VAT calculation (25%) on invoices
 
 ### Out of Scope
 - Email sending (needs SMTP env vars + nodemailer) — future
@@ -49,18 +49,18 @@ Construction companies need to send professional offers and invoices to clients.
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] Build completes: `bun run build`
+- [x] Build completes: `bun run build`
 
 ### Manual Verification
-- [ ] `POST /api/offers` creates offer with number `ANB-2026-001`
-- [ ] `GET /api/offers` returns list of offers
-- [ ] `PUT /api/offers/:id` updates draft offer
-- [ ] `DELETE /api/offers/:id` deletes offer (admin only)
-- [ ] `GET /api/offers/:id/document` returns styled HTML
-- [ ] `POST /api/offers/:id/send?channels=telegram` sends via Telegram
-- [ ] `POST /api/invoices` creates invoice from offer, marks offer as invoiced
-- [ ] `GET /api/invoices/:id/document` returns styled HTML
-- [ ] `POST /api/invoices/:id/send?channels=telegram` sends via Telegram
+- [x] `POST /api/offers` creates offer with number `ANB-2026-001`
+- [x] `GET /api/offers` returns list of offers
+- [x] `PUT /api/offers/:id` updates draft offer
+- [x] `DELETE /api/offers/:id` deletes offer (admin only)
+- [x] `GET /api/offers/:id/document` returns styled HTML
+- [x] `POST /api/offers/:id/send?channels=telegram` sends via Telegram
+- [x] `POST /api/invoices` creates invoice from offer, marks offer as invoiced
+- [x] `GET /api/invoices/:id/document` returns styled HTML
+- [x] `POST /api/invoices/:id/send?channels=telegram` sends via Telegram
 
 ## Technical Notes
 
@@ -155,6 +155,6 @@ Uses existing `sendTelegramMessage` function from `telegram-bot.ts`. Requires:
 **Status**: Implementation Feedback — users can't write JSON. Items need form-based editor.
 
 ### Remaining Work
-- [ ] Replace JSON textarea in `OffersInvoicesTab` with a proper item table editor — add/remove/edit rows for name, quantity, unit, unit_price, with auto-calculated totals
+- [x] Replace JSON textarea in `OffersInvoicesTab` with a proper item table editor — add/remove/edit rows for name, quantity, unit, unit_price, with auto-calculated totals
 - [ ] Price list integration: allow picking items from existing price lists instead of manual entry
 - [ ] Template offers: save/load common offer templates

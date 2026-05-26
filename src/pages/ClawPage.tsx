@@ -223,7 +223,7 @@ export function ClawPage() {
       onRefreshWorkspace: tree.refresh,
       onCopyWorkspacePath: copyWorkspacePath,
       onSelectActivity: (a: any) => {
-        setUiMode("technical");
+        setUiMode("claw"); // Fallback to claw mode
         setLeftSidebarVisible(true);
         setTechnicalActivity(a);
       },
@@ -244,16 +244,15 @@ export function ClawPage() {
       onOpenPiModelConfig: (path?: string) => {
         if (path) {
           // Claw mode doesn't have a direct provider file focus but we can switch to technical
-          setUiMode("technical");
+          setUiMode("claw"); // Fallback to claw mode
           setLeftSidebarVisible(true);
           setTechnicalActivity("settings");
         } else {
-          setUiMode("technical");
+          setUiMode("claw"); // Fallback to claw mode
           setLeftSidebarVisible(true);
           setTechnicalActivity("settings");
         }
-      },
-      chatSessionControls: {
+      },      chatSessionControls: {
         mode: session.chatMode,
         switchDisabled: session.streaming,
         onSetMode: session.setChatMode,

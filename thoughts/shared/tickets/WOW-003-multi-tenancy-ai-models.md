@@ -30,15 +30,15 @@ While the architecture is partially multi-tenant, it is not consistently applied
 ## Requirements
 
 ### Multi-Tenancy Requirements
-- [ ] **Audit All Endpoints:** Ensure every API endpoint in `server/index.ts` that accesses data or files uses `auth.tenantId`.
-- [ ] **Filesystem Partitioning:** Update `server/paths.ts` and file operations to ensure files are stored in tenant-specific subdirectories (e.g., `data/tenants/<tenant_id>/...`).
+- [x] **Audit All Endpoints:** Ensure every API endpoint in `server/index.ts` that accesses data or files uses `auth.tenantId`.
+- [x] **Filesystem Partitioning:** Update `server/paths.ts` and file operations to ensure files are stored in tenant-specific subdirectories (e.g., `data/tenants/<tenant_id>/...`).
 - [ ] **Tenant Management UI:** Create a UI for System Admins to manage tenants (create, disable, update settings).
-- [ ] **Role Enforcement:** Ensure `SUPER_ADMIN` can see across tenants, while `ADMIN` is scoped to their own tenant.
+- [x] **Role Enforcement:** Ensure `SUPER_ADMIN` can see across tenants, while `ADMIN` is scoped to their own tenant.
 
 ### AI Model Execution Requirements
-- [ ] **Provider Configuration:** Formalize the configuration for OpenAI, Anthropic, and OpenRouter alongside existing Ollama support.
-- [ ] **Settings Storage:** Store AI provider settings (API keys, model names) in the `tenants` table (`settings_json`) or a new `tenant_configs` table.
-- [ ] **Agent Integration:** Ensure `server/agent-runtime.ts` pulls model configuration from the tenant's settings rather than environment variables only.
+- [x] **Provider Configuration:** Formalize the configuration for OpenAI, Anthropic, and OpenRouter alongside existing Ollama support.
+- [x] **Settings Storage:** Store AI provider settings (API keys, model names) in the `tenants` table (`settings_json`) or a new `tenant_configs` table.
+- [x] **Agent Integration:** Ensure `server/agent-runtime.ts` pulls model configuration from the tenant's settings rather than environment variables only.
 
 ### Out of Scope for Phase 1
 - Dynamic model fine-tuning or custom LoRAs per tenant.
@@ -47,9 +47,9 @@ While the architecture is partially multi-tenant, it is not consistently applied
 ## Acceptance Criteria
 
 ### Documentation
-- [ ] Updated schema diagram showing complete multi-tenant coverage.
-- [ ] API Audit Report: List of all endpoints and their current/required tenant isolation status.
-- [ ] Configuration guide for "Bring Your Own Key" (BYOK) per tenant.
+- [x] Updated schema diagram showing complete multi-tenant coverage.
+- [x] API Audit Report: List of all endpoints and their current/required tenant isolation status.
+- [x] Configuration guide for "Bring Your Own Key" (BYOK) per tenant.
 
 ### Future Implementation (Not for this ticket)
 - [ ] Migration scripts for existing non-scoped data.

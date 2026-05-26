@@ -1003,7 +1003,7 @@ export function SimpleApp({
 									onColorMode={setColorMode}
 									approvalQueue={approvalQueue}
 									onApprovalQueue={setApprovalQueue}
-									onSwitchToTechnical={() => setUiMode("technical")}
+									// onSwitchToTechnical={() => setUiMode("technical")} // Removed as technical mode is deprecated
 									onOpenIndexingDocs={onOpenIndexingDocs}
 									serverConfig={config}
 									onConfigRefresh={onConfigRefresh}

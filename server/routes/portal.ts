@@ -1,7 +1,7 @@
 import { stat, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { json } from "../utils";
-import { db } from "../db";
+import { db, createResourcePermission } from "../db";
 import { auditLog } from "../audit-logger";
 import { getPrimaryWorkspacePath } from "../workspace-state";
 import type { Router } from "../router";
@@ -105,28 +105,54 @@ export function registerPortalRoutes(router: Router) {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
 		try {
 			const isLeader = auth.role === "LEADER" || auth.role === "ADMIN" || auth.role === "SUPER_ADMIN";
-			let tasks: any[];
-			if (isLeader) {
-				tasks = db.query(`
-					SELECT t.*, u.username as assigned_name, p.name as project_name
-					FROM tasks t
-					LEFT JOIN users u ON t.assigned_to = u.id
-					LEFT JOIN projects p ON t.project_id = p.id
-					WHERE t.tenant_id = ?
-					ORDER BY t.deadline ASC, t.created_at DESC
-				`).all(auth.tenantId) as any[];
-			} else {
-				tasks = db.query(`
-					SELECT t.*, p.name as project_name
-					FROM tasks t
-					LEFT JOIN projects p ON t.project_id = p.id
-					WHERE t.tenant_id = ? AND t.assigned_to = ?
-					ORDER BY t.deadline ASC, t.created_at DESC
-				`).all(auth.tenantId, auth.userId) as any[];
+			const isSuper = auth.role === "ADMIN" || auth.role === "SUPER_ADMIN";
+
+			let baseQuery = `
+				SELECT
+					t.*,
+					u.username as assigned_name,
+					p.name as project_name,
+					rp.owner_id,
+					rp.visibility
+				FROM
+					tasks t
+				LEFT JOIN users u ON t.assigned_to = u.id
+				LEFT JOIN projects p ON t.project_id = p.id
+				LEFT JOIN resource_permissions rp ON t.resource_permission_id = rp.resource_id
+			`;
+
+			const queryParams: (string | number)[] = [auth.tenantId];
+			const whereClauses: string[] = ["t.tenant_id = ?"];
+
+			if (!isLeader) { // Workers and Clients have restricted view
+				whereClauses.push("t.assigned_to = ?"); // Assigned to them
+				queryParams.push(auth.userId);
+				whereClauses.push(`
+					(
+						rp.owner_id = ? OR                                  -- User is the owner
+						rp.visibility = 'tenant' OR                         -- Visible to all in tenant
+						EXISTS(SELECT 1 FROM resource_shares rs WHERE rs.resource_id = t.resource_permission_id AND rs.shared_with_id = ?) OR -- Explicitly shared
+						EXISTS(SELECT 1 FROM project_members pm WHERE t.project_id = pm.project_id AND pm.user_id = ?) -- Member of project
+					)
+				`);
+				queryParams.push(auth.userId, auth.userId, auth.userId);
+			} else if (!isSuper) { // Leaders can see all in tenant that are not private, or are shared, or they own
+				whereClauses.push(`
+					(
+						rp.owner_id = ? OR
+						rp.visibility = 'tenant' OR
+						EXISTS(SELECT 1 FROM resource_shares rs WHERE rs.resource_id = t.resource_permission_id AND rs.shared_with_id = ?) OR
+						EXISTS(SELECT 1 FROM project_members pm WHERE t.project_id = pm.project_id AND pm.user_id = ?)
+					)
+				`);
+				queryParams.push(auth.userId, auth.userId, auth.userId);
 			}
+			
+			const fullQuery = `${baseQuery} WHERE ${whereClauses.join(" AND ")} ORDER BY t.deadline ASC, t.created_at DESC`;
+
+			let tasks = db.query(fullQuery).all(...queryParams) as any[];
 
 			// Economics shield (WOW-016): hide estimated_hours from workers and leaders
-			const isSuper = auth.role === "ADMIN" || auth.role === "SUPER_ADMIN";
 			if (!isSuper) {
 				tasks = tasks.map(t => {
 					const { estimated_hours, ...rest } = t;
@@ -146,23 +172,72 @@ export function registerPortalRoutes(router: Router) {
 		try {
 			const isWorker = auth.role === "WORKER";
 			let files;
+
+			const baseQuery = `
+				SELECT
+					f.*,
+					rp.resource_id AS rp_resource_id,
+					rp.resource_type AS rp_resource_type,
+					rp.owner_id AS rp_owner_id,
+					rp.visibility AS rp_visibility,
+					rp.created_at AS rp_created_at,
+					rp.updated_at AS rp_updated_at
+				FROM
+					workspace_files f
+				LEFT JOIN
+					resource_permissions rp ON f.resource_permission_id = rp.resource_id
+			`;
+
+			const queryParams: (string | number)[] = [auth.tenantId];
+			const whereClauses: string[] = ["f.tenant_id = ?"];
+
 			if (isWorker) {
-				files = db.query(`
-					SELECT f.*
-					FROM workspace_files f
-					JOIN project_members pm ON f.project_id = pm.project_id
-					WHERE f.tenant_id = ? AND pm.user_id = ?
-					ORDER BY f.created_at DESC
-				`).all(auth.tenantId, auth.userId) as any[];
-			} else {
-				files = db.query(`
-					SELECT *
-					FROM workspace_files
-					WHERE tenant_id = ?
-					ORDER BY created_at DESC
-				`).all(auth.tenantId) as any[];
+				// Workers can only see files in projects they are members of, AND files they own/are shared with
+				whereClauses.push(`
+					(
+						EXISTS(SELECT 1 FROM project_members pm WHERE f.project_id = pm.project_id AND pm.user_id = ?)
+						AND
+						(
+							rp.owner_id = ? OR
+							rp.visibility = 'tenant' OR
+							EXISTS(SELECT 1 FROM resource_shares rs WHERE rs.resource_id = f.resource_permission_id AND rs.shared_with_id = ?)
+						)
+					)
+				`);
+				queryParams.push(auth.userId, auth.userId, auth.userId);
+			} else if (auth.role !== "ADMIN" && auth.role !== "SUPER_ADMIN") {
+				// Other non-admin/super_admin roles (e.g., Leader, Client)
+				whereClauses.push(`(
+					rp.owner_id = ? OR
+					rp.visibility = 'tenant' OR
+					EXISTS(SELECT 1 FROM resource_shares rs WHERE rs.resource_id = f.resource_permission_id AND rs.shared_with_id = ?)
+				)`);
+				queryParams.push(auth.userId, auth.userId);
 			}
-			return json(files || []);
+
+			const fullQuery = `${baseQuery} WHERE ${whereClauses.join(" AND ")} ORDER BY f.created_at DESC`;
+			let files = db.query(fullQuery).all(...queryParams) as any[];
+
+			// Map results to include resourcePermission object
+			const formattedFiles = files.map(file => {
+				const { 
+					rp_resource_id, rp_resource_type, rp_owner_id, rp_visibility, rp_created_at, rp_updated_at, 
+					...rest 
+				} = file;
+				return {
+					...rest,
+					resourcePermission: rp_resource_id ? {
+						resource_id: rp_resource_id,
+						resource_type: rp_resource_type,
+						owner_id: rp_owner_id,
+						visibility: rp_visibility,
+						created_at: rp_created_at,
+						updated_at: rp_updated_at,
+					} : undefined,
+				};
+			});
+
+			return json(formattedFiles || []);
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			return json({ error: "Failed to fetch files", details: message }, 500);
@@ -171,19 +246,54 @@ export function registerPortalRoutes(router: Router) {
 
 	router.get("/api/portal/files/:id", async (_req, params, auth) => {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
-		const id = params.id;
+		const fileId = params.id;
 		try {
-			const isWorker = auth.role === "WORKER";
-			const file = db.query("SELECT * FROM workspace_files WHERE id = ? AND tenant_id = ?").get(id, auth.tenantId) as any;
-			if (!file) return json({ error: "File not found" }, 404);
-
-			if (isWorker && file.project_id) {
-				const isMember = db.query("SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?")
-					.get(file.project_id, auth.userId);
-				if (!isMember) return json({ error: "Forbidden" }, 403);
+			const hasAccess = await checkResourceAccess(fileId, 'workspace_file', auth);
+			if (!hasAccess) {
+				auditLog({
+					tenantId: auth.tenantId,
+					userId: auth.userId,
+					action: "ACCESS_DENIED",
+					resourceType: "workspace_file",
+					resourceId: fileId,
+					summary: `User attempted to access workspace file without permission`
+				});
+				return json({ error: "Forbidden" }, 403);
 			}
 
-			return json(file);
+			const file = db.query(`
+				SELECT
+					f.*,
+					rp.resource_id AS rp_resource_id,
+					rp.resource_type AS rp_resource_type,
+					rp.owner_id AS rp_owner_id,
+					rp.visibility AS rp_visibility,
+					rp.created_at AS rp_created_at,
+					rp.updated_at AS rp_updated_at
+				FROM workspace_files f
+				LEFT JOIN resource_permissions rp ON f.resource_permission_id = rp.resource_id
+				WHERE f.id = ? AND f.tenant_id = ?
+			`).get(fileId, auth.tenantId) as any;
+			if (!file) return json({ error: "File not found" }, 404);
+
+			const { 
+				rp_resource_id, rp_resource_type, rp_owner_id, rp_visibility, rp_created_at, rp_updated_at, 
+				...rest 
+			} = file;
+			
+			const formattedFile = {
+				...rest,
+				resourcePermission: rp_resource_id ? {
+					resource_id: rp_resource_id,
+					resource_type: rp_resource_type,
+					owner_id: rp_owner_id,
+					visibility: rp_visibility,
+					created_at: rp_created_at,
+					updated_at: rp_updated_at,
+				} : undefined,
+			};
+
+			return json(formattedFile);
 		} catch (e) {
 			return json({ error: "Failed to fetch file" }, 500);
 		}
@@ -372,10 +482,12 @@ export function registerPortalRoutes(router: Router) {
 		}
 		try {
 			const id = `task_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+			createResourcePermission(id, 'task', auth.userId); // Create permission first
+
 			db.query(`
-				INSERT INTO tasks (id, tenant_id, title, assigned_to, project_id, estimated_hours, deadline, status, priority, description)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`).run(id, auth.tenantId, body.title, body.assigned_to || null, body.project_id || null, body.estimated_hours || null, body.deadline || null, body.status || 'todo', body.priority || 'medium', body.description || null);
+				INSERT INTO tasks (id, tenant_id, title, assigned_to, project_id, estimated_hours, deadline, status, priority, description, resource_permission_id)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`).run(id, auth.tenantId, body.title, body.assigned_to || null, body.project_id || null, body.estimated_hours || null, body.deadline || null, body.status || 'todo', body.priority || 'medium', body.description || null, id);
 			const task = db.query("SELECT * FROM tasks WHERE id = ?").get(id);
 			return json(task);
 		} catch (e) {
@@ -384,17 +496,79 @@ export function registerPortalRoutes(router: Router) {
 		}
 	});
 
+	router.post("/api/portal/files/upload", async (req, _params, auth) => {
+		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const workspaceRoot = getPrimaryWorkspacePath(auth.tenantId);
+		const uploadDir = resolve(workspaceRoot, auth.tenantId, "files"); // Tenant-specific upload directory
+		
+		try {
+			// Ensure the upload directory exists
+			await mkdir(uploadDir, { recursive: true });
+
+			const formData = await req.formData();
+			const file = formData.get("file") as File;
+			const projectId = formData.get("project_id") as string | null;
+
+			if (!file) {
+				return json({ error: "No file uploaded" }, 400);
+			}
+
+			const filename = file.name;
+			const mimeType = file.type;
+			const fileSize = file.size;
+			const fileId = `file_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+			const filePath = resolve(uploadDir, fileId + "_" + filename); // Store with unique ID prefix
+
+			await Bun.write(filePath, file); // Save the file
+			createResourcePermission(fileId, 'workspace_file', auth.userId); // Create permission first
+
+			db.query(`
+				INSERT INTO workspace_files (id, tenant_id, project_id, file_path, filename, mime_type, size, created_by, resource_permission_id)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`).run(fileId, auth.tenantId, projectId, filePath, filename, mimeType, fileSize, auth.userId, fileId);
+
+			const uploadedFile = db.query("SELECT * FROM workspace_files WHERE id = ?").get(fileId);
+			auditLog({
+				tenantId: auth.tenantId,
+				userId: auth.userId,
+				action: "FILE_UPLOAD",
+				resourceType: "file",
+				resourceId: fileId,
+				summary: `Uploaded file: ${filename}`,
+				details: { path: filePath, projectId: projectId }
+			});
+			return json(uploadedFile, 201);
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			return json({ error: "Failed to upload file", details: message }, 500);
+		}
+	});
+
 	// GET /api/portal/tasks/:id - Get single card
 	router.get("/api/portal/tasks/:id", async (_req, params, auth) => {
 		if (!auth) return json({ error: "Unauthorized" }, 401);
+		const taskId = params.id;
 		try {
+			const hasAccess = await checkResourceAccess(taskId, 'task', auth);
+			if (!hasAccess) {
+				auditLog({
+					tenantId: auth.tenantId,
+					userId: auth.userId,
+					action: "ACCESS_DENIED",
+					resourceType: "task",
+					resourceId: taskId,
+					summary: `User attempted to access task without permission`
+				});
+				return json({ error: "Forbidden" }, 403);
+			}
+
 			const task = db.query(`
 				SELECT t.*, u.username as assigned_name, p.name as project_name
 				FROM tasks t
 				LEFT JOIN users u ON t.assigned_to = u.id
 				LEFT JOIN projects p ON t.project_id = p.id
 				WHERE t.id = ? AND t.tenant_id = ?
-			`).get(params.id, auth.tenantId);
+			`).get(taskId, auth.tenantId);
 			if (!task) return json({ error: "Task not found" }, 404);
 			return json(task);
 		} catch (e) {

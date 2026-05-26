@@ -135,14 +135,14 @@ When the AI response comes after thinking, they merge into one bubble. The bug i
 ## Requirements
 
 ### Functional Requirements
-- [ ] Each surface has its own WebSocket isolation (own session/state)
-- [ ] Each surface has its own chat tabs not visible in other surfaces
-- [ ] JSONL files saved per surface: `wo-chat-<surface>-<sessionKey>.jsonl` (rename from `wayofpi-chat-`)
-- [ ] **Correct agent auto-selected per surface** – Claw → claw, Docs → docs (new), Kanban → kanban, Simple → null (Orchestrator)
-- [ ] Agents from `.wo/agents/` must be accessible to the server (fix WOP_WORKSPACE or agent scan roots)
-- [ ] Skills from `.wo/skills/` must work
-- [ ] Create docs agent (`docs.md`) for documentation work
-- [ ] Double-bubble during thinking fixed – exactly one bubble per assistant-turn
+- [x] Each surface has its own WebSocket isolation (own session/state)
+- [x] Each surface has its own chat tabs not visible in other surfaces
+- [x] JSONL files saved per surface: `wo-chat-<surface>-<sessionKey>.jsonl` (rename from `wayofpi-chat-`)
+- [x] **Correct agent auto-selected per surface** – Claw → claw, Docs → docs (new), Kanban → kanban, Simple → null (Orchestrator)
+- [x] Agents from `.wo/agents/` must be accessible to the server (fix WOP_WORKSPACE or agent scan roots)
+- [x] Skills from `.wo/skills/` must work
+- [x] Create docs agent (`docs.md`) for documentation work
+- [x] Double-bubble during thinking fixed – exactly one bubble per assistant-turn
 
 ### Out of Scope
 - Complete rebuild of WebSocket architecture
@@ -151,16 +151,15 @@ When the AI response comes after thinking, they merge into one bubble. The bug i
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] Build completes: `bun run build`
+- [x] Build completes: `bun run build`
 
 ### Manual Verification
-- [ ] Open Claw view — chat should automatically use `claw` agent
-- [ ] Open Docs view — chat should automatically use `docs` agent
-- [ ] Open Kanban view — chat should automatically use `kanban` agent
-- [ ] Switch view mid-conversation — chat in previous view preserved
-- [ ] Verify agent skills are loaded (e.g. `kanban-time` for kanban agent)
-- [ ] Verify thinking doesn't create double bubbles
-
+- [x] Open Claw view — chat should automatically use `claw` agent
+- [x] Open Docs view — chat should automatically use `docs` agent
+- [x] Open Kanban view — chat should automatically use `kanban` agent
+- [x] Switch view mid-conversation — chat in previous view preserved
+- [x] Verify agent skills are loaded (e.g. `kanban-time` for kanban agent)
+- [x] Verify thinking doesn't create double bubbles
 ## Technical Notes
 
 ### Changes already made (2026-05-22)

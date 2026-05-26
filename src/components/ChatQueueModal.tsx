@@ -1,6 +1,7 @@
 import { ListOrdered, Play, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ChatQueueItem } from "../utils/chatQueueTranscript";
+import { useTranslation } from "../contexts/LanguageContext"; // Import useTranslation
 
 /** Inspect / edit / delete / prioritize pending user messages (server queue while a reply streams). */
 export function ChatQueueModal({
@@ -25,6 +26,7 @@ export function ChatQueueModal({
 	onForce: (id: string) => void;
 	appearanceDark?: boolean;
 }) {
+	const { t } = useTranslation(); // Initialize t()
 	const [drafts, setDrafts] = useState<Record<string, string>>({});
 
 	useEffect(() => {
@@ -64,14 +66,14 @@ export function ChatQueueModal({
 					<div className="flex min-w-0 items-center gap-2">
 						<ListOrdered className="shrink-0 text-[#ea580c]" size={20} />
 						<h2 id="wop-chat-queue-title" className="truncate text-sm font-bold tracking-tight">
-							Queued messages
+							{t("chat.queuedMessages")}
 						</h2>
 					</div>
 					<button
 						type="button"
 						onClick={onClose}
 						className={`rounded-lg p-1.5 ${appearanceDark ? "text-[#858585] hover:bg-[#3c3c3c] hover:text-white" : "text-[#616161] hover:bg-[#ececec]"}`}
-						aria-label="Close"
+						aria-label={t("common.close")}
 					>
 						<X size={18} />
 					</button>
@@ -79,9 +81,9 @@ export function ChatQueueModal({
 
 				<div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
 					{!connected ? (
-						<p className={`text-sm ${muted}`}>Connect to the server to manage the queue.</p>
+						<p className={`text-sm ${muted}`}>{t("chat.connectToServerToManageQueue")}</p>
 					) : items.length === 0 ? (
-						<p className={`text-sm ${muted}`}>Nothing is queued right now.</p>
+						<p className={`text-sm ${muted}`}>{t("chat.nothingQueued")}</p>
 					) : (
 						<ol className="flex flex-col gap-3">
 							{items.map((q, i) => (
@@ -89,7 +91,7 @@ export function ChatQueueModal({
 									<div className={`mb-2 flex items-center justify-between gap-2 text-[11px] font-mono font-semibold uppercase tracking-wide ${muted}`}>
 										<span>
 											#{i + 1}
-											{i === 0 && streaming ? " — runs next" : ""}
+											{i === 0 && streaming ? ` — ${t("chat.runsNext")}` : ""}
 										</span>
 										<span className="truncate font-normal opacity-80" title={q.id}>
 											{q.id.slice(0, 8)}…
@@ -113,7 +115,7 @@ export function ChatQueueModal({
 											onClick={() => onEdit(q.id, (drafts[q.id] ?? q.text).trim())}
 											className="rounded-md bg-[#ea580c] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#c2410c] disabled:cursor-not-allowed disabled:opacity-40"
 										>
-											Save edit
+											{t("chat.saveEdit")}
 										</button>
 										<button
 											type="button"
@@ -125,7 +127,7 @@ export function ChatQueueModal({
 													: "border-red-300 text-red-700 hover:bg-red-50"
 											} disabled:opacity-40`}
 										>
-											<Trash2 size={14} /> Remove
+											<Trash2 size={14} /> {t("chat.remove")}
 										</button>
 										<button
 											type="button"
@@ -133,15 +135,15 @@ export function ChatQueueModal({
 											title={
 												streaming
 													? i === 0
-														? "Already next in line"
-														: "Move to front — runs after the current reply"
-													: "Send this message now (starts the next turn)"
+														? t("chat.alreadyNextInLine")
+														: t("chat.moveToFrontAfterCurrentReply")
+													: t("chat.sendThisMessageNow")
 											}
 											onClick={() => onForce(q.id)}
 											className={`ml-auto flex items-center gap-1 rounded-md border border-[#ea580c]/50 bg-[#ea580c]/15 px-3 py-1.5 text-xs font-bold text-[#fdba74] hover:bg-[#ea580c]/25 disabled:opacity-40`}
 										>
 											<Play size={14} />
-											{streaming ? "Run next" : "Send now"}
+											{streaming ? t("chat.runNext") : t("chat.sendNow")}
 										</button>
 									</div>
 								</li>
@@ -153,9 +155,7 @@ export function ChatQueueModal({
 				<div
 					className={`border-t px-4 py-2.5 text-[11px] leading-snug ${muted} ${appearanceDark ? "border-[#3c3c3c]/80" : "border-[#e5e5e5]"}`}
 				>
-					While a reply is streaming, new messages queue here. <strong className="text-[#ea580c]">Run next</strong> moves a
-					message to the head of the line. <strong className="text-[#ea580c]">Send now</strong> starts it immediately when
-					the assistant is idle.
+					{t("chat.queueExplanation")}
 				</div>
 			</div>
 		</div>

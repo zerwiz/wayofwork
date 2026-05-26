@@ -73,35 +73,33 @@
 - [ ] Backup status indicator in Admin Console
 
 #### Phase 3: Agent Skill for Document Storage
-- [ ] Create `.wo/skills/workspace-storage/SKILL.md`:
+- [x] Create `.wo/skills/workspace-storage/SKILL.md`:
   - `workspace_snapshot` — commit workspace state with description
   - `doc_history <path>` — show version history for a file
   - `doc_restore <path> <version>` — restore file from version
   - `workspace_backup_status` — check last backup time
-- [ ] Wire skill into agents: `fakturering`, `projektledare`, `docs`
-- [ ] Agents can save documents after creating/modifying them
+- [x] Wire skill into agents: `fakturering`, `projektledare`, `docs`
+- [x] Agents can save documents after creating/modifying them
 
 #### Phase 4: Orchestrator Rework
-- [ ] Orchestrator becomes the **Way of Work Simple mode agent + channel handler** — not a generic chat bot
-- [ ] Orchestrator handles all inbound Telegram/WhatsApp traffic (see WOW-015)
-- [ ] Channel messages route through Orchestrator which dispatches to appropriate sub-agents
-- [ ] Orchestrator system prompt describes: coordinating the platform, dispatching sub-agents, channel message handling, system configuration, user management
-- [ ] Orchestrator has a `dispatch_agent <name> <task>` tool that:
+- [x] Orchestrator becomes the **Way of Work Simple mode agent + channel handler** — not a generic chat bot
+- [x] Orchestrator handles all inbound Telegram/WhatsApp traffic (see WOW-015)
+- [x] Channel messages route through Orchestrator which dispatches to appropriate sub-agents
+- [x] Orchestrator system prompt describes: coordinating the platform, dispatching sub-agents, channel message handling, system configuration, user management
+- [x] Orchestrator has a `dispatch_agent <name> <task>` tool that:
   - Spawns a sub-agent with the given name
   - Passes the task description as context
   - Receives the sub-agent's output/result
   - Returns the result to the user
-- [ ] Sub-agent dispatch is isolated — each dispatch gets a fresh context (not shared history)
-- [ ] Orchestrator can dispatch: `fakturering` (create offer), `projektledare` (cost estimate), `forskare` (research price), `schemaplanerare` (plan schedule)
-
+- [x] Sub-agent dispatch is isolated — each dispatch gets a fresh context (not shared history)
+- [x] Orchestrator can dispatch: `fakturering` (create offer), `projektledare` (cost estimate), `forskare` (research price), `schemaplanerare` (plan schedule)
 #### Phase 5: Surface-Specific Agents
-- [ ] **Simple** → Orchestrator (system agent, no specialized tools)
-- [ ] **Claw** → `claw` agent (coding/workspace management)
-- [ ] **Docs** → `docs` agent (document writing + workspace-storage skill)
-- [ ] **Kanban** → `kanban` agent (board management + time tracking)
-- [ ] Each surface auto-selects its agent on navigation (see WOW-012)
+- [x] **Simple** → Orchestrator (system agent, no specialized tools)
+- [x] **Claw** → `claw` agent (coding/workspace management)
+- [x] **Docs** → `docs` agent (document writing + workspace-storage skill)
+- [x] **Kanban** → `kanban` agent (board management + time tracking)
+- [x] Each surface auto-selects its agent on navigation (see WOW-012)
 - [ ] Agent cleanup when leaving a surface — orchestrator takes over in Simple
-
 ### Out of Scope
 - Git GUI or diff viewer in the browser — future
 - Multi-repo backup (one GitHub repo per tenant) — future
@@ -112,7 +110,7 @@
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] Build completes: `bun run build`
+- [x] Build completes: `bun run build`
 
 ### Manual Verification
 - [ ] Admin can connect GitHub via Admin Console with PAT
@@ -120,14 +118,13 @@
 - [ ] "Version History" shows list of previous versions with timestamps
 - [ ] Daily backup runs and creates `backup/YYYY-MM-DD` branch
 - [ ] Old backups (>30 days) are pruned automatically
-- [ ] Agent can call `workspace_snapshot` to save documents
-- [ ] Orchestrator can dispatch `fakturering` as sub-agent to create an offer
-- [ ] Sub-agent result is returned to user through Orchestrator
-- [ ] Claw uses `claw` agent by default
-- [ ] Docs uses `docs` agent by default
-- [ ] Kanban uses `kanban` agent by default
-- [ ] Simple uses Orchestrator by default
-
+- [x] Agent can call `workspace_snapshot` to save documents
+- [x] Orchestrator can dispatch `fakturering` as sub-agent to create an offer
+- [x] Sub-agent result is returned to user through Orchestrator
+- [x] Claw uses `claw` agent by default
+- [x] Docs uses `docs` agent by default
+- [x] Kanban uses `kanban` agent by default
+- [x] Simple uses Orchestrator by default
 ## Technical Notes
 
 ### Git for Non-Developers

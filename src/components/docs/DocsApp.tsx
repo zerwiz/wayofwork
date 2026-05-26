@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState, useEffect, useRef, type CSSProperties } from "react";
-import { FolderOpen, MessageSquare, Eye, FileText, FileCheck, FileWarning, FileClock, CheckCircle, AlertCircle, Clock, Send } from "lucide-react";
+import { FolderOpen, MessageSquare, Eye, FileText, FileCheck, FileWarning, FileClock, CheckCircle, AlertCircle, Clock, Send, Save, History } from "lucide-react";
 import type { TreeNode } from "../../types/tree";
 import type { ChatRow, ChatSessionMode, LogRow } from "../../hooks/useWayOfWorkSession";
 import { FileExplorer } from "../documenthandler/FileExplorer";
+import { VersionHistoryModal } from "../VersionStorageManageSettingsCard";
 import { DocumentBrowser } from "./DocumentBrowser";
 import { apiGet } from "../../api/client";
 import { useDocumentHandler } from "../documenthandler/context/DocumentHandlerContext";
@@ -88,6 +89,50 @@ export function DocsApp({
 	const [selectedContent, setSelectedContent] = useState<string | null>(null);
 	const [contentLoading, setContentLoading] = useState(false);
 	const docsAgentRef = useRef(false);
+	const [saveBusy, setSaveBusy] = useState(false);
+	const [message, setMessage] = useState("");
+	const [showPrompt, setShowPrompt] = useState(false);
+
+	const onSaveVersion = async () => {
+		if (!message.trim()) {
+			setShowPrompt(true); // Should probably use a more robust way to show error
+			return;
+		}
+		setSaveBusy(true);
+		try {
+			const res = await fetch("/api/github/save-version", { // This will use the renamed API for Version Storage
+				method: "POST",
+				headers: { "Content-Type": "application/json" }, // Assuming token is handled by auth middleware
+				body: JSON.stringify({ message }),
+			});
+			if (!res.ok) {
+				const text = await res.text();
+				throw new Error(text || "Failed to save version");
+			}
+			setMessage("");
+			setShowPrompt(false);
+			alert("Version saved successfully!");
+		} catch (e) {
+			alert(e instanceof Error ? e.message : String(e));
+		} finally {
+			setSaveBusy(false);
+		}
+	};
+
+	const [historyOpen, setHistoryOpen] = useState(false);
+	const [history, setHistory] = useState<any[]>([]);
+
+	const onViewHistory = async () => {
+		try {
+			const res = await fetch("/api/github/version-history"); // This will use the renamed API for Version Storage
+			if (!res.ok) throw new Error("Failed to fetch history");
+			const data = await res.json();
+			setHistory(data);
+			setHistoryOpen(true);
+		} catch (e) {
+			alert(e instanceof Error ? e.message : String(e));
+		}
+	};
 
 	useEffect(() => {
 		if (connected && !docsAgentRef.current) {
@@ -276,13 +321,68 @@ export function DocsApp({
 
 				<div className="flex items-center gap-3">
 					<span className={`text-xs ${subC}`}>{selectedPath ? selectedPath.split("/").pop() : "No file selected"}</span>
+					{selectedPath && (
+						<>
+						<button
+							type="button"
+							onClick={() => setShowPrompt(true)}
+							disabled={saveBusy}
+							className="rounded-lg bg-[#ea580c] px-3 py-1 text-xs font-semibold text-white hover:bg-[#d94e06] disabled:opacity-50"
+							title="Save current version of this document"
+						>
+							<Save size={12} className="inline-block mr-1" /> Save
+						</button>
+						<button
+							type="button"
+							onClick={onViewHistory}
+							className="rounded-lg border border-[#3c3c3c] bg-[#1e1e1e] px-3 py-1 text-xs font-semibold text-[#cccccc] hover:bg-[#2d2d2d]"
+							title="View version history of this document"
+						>
+							<History size={12} className="inline-block mr-1" /> History
+						</button>
+						</>
+					)}
 				</div>
 			</div>
+
+			{showPrompt && (
+				<div className="flex shrink-0 items-center gap-2 border-b border-[#3c3c3c] bg-[#252526] px-4 py-3">
+					<label className="text-xs font-bold uppercase text-[#858585]">
+						Version message:
+					</label>
+					<input
+						type="text"
+						autoFocus
+						value={message}
+						onChange={(e) => setMessage(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" && message.trim()) onSaveVersion();
+							if (e.key === "Escape") setShowPrompt(false);
+						}}
+						placeholder="e.g. Updated safety guidelines for Block A"
+						className="flex-1 rounded border border-[#3c3c3c] bg-[#1e1e1e] px-3 py-2 text-sm text-[#cccccc] focus:border-[#ea580c] outline-none"
+					/>
+					<button
+						onClick={onSaveVersion}
+						disabled={saveBusy || !message.trim()}
+						className="rounded bg-[#238636] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2ea043] disabled:opacity-50"
+					>
+						Confirm Save
+					</button>
+					<button
+						onClick={() => setShowPrompt(false)}
+						className="rounded border border-[#3c3c3c] px-3 py-2 text-sm text-[#858585] hover:text-white"
+					>
+						Cancel
+					</button>
+				</div>
+			)}
 
 			{/* Three-panel layout: Tree | Preview | Chat */}
 			<div className="docs-content flex min-h-0 flex-1 overflow-hidden">
 				
 				{/* Left: File Tree */}
+
 				{treeOpen && (
 					<>
 					<div
@@ -420,5 +520,10 @@ export function DocsApp({
 				)}
 			</div>
 		</div>
+		<VersionHistoryModal 
+			open={historyOpen} 
+			onDismiss={() => setHistoryOpen(false)} 
+			history={history} 
+		/>
 	);
 }

@@ -273,7 +273,7 @@ export function registerConfigRoutes(router: Router) {
 		const scripts = await readPackageScripts();
 		if (!scripts || !(script in scripts)) return json({ error: "Script not in package.json" }, 400);
 		const cwd = getPrimaryWorkspacePath();
-		broadcastToolLog("INFO", "bash", `bun run ${script} (cwd ${cwd.length > 80 ? `${cwd.slice(0, 77)}…` : cwd})`);
+		broadcastToolLog("INFO", "bash", `bun run ${script} (cwd ${cwd.length > 80 ? `${cwd.slice(0, 77)}…` : cwd})`, auth.tenantId);
 		try {
 			const proc = Bun.spawn(["bun", "run", script], { cwd, stdout: "pipe", stderr: "pipe" });
 			const stdout = await new Response(proc.stdout).text();

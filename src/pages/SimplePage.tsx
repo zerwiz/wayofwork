@@ -199,7 +199,7 @@ export function SimplePage() {
       onRefreshWorkspace: tree.refresh,
       onCopyWorkspacePath: copyWorkspacePath,
       onSelectActivity: (a) => {
-        setUiMode("technical");
+        setUiMode("simple"); // Fallback to simple mode
         setLeftSidebarVisible(true);
         setTechnicalActivity(a);
       },
@@ -222,12 +222,11 @@ export function SimplePage() {
           setSimpleProviderPath(path as any);
           setSimpleProviderNonce(simpleProviderNonce + 1);
         } else {
-          setUiMode("technical");
+          setUiMode("simple"); // Fallback to simple mode
           setLeftSidebarVisible(true);
           setTechnicalActivity("settings");
         }
-      },
-      chatSessionControls: {
+      },      chatSessionControls: {
         mode: session.chatMode,
         switchDisabled: session.streaming,
         onSetMode: session.setChatMode,

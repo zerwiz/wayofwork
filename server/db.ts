@@ -64,7 +64,8 @@ db.run(`
     description TEXT,
     status TEXT DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+    resource_permission_id TEXT REFERENCES resource_permissions(resource_id) ON DELETE CASCADE
   )
 `);
 
@@ -95,7 +96,30 @@ db.run(`
     estimated_hours REAL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    FOREIGN KEY (project_id) REFERENCES projects(id)
+    FOREIGN KEY (project_id) REFERENCES projects(id),
+    resource_permission_id TEXT REFERENCES resource_permissions(resource_id) ON DELETE CASCADE
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS resource_permissions (
+    resource_id TEXT PRIMARY KEY,        -- e.g., "board_123", "file_abc"
+    resource_type TEXT NOT NULL,         -- 'kanban_board', 'workspace_file', 'document', 'task'
+    owner_id TEXT NOT NULL REFERENCES users(id),
+    visibility TEXT NOT NULL DEFAULT 'private', -- 'private', 'shared', 'tenant'
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS resource_shares (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    resource_id TEXT NOT NULL REFERENCES resource_permissions(resource_id) ON DELETE CASCADE,
+    shared_with_id TEXT NOT NULL REFERENCES users(id),
+    permission TEXT NOT NULL DEFAULT 'read', -- 'read', 'write'
+    created_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(resource_id, shared_with_id)
   )
 `);
 
@@ -220,6 +244,27 @@ db.run(`
 `);
 
 db.run(`
+  CREATE TABLE IF NOT EXISTS workspace_files (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    project_id TEXT,
+    kanban_card_id TEXT,
+    kanban_board_id TEXT,
+    file_path TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    mime_type TEXT,
+    size INTEGER,
+    download_count INTEGER DEFAULT 0,
+    created_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+    FOREIGN KEY (project_id) REFERENCES projects(id),
+    FOREIGN KEY (created_by) REFERENCES users(id),
+    resource_permission_id TEXT REFERENCES resource_permissions(resource_id) ON DELETE CASCADE
+  )
+`);
+
+db.run(`
   CREATE TABLE IF NOT EXISTS notes (
     id TEXT PRIMARY KEY,
     tenant_id TEXT NOT NULL,
@@ -230,7 +275,8 @@ db.run(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    FOREIGN KEY (project_id) REFERENCES projects(id)
+    FOREIGN KEY (project_id) REFERENCES projects(id),
+    resource_permission_id TEXT REFERENCES resource_permissions(resource_id) ON DELETE CASCADE
   )
 `);
 
@@ -981,4 +1027,27 @@ db.run(`
   )
 `);
 
+db.run(`
+  CREATE TABLE IF NOT EXISTS git_configs (
+    tenant_id TEXT NOT NULL,
+    config_key TEXT NOT NULL,
+    config_value TEXT NOT NULL,
+    updated_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (tenant_id, config_key),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+  )
+`);
+
 export { db };
+
+export function createResourcePermission(
+  resourceId: string,
+  resourceType: 'kanban_board' | 'workspace_file' | 'document' | 'task',
+  ownerId: string,
+  visibility: 'private' | 'shared' | 'tenant' = 'private'
+) {
+  db.run(
+    "INSERT INTO resource_permissions (resource_id, resource_type, owner_id, visibility) VALUES (?, ?, ?, ?)",
+    [resourceId, resourceType, ownerId, visibility]
+  );
+}
