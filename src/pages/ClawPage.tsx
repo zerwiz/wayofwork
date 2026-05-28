@@ -127,56 +127,6 @@ export function ClawPage() {
     onEmmetExpand: () => {}
   } as any;
 
-  const selectionMenu = {
-    canEdit: true,
-    onSelectAll: () => {},
-    onExpandSelection: () => {},
-    onShrinkSelection: () => {},
-    onCopyLineUp: () => {},
-    onCopyLineDown: () => {},
-    onMoveLineUp: () => {},
-    onMoveLineDown: () => {},
-    onDuplicateSelection: () => {},
-    onAddNextOccurrence: () => {},
-    onAddPreviousOccurrence: () => {},
-    onSelectAllOccurrences: () => {},
-    onToggleCtrlClickMultiCursor: () => {},
-    ctrlClickMultiCursor: false,
-    onToggleColumnSelectionMode: () => {},
-    columnSelectionMode: false
-  } as any;
-
-  const goMenu = {
-    canGoBack: true,
-    canGoForward: true,
-    onBack: goHistoryBack,
-    onForward: goHistoryForward,
-    onGoToFile: () => {},
-    onGoToSymbolInWorkspace: () => {},
-    onGoToSymbolInEditor: () => {},
-    onGoToDefinition: () => {},
-    onGoToDeclaration: () => {},
-    onGoToTypeDefinition: () => {},
-    onGoToImplementations: () => {},
-    onGoToReferences: () => {},
-    canGoToLine: true,
-    onGoToLineColumn: () => {},
-  } as any;
-
-  const runMenu = {
-     debugSessionActive: false,
-     canStartDebugging: true,
-     debugReplSession: false,
-     terminalServerEnabled: true,
-  } as any;
-
-  const terminalMenu = {
-    onNewTerminal: () => {},
-    onSplitTerminal: () => {},
-    onRunTask: () => {},
-    onConfigureTasks: () => {},
-  } as any;
-
   const helpMenu = {
     onHowToUse: () => modals.setHowToUseModalOpen(true),
     onViewLicense: () => modals.setMitLicenseModalOpen(true),
@@ -230,10 +180,6 @@ export function ClawPage() {
       onFocusBottomTab: () => {},
       fileMenu,
       editMenu,
-      selectionMenu,
-      goMenu,
-      runMenu,
-      terminalMenu,
       helpMenu,
       onOpenAgentSetup: () => {},
       onOpenAgentPermissions: () => setCommandPaletteOpen(true),

@@ -1,4 +1,4 @@
-import { Component, StrictMode, type ErrorInfo, type ReactNode } from "react";
+import { Component, StrictMode, useEffect, useState, type ErrorInfo, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import App from "./App";
@@ -52,10 +52,40 @@ function RootRedirect() {
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const hasToken = !!localStorage.getItem("wop_token");
-  if (!hasToken) {
+  const [validating, setValidating] = useState(true);
+  const [validated, setValidated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("wop_token");
+    if (!token) {
+      setValidating(false);
+      return;
+    }
+    fetch("/api/portal/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Invalid token");
+        setValidated(true);
+      })
+      .catch(() => {
+        localStorage.removeItem("wop_token");
+      })
+      .finally(() => setValidating(false));
+  }, []);
+
+  if (validating) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#1e1e1e]">
+        <div className="text-sm text-[#858585]">Verifying session…</div>
+      </div>
+    );
+  }
+
+  if (!validated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
+
   return <>{children}</>;
 }
 

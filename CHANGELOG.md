@@ -28,6 +28,13 @@ All notable changes to Way of Work
   - **API Extension:**
     - Added `GET /api/access/:resourceId/permissions` route to `server/routes/access.ts` to retrieve resource permission details for frontend use.
 
+### Fixed
+- **TA-Planner Chatbox Positioning (Corrected):** Implemented correct sticky behavior for the TA-Planner chat. The chat panel header in `src/pages/TAPlannerPage.tsx` now sticks to the top of the panel by adding `sticky top-0 z-10` to its container. The chat input area within `src/components/simple/SimpleChatView.tsx` now sticks to the bottom of the chat view by adding `sticky bottom-0`. The main chat panel now has `relative` positioning.
+- **Redundant Chat Header Removed:** Eliminated duplicate "Chat with TA-Planner" header by introducing a `hideHeader` prop in `src/components/simple/SimpleChatView.tsx` and passing `hideHeader={true}` from `src/components/taplanner/TmaPlannerChatView.tsx`.
+- **Kanban Chat Relocated and Toggle Button Added:** The Kanban chat panel in `src/pages/Kanban.tsx` has been moved from the left side to the right side of the main content area for both board selection and no-board-selected views. A "Chat" toggle button, utilizing the `MessageSquare` icon, has been added next to the "Add Column" button, allowing users to show/hide the chat panel.
+- **Dynamic NSR Folder Dropdown and Card Filtering:** Implemented a functional "NSR Folder" filter in `src/pages/Kanban.tsx`. The dropdown now dynamically populates with project names from `allProjects`. Cards are filtered based on their `metadata.projectIds` matching the selected NSR folder. The filtering logic has been unified through a `filteredCards` `useMemo` hook, improving performance and maintainability.
+- **Standardized Button Sizing in Chat Views:** Applied consistent styling to various buttons within `src/components/simple/SimpleChatView.tsx` (used by Simple and TA Planner modes) to match the standardized sizes found in the Docs view. This involved defining new Tailwind CSS constants for padding, text size, and icon size, and applying them to mode selectors, plan-related buttons, Send/Stop buttons, and attachment buttons.
+
 ## [2.3.25] - 2026-05-25
 
 ### Added

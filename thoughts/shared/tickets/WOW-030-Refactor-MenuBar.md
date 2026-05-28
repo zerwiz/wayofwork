@@ -12,21 +12,21 @@ The `MenuBar.tsx` file will be refactored into a clear, modular structure. Each 
 ## Requirements
 ### Code Structure
 - [x] **Component Extraction:** Extract logical sections of `MenuBar.tsx` into new, dedicated React components:
-    - [x] `FileMenu.tsx`
-    - [x] `EditMenu.tsx`
-    - [x] `SelectionMenu.tsx`
-    - [x] `ViewMenu.tsx` (manual integration required in `MenuBar.tsx` for full replacement)
-    - [ ] `GoMenuContent.tsx` (remaining)
-    - [ ] `RunMenuContent.tsx` (remaining)
-    - [ ] `TerminalMenuContent.tsx` (remaining)
-    - [ ] `HelpMenuContent.tsx` (remaining)
-    - [ ] `AgentsMenuContent.tsx` (remaining)
-    - [ ] `SettingsMenuContent.tsx` (remaining)
+    - [ ] `FileMenu.tsx` — extracted but not imported (dead; `FileMenuContent.tsx` is used instead)
+    - [ ] `EditMenu.tsx` — extracted but not imported (dead; inline JSX used)
+    - [ ] ~~`SelectionMenu.tsx`~~ — **REMOVED** per WOW-031 (Selection menu deleted)
+    - [ ] ~~`ViewMenu.tsx`~~ — extracted but not imported (dead; inline JSX used)
+    - [ ] ~~`GoMenuContent.tsx`~~ — **NOT NEEDED** (Go menu removed per WOW-031)
+    - [ ] ~~`RunMenuContent.tsx`~~ — **NOT NEEDED** (Run menu removed per WOW-031)
+    - [ ] ~~`TerminalMenuContent.tsx`~~ — **NOT NEEDED** (Terminal menu removed per WOW-031)
+    - [ ] `HelpMenu.tsx` — extracted but not imported (dead; inline JSX used)
+    - [ ] `AgentsMenuContent.tsx` (remaining — inline JSX in MenuBar.tsx)
+    - [ ] `SettingsMenuContent.tsx` (remaining — inline JSX in MenuBar.tsx)
     - [x] `NotificationsArea.tsx` (existing `NotificationsDropdown` component)
     - [ ] `LlmSelector.tsx` (remaining)
     - [x] `LanguageSwitcher.tsx` (remaining)
 - [ ] **Prop Drilling Minimization:** Design new components to receive only the necessary props.
-- [x] **File Organization:** Organize new components logically within `src/components/menubar/`.
+- [ ] **File Organization:** Components live in `src/components/menus/` but are unused; `FileMenuContent.tsx` lives at `src/components/FileMenuContent.tsx` and IS used.
 
 ### Functionality
 - [x] **Maintain Existing Functionality:** Ensure all existing menus, buttons, and interactions within the MenuBar remain fully functional after refactoring.
@@ -42,6 +42,11 @@ The `MenuBar.tsx` file will be refactored into a clear, modular structure. Each 
 - All extracted components are clearly named and logically grouped.
 - The MenuBar functions identically to its pre-refactoring state.
 - Code quality is improved, adhering to project conventions.
+
+## Notes
+- WOW-031 removed Selection, Go, Run, Terminal menus entirely. Any extracted sub-components for those menus are now dead code and should be cleaned up.
+- `src/components/menus/` contains unused extracted sub-components (not imported anywhere). Only `FileMenuContent.tsx` is actively used.
+- No `src/components/menubar/` directory exists; components are in `src/components/menus/`.
 
 ## Meta
 **Created**: 2026-05-24

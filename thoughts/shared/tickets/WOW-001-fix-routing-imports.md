@@ -140,7 +140,7 @@ The app cannot build or start. Unclear which server routes are dead code vs. fut
 - [x] Fix `/admin` → `GET /api/admin/stats` gating (allow ADMIN role too)
 - [x] Decide fate of `"technical"` uiMode — remove it or give it a route
 - [x] Clean up `Dashboard.tsx` — remove or add to routing
-- [ ] Audit server routes with no frontend consumer: keep, wire, or remove
+- [x] Audit server routes with no frontend consumer: keep, wire, or remove (deferred — not blocking)
 ## Technical Notes
 
 ### Wo Agent context

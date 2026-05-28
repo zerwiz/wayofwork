@@ -122,64 +122,6 @@ export function AppShell() {
             onToggleBlockComment: () => {},
             onEmmetExpand: () => {}
         }}
-        selectionMenu={{
-            canEdit: true,
-            onSelectAll: () => {},
-            onExpandSelection: () => {},
-            onShrinkSelection: () => {},
-            onCopyLineUp: () => {},
-            onCopyLineDown: () => {},
-            onMoveLineUp: () => {},
-            onMoveLineDown: () => {},
-            onDuplicateSelection: () => {},
-            onAddNextOccurrence: () => {},
-            onAddPreviousOccurrence: () => {},
-            onSelectAllOccurrences: () => {},
-            onToggleCtrlClickMultiCursor: () => {},
-            ctrlClickMultiCursor: false,
-            onToggleColumnSelectionMode: () => {},
-            columnSelectionMode: false
-        }}
-        goMenu={{
-            canGoBack: true,
-            canGoForward: true,
-            onBack: goHistoryBack,
-            onForward: goHistoryForward,
-            canLastEditLocation: false,
-            onLastEditLocation: () => {},
-            canSwitchEditorPrevious: false,
-            onSwitchEditorPrevious: () => {},
-            canSwitchEditorNext: false,
-            onSwitchEditorNext: () => {},
-            onGoToFile: () => {},
-            onGoToSymbolInWorkspace: () => {},
-            canLanguageFeatures: false,
-            onGoToSymbolInEditor: () => {},
-            onGoToDefinition: () => {},
-            onGoToDeclaration: () => {},
-            onGoToTypeDefinition: () => {},
-            onGoToImplementations: () => {},
-            canAddSymbolToChat: false,
-            onAddSymbolToCurrentChat: () => {},
-            onAddSymbolToNewChat: () => {},
-            onGoToReferences: () => {},
-            canGoToLine: true,
-            onGoToLineColumn: () => {},
-            canGoToBracket: false,
-            onGoToBracket: () => {},
-        } as any}
-        runMenu={{
-             debugSessionActive: debug.debugSessionActive,
-             canStartDebugging: true,
-             debugReplSession: debug.debugReplSession,
-             terminalServerEnabled: true,
-        } as any}
-        terminalMenu={{
-            onNewTerminal: () => {},
-            onSplitTerminal: () => {},
-            onRunTask: () => {},
-            onConfigureTasks: () => {},
-        } as any}
         helpMenu={{
             onHowToUse: () => modals.setHowToUseModalOpen(true),
             onViewLicense: () => modals.setMitLicenseModalOpen(true),

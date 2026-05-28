@@ -33,20 +33,20 @@ Users interact with non-functional menu items and get a broken/cluttered impress
 ## Requirements
 
 ### Functional Requirements
-- [ ] Keep **File** menu — review and streamline submenu items
-- [ ] Keep **Edit** menu — review and streamline submenu items
-- [ ] Remove **Selection** menu button and all its submenu code
-- [ ] Remove **Go** menu button and all its submenu code
-- [ ] Remove **Run** menu button and all its submenu code
-- [ ] Remove **Terminal** menu button and all its submenu code
+- [x] Keep **File** menu — review and streamline submenu items
+- [x] Keep **Edit** menu — review and streamline submenu items
+- [x] Remove **Selection** menu button and all its submenu code
+- [x] Remove **Go** menu button and all its submenu code
+- [x] Remove **Run** menu button and all its submenu code
+- [x] Remove **Terminal** menu button and all its submenu code
 
 - [ ] Keep **View** menu — streamline to show only functional items (layout switching, chat mode). Remove broken/dead items
 - [ ] Keep **Agents** menu — ensure all items work
 - [ ] Keep **Settings** menu — ensure all items work
 - [ ] Keep **Help** menu — ensure all items work. Review what Help currently offers (keyboard shortcuts, docs links) and streamline
-- [ ] Clean up unused props/interfaces from all parent components that passed `editMenu`, `selectionMenu`, `goMenu`, `runMenu`, `terminalMenu`, `fileMenu` handlers
+- [x] Clean up unused props/interfaces from all parent components that passed `selectionMenu`, `goMenu`, `runMenu`, `terminalMenu` handlers
 - [ ] Verify the header renders correctly in both Simple and Technical modes
-- [ ] Remove or deprecate the `src/components/menus/` sub-components that are now unnecessary
+- [x] Remove or deprecate the `src/components/menus/` sub-components that are now unnecessary
 
 ### Out of Scope
 - Adding new menu items or functionality — this is purely a cleanup ticket
@@ -56,11 +56,11 @@ Users interact with non-functional menu items and get a broken/cluttered impress
 ## Acceptance Criteria
 
 ### Automated Verification
-- [ ] Build completes: `bun run build`
-- [ ] No TypeScript errors in `MenuBar.tsx` or any parent component that was cleaned up
+- [x] Build completes: `bun run build`
+- [x] No TypeScript errors in `MenuBar.tsx` or any parent component that was cleaned up
 
 ### Manual Verification
-- [ ] Header shows only View, Help, Agents, and Settings menus (plus the Way of Work logo and sidebar toggle)
+- [ ] Header shows only File, Edit, View, Help, Agents, and Settings menus (plus the Way of Work logo and sidebar toggle)
 - [ ] Clicking each remaining menu shows functional, working items
 - [ ] Layout switching in View menu still works
 - [ ] Agents menu still opens teams.yaml, creates agent stubs, reloads agents

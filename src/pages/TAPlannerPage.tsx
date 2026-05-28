@@ -214,8 +214,8 @@ export function TAPlannerPage() {
 
       {/* Chat panel */}
       {chatOpen && (
-        <div className="flex w-[420px] shrink-0 flex-col border-l border-[#3c3c3c] bg-[#252526]">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[#3c3c3c]">
+        <div className="relative flex w-[420px] shrink-0 flex-col border-l border-[#3c3c3c] bg-[#252526]">
+          <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-[#3c3c3c]">
             <div className="flex items-center gap-2">
               <MessageCircle size={16} className="text-[#ea580c]" />
               <span className="text-sm font-bold text-white">TA-Planner Chat</span>

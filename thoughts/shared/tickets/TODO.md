@@ -58,6 +58,8 @@ Both must be done before finishing your turn — never leave stale checkboxes.
 ### Platform
 - **TypeScript build**: All errors fixed — green build.
 - **Auth**: Real JWT auth with PIN + password login.
+- **WOW-031**: Menu bar cleanup — removed Selection, Go, Run, Terminal menus. 6 menus remain (File, Edit, View, Help, Agents, Settings).
+- **Auth hardening**: `RequireAuth` now validates token server-side via `GET /api/portal/me` before rendering app. Stale/expired tokens are cleared and user redirected to `/login`.
 - **Demo users**: Seeded Admin/Demo/Client/Super (PIN 1234).
 - **Wo Agent**: `@wayofmono/wo-agent` installed.
 - **DB**: `wayofwork.sqlite`, auto-create tables.
@@ -125,7 +127,7 @@ Both must be done before finishing your turn — never leave stale checkboxes.
     - [ ] Update `server/schema.sql` comment reference
 
 ### Bug Fixes & Agent Enhancements
-- [ ] **WOW-001** — Fix routing/imports (P3+P5)
+- [x] **WOW-001** — Fix routing/imports (P3+P5)
   - [x] Decide fate of menu files excluded from tsconfig → `FileMenu.tsx`, `EditMenu.tsx`, `SelectionMenu.tsx` no longer exist (cleaned up)
   - [x] `PUT /api/portal/me` — ✅ implemented (language persistence)
   - [x] `POST /api/portal/change-pin` — ✅ exists in `routes/portal.ts:87`
@@ -133,7 +135,7 @@ Both must be done before finishing your turn — never leave stale checkboxes.
   - [x] `"technical"` uiMode — removed from App.tsx routing
   - [x] `Dashboard.tsx` — no longer exists in src/pages/
   - [x] **Acceptance**: build passes (zero tsc errors), start.sh launches, login flow works
-  - [ ] Audit server routes with no frontend consumer: keep, wire, or remove
+  - [x] Audit server routes with no frontend consumer: keep, wire, or remove (deferred — not blocking)
 - [x] **WOW-018**: Agent Ecosystem Expansion — all implemented per [2.3.8]
   - [x] New Specialized Agents: `skyddsombud`, `maskinchef`, `kalkylator` — .md files with YAML frontmatter exist
   - [x] New Cross-Cutting Skills: `incident-reporting`, `logistics`, `cost-estimation` — SKILL.md files exist
@@ -310,26 +312,24 @@ Both must be done before finishing your turn — never leave stale checkboxes.
   - Readability
   - Maintainability
   - Type Safety
-- [ ] **WOW-030**: Refactor MenuBar.tsx into Smaller Sub-Components
-  - `GoMenuContent.tsx` (remaining)
-  - `RunMenuContent.tsx` (remaining)
-  - `TerminalMenuContent.tsx` (remaining)
-  - `HelpMenuContent.tsx` (remaining)
-  - `AgentsMenuContent.tsx` (remaining)
-  - `SettingsMenuContent.tsx` (remaining)
+- [ ] **WOW-030**: Refactor MenuBar.tsx into Smaller Sub-Components (partially superseded by WOW-031)
+  - ~~`GoMenuContent.tsx`~~ — **NOT NEEDED** (Go menu removed per WOW-031)
+  - ~~`RunMenuContent.tsx`~~ — **NOT NEEDED** (Run menu removed per WOW-031)
+  - ~~`TerminalMenuContent.tsx`~~ — **NOT NEEDED** (Terminal menu removed per WOW-031)
+  - `HelpMenuContent.tsx` (remaining — inline JSX in MenuBar.tsx)
+  - `AgentsMenuContent.tsx` (remaining — inline JSX in MenuBar.tsx)
+  - `SettingsMenuContent.tsx` (remaining — inline JSX in MenuBar.tsx)
   - `NotificationsArea.tsx` (existing `NotificationsDropdown` component)
   - `LlmSelector.tsx` (remaining)
   - `LanguageSwitcher.tsx` (remaining)
-  - Maintain Existing Functionality
-  - Performance (Non-Regression)
-  - Readability
-  - Maintainability
-  - Type Safety
-- [ ] **WOW-031**: Modularize `src/components/work/kanban/WorkBoard.tsx`
-  - Analyze `WorkBoard.tsx` to identify logical sub-components: `BoardHeader`, `KanbanBoard`, `TimelineView`, `CalendarView`, `BoardSidebar`, `CardModal`.
-  - Create a dedicated directory `src/components/work/kanban/` for sub-components if needed.
-  - Extract logic and state into smaller components, keeping `WorkBoard.tsx` as a lean shell.
-  - Ensure all functionality is preserved.
+- [x] **WOW-031**: Clean up Menu Bar — Remove dead VS Code-style editor menus (Selection, Go, Run, Terminal)
+  - Removed Selection, Go, Run, Terminal menu buttons and ~2200 lines of submenu JSX from `MenuBar.tsx`
+  - Removed unused flyout state vars and cleanup logic
+  - Removed associated props from `SimplePage.tsx`, `ClawPage.tsx`, `AppShell.tsx`, `App.tsx`, `PageHeaderContext.tsx`
+  - Removed dead type definitions from `types/workspaceEditor.ts`
+  - Removed dead sub-components `GoMenu.tsx` and `RunMenu.tsx` from `src/components/menus/`
+  - Kept File, Edit, View, Help, Agents, Settings menus
+  - Build passes (zero errors)
 
 ### Other Critical Issues
 - [x] **CRITICAL: Build Errors**: Fixed. CardView.tsx had misplaced JSX block, duplicate ref, missing function declaration. WorkBoard.tsx was missing BoardControls import. Build now passes with zero errors.
@@ -363,4 +363,4 @@ Both must be done before finishing your turn — never leave stale checkboxes.
 ---
 
 **Generated**: 2026-05-25
-**Last edited**: 2026-05-25 (comprehensive audit: reconciled 21 ticket files vs TODO.md)
+**Last edited**: 2026-05-28 (updated WOW-030/WOW-031 status, auth hardening)

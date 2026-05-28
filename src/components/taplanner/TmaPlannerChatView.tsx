@@ -39,6 +39,7 @@ export function TmaPlannerChatView() {
             contextFillPct={session.tokenMeter.contextPct ?? null}
             contextTitle={session.tokenMeter.contextTitle ?? ""}
             sessionLeadFallbackLabel="TA"
+            hideHeader={true}
         />
     );
 }

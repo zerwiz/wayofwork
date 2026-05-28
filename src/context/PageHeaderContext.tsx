@@ -1,9 +1,7 @@
 import { createContext, useContext, type ReactNode } from "react";
 import type { FileMenuProps } from "../types/fileMenu";
 import type {
-  EditMenuHandlers, GoMenuHandlers, HelpMenuHandlers,
-  RunMenuHandlers, SelectionMenuHandlers, SettingsMenuHandlers,
-  TerminalMenuHandlers,
+  EditMenuHandlers, HelpMenuHandlers, SettingsMenuHandlers,
 } from "../types/workspaceEditor";
 import type { ChatDockRegion, ViewMenuSimpleOptions, ViewMenuTechnicalOptions } from "../types/technicalShell";
 import type { ServerConfig } from "../hooks/useServerConfig";
@@ -26,10 +24,6 @@ export interface PageHeaderHandlers {
   onFocusBottomTab: (t: any) => void;
   fileMenu?: FileMenuProps;
   editMenu?: EditMenuHandlers;
-  selectionMenu?: SelectionMenuHandlers;
-  goMenu?: GoMenuHandlers;
-  runMenu?: RunMenuHandlers;
-  terminalMenu?: TerminalMenuHandlers;
   helpMenu?: HelpMenuHandlers;
   settingsMenu?: SettingsMenuHandlers;
   onOpenAgentSetup: () => void;

@@ -38,85 +38,6 @@ export type WorkspaceEditorRef = {
 	goToMatchingBracket: () => void;
 };
 
-/** Menu bar Go → … (navigation; LSP-backed items stay disabled until a language service exists). */
-export type GoMenuHandlers = {
-	canGoBack: boolean;
-	canGoForward: boolean;
-	onBack: () => void;
-	onForward: () => void;
-	canLastEditLocation: boolean;
-	onLastEditLocation: () => void;
-	canSwitchEditorPrevious: boolean;
-	canSwitchEditorNext: boolean;
-	onSwitchEditorPrevious: () => void;
-	onSwitchEditorNext: () => void;
-	onGoToFile: () => void;
-	onGoToSymbolInWorkspace: () => void;
-	canGoToLine: boolean;
-	onGoToLineColumn: () => void;
-	canGoToBracket: boolean;
-	onGoToBracket: () => void;
-	canLanguageFeatures: boolean;
-	onGoToSymbolInEditor: () => void;
-	onGoToDefinition: () => void;
-	onGoToDeclaration: () => void;
-	onGoToTypeDefinition: () => void;
-	onGoToImplementations: () => void;
-	onGoToReferences: () => void;
-	canAddSymbolToChat: boolean;
-	onAddSymbolToCurrentChat: () => void;
-	onAddSymbolToNewChat: () => void;
-	canNavigateProblems: boolean;
-	onNextProblem: () => void;
-	onPreviousProblem: () => void;
-	canNavigateChanges: boolean;
-	onNextChange: () => void;
-	onPreviousChange: () => void;
-};
-
-/** Menu bar Run → … (debug / breakpoints; stepping when `debugSessionActive`). */
-export type RunMenuHandlers = {
-	debugSessionActive: boolean;
-	/**
-	 * True when **Start Debugging** can launch a supported runner (see `getActiveFileDebugPlan`).
-	 * Mirrors Cursor/VS Code: unsupported types stay gray until a `.js` / `.ts` / `.py` (etc.) file is active.
-	 */
-	canStartDebugging: boolean;
-	/**
-	 * Terminal REPL debugger (pdb): Run → Continue / Step * and F5/F10/F11 forward one-letter commands.
-	 * False for Node/Bun `--inspect*` (attach Chrome / built-in inspector instead).
-	 */
-	debugReplSession: boolean;
-	terminalServerEnabled: boolean;
-	/** File open in editor and ready — toggles breakpoint on current line. */
-	canToggleBreakpoint: boolean;
-	hasBreakpoints: boolean;
-	allBreakpointsDisabled: boolean;
-	onStartDebugging: () => void;
-	onRunWithoutDebugging: () => void;
-	onStopDebugging: () => void;
-	onRestartDebugging: () => void;
-	/** Open **`.vscode/launch.json`** (create from template if missing), like VS Code **Open Configurations**. */
-	onOpenConfigurations: () => void;
-	/** Append a configuration (picker / merge), then open **launch.json** — Cursor **Add Configuration…**. */
-	onAddConfiguration: () => void;
-	onStepOver: () => void;
-	onStepInto: () => void;
-	onStepOut: () => void;
-	onContinue: () => void;
-	onToggleBreakpoint: () => void;
-	onNewBreakpointInline: () => void;
-	onNewBreakpointConditional: () => void;
-	onNewBreakpointLogpoint: () => void;
-	onNewBreakpointTriggered: () => void;
-	onNewBreakpointFunction: () => void;
-	onEnableAllBreakpoints: () => void;
-	onDisableAllBreakpoints: () => void;
-	onRemoveAllBreakpoints: () => void;
-	/** VS Code / Cursor-style: open chooser with Marketplace links and DAP context (extensions install in the desktop editor). */
-	onInstallAdditionalDebuggers: () => void;
-};
-
 /** Menu bar Settings → preferences, sidebars, and technical chrome (wired from App). */
 export type SettingsMenuHandlers = {
 	/** Simple UI **Settings** tab (appearance, approvals, switch to Technical). */
@@ -162,20 +83,6 @@ export type HelpMenuHandlers = {
 	onDownloadUpdate: () => void;
 };
 
-/** Menu bar Terminal → … */
-export type TerminalMenuHandlers = {
-	/** Server allows PTY (WOP_ALLOW_TERMINAL=1); needed for injected run commands. */
-	terminalServerEnabled: boolean;
-	onNewTerminal: () => void;
-	onSplitTerminal: () => void;
-	onRunTask: () => void;
-	onRunBuildTask: () => void;
-	onRunActiveFile: () => void;
-	onRunSelectedText: () => void;
-	onConfigureTasks: () => void;
-	onConfigureDefaultBuildTask: () => void;
-};
-
 /** Menu bar Edit → … actions; optional when no editor surface. */
 export type EditMenuHandlers = {
 	/** File open and editor ready (not loading/error). */
@@ -196,23 +103,4 @@ export type EditMenuHandlers = {
 	canRedo: boolean;
 };
 
-/** Menu bar Selection → … (workspace text editor). */
-export type SelectionMenuHandlers = {
-	canEdit: boolean;
-	/** Visual / preference toggles (native textarea has a single caret). */
-	ctrlClickMultiCursor: boolean;
-	columnSelectionMode: boolean;
-	onSelectAll: () => void;
-	onExpandSelection: () => void;
-	onShrinkSelection: () => void;
-	onCopyLineUp: () => void;
-	onCopyLineDown: () => void;
-	onMoveLineUp: () => void;
-	onMoveLineDown: () => void;
-	onDuplicateSelection: () => void;
-	onAddNextOccurrence: () => void;
-	onAddPreviousOccurrence: () => void;
-	onSelectAllOccurrences: () => void;
-	onToggleCtrlClickMultiCursor: () => void;
-	onToggleColumnSelectionMode: () => void;
-};
+

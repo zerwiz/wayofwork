@@ -138,6 +138,9 @@ export default function Kanban() {
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [kanbanChatOpen, setKanbanChatOpen] = useState(false);
   const [showBoardShareModal, setShowBoardShareModal] = useState(false);
+  const [editingBoardName, setEditingBoardName] = useState(false);
+  const [newBoardName, setNewBoardName] = useState('');
+  const [nsrFolderOptions, setNsrFolderOptions] = useState<{ value: string; label: string }[]>([]);
   const currentUserId = useMemo(() => getUserIdFromToken(), []);
 
   useEffect(() => {
@@ -145,6 +148,8 @@ export default function Kanban() {
       try {
         const projects = await projectsService.getAllProjects();
         setAllProjects(projects);
+        const options = projects.map(p => ({ value: p.id, label: p.name }));
+        setNsrFolderOptions(options);
       } catch (error) {
         console.error('Failed to load projects:', error);
       }
@@ -342,6 +347,22 @@ export default function Kanban() {
     } catch (error) {
       console.error('Failed to load drive files:', error);
       setDriveFiles([]);
+    }
+  };
+
+  const handleUpdateBoardName = async () => {
+    if (!board || !currentBoardId || !newBoardName.trim()) {
+      showToast({ type: 'error', message: 'Board name cannot be empty.', duration: 3000 });
+      return;
+    }
+    try {
+      await kanbanService.updateBoard(currentBoardId, { name: newBoardName.trim() });
+      loadBoard(); // Reload the board to reflect the new name
+      setEditingBoardName(false);
+      showToast({ type: 'success', message: 'Board name updated successfully.', duration: 2000 });
+    } catch (error) {
+      console.error('Failed to update board name:', error);
+      showToast({ type: 'error', message: 'Failed to update board name.', duration: 3000 });
     }
   };
 
@@ -1014,6 +1035,39 @@ export default function Kanban() {
     return Array.from(cards.values()).filter((card) => card.dueDate || card.startDate);
   }, [cards]);
 
+  const filteredCards = useMemo(() => {
+    let currentCards = Array.from(cards.values());
+
+    if (searchQuery) {
+      currentCards = currentCards.filter((card) =>
+        card.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        card.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        card.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        card.assignees?.some(assignee => assignee.displayName.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+
+    if (selectedDevelopmentWorkflowId) {
+      currentCards = currentCards.filter(card => card.metadata?.developmentWorkflowId === selectedDevelopmentWorkflowId);
+    }
+    if (selectedDevelopmentPhase) {
+      currentCards = currentCards.filter(card => card.metadata?.developmentPhase === selectedDevelopmentPhase);
+    }
+
+    if (selectedNSRFolder) {
+      currentCards = currentCards.filter(card => card.metadata?.projectIds?.includes(selectedNSRFolder));
+    }
+
+    if (selectedWorkflowId) {
+      currentCards = currentCards.filter(card => card.metadata?.workflowId === selectedWorkflowId);
+    }
+    if (selectedEnterprisePhase) {
+      currentCards = currentCards.filter(card => card.metadata?.enterprisePhase === selectedEnterprisePhase);
+    }
+
+    return currentCards;
+  }, [cards, searchQuery, selectedDevelopmentWorkflowId, selectedDevelopmentPhase, selectedNSRFolder, selectedWorkflowId, selectedEnterprisePhase]);
+
   // Generate timeline dates helper
   // Helper function to get ISO week number
   const getISOWeekNumber = (date: Date): number => {
@@ -1116,10 +1170,6 @@ export default function Kanban() {
 
     return (
       <div className="h-full flex bg-[#1e1e1e] text-white overflow-hidden">
-        <KanbanChatPanel
-          open={kanbanChatOpen}
-          onToggle={() => setKanbanChatOpen(!kanbanChatOpen)}
-        />
         <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* Header */}
         <div className="bg-[#252526] border-b border-[#333333] pl-4 pr-2 lg:pl-6 py-4 flex-shrink-0 glass-enhanced">
@@ -1668,36 +1718,74 @@ export default function Kanban() {
           </div>
         )}
         </div>
-      </div>
-    );
-  }
-
-  const filteredColumns = board.columns.filter((col) => {
-    if (!searchQuery) return true;
-    const columnCards = Array.from(cards.values()).filter((c) => c.columnId === col.id);
-    return columnCards.some((card) =>
-      card.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
-
-  return (
-    <div className="h-full flex bg-[#1e1e1e] text-white overflow-hidden">
-      {board && (
         <KanbanChatPanel
           open={kanbanChatOpen}
           onToggle={() => setKanbanChatOpen(!kanbanChatOpen)}
         />
-      )}
+      </div>
+    );
+  }
+
+  const visibleColumns = useMemo(() => {
+    if (!board) return [];
+    return board.columns.filter((col) => {
+      const cardsInColumn = filteredCards.filter(card => card.columnId === col.id);
+      return cardsInColumn.length > 0 || (
+        !searchQuery &&
+        !selectedDevelopmentWorkflowId &&
+        !selectedDevelopmentPhase &&
+        !selectedNSRFolder &&
+        !selectedWorkflowId &&
+        !selectedEnterprisePhase
+      );
+    });
+  }, [board, filteredCards, searchQuery, selectedDevelopmentWorkflowId, selectedDevelopmentPhase, selectedNSRFolder, selectedWorkflowId, selectedEnterprisePhase]);
+
+  return (
+    <div className="h-full flex bg-[#1e1e1e] text-white overflow-hidden">
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
       {/* Header */}
       <div className="bg-[#252526] border-b border-[#333333] pl-3 pr-2 sm:pl-4 lg:pl-6 py-3 sm:py-4 flex-shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2 truncate">
+            <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
               <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-600 rounded flex items-center justify-center flex-shrink-0">
                 <GripVertical className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
               </div>
-              <span className="truncate">{board.name}</span>
+              {editingBoardName ? (
+                <input
+                  type="text"
+                  value={newBoardName}
+                  onChange={(e) => setNewBoardName(e.target.value)}
+                  onBlur={handleUpdateBoardName}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.currentTarget.blur();
+                    }
+                    if (e.key === 'Escape') {
+                      setEditingBoardName(false);
+                      setNewBoardName(board.name);
+                    }
+                  }}
+                  className="bg-[#333333] border border-[#444444] rounded-md px-2 py-1 text-base text-white focus:outline-none focus:ring-1 focus:ring-orange-500 w-full"
+                  autoFocus
+                />
+              ) : (
+                <span className="truncate flex items-center gap-2">
+                  {board.name}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setNewBoardName(board.name);
+                      setEditingBoardName(true);
+                    }}
+                    className="p-1 rounded-full text-[#858585] hover:bg-[#444444] hover:text-white transition-colors"
+                    title="Edit board name"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                </span>
+              )}
               {board.visibility && (
                 <span className="ml-2 flex items-center gap-1 text-sm text-[#858585]" title={`Visibility: ${board.visibility}`}>
                   {board.visibility === 'private' && <Lock className="w-4 h-4" />}
@@ -1841,6 +1929,18 @@ export default function Kanban() {
                     <span className="hidden sm:inline">Add Column</span>
                   </button>
                 )}
+                <button
+                  onClick={() => setKanbanChatOpen(!kanbanChatOpen)}
+                  className={`px-2 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors flex items-center gap-1 sm:gap-1.5 flex-shrink-0 ${
+                    kanbanChatOpen
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-[#333333] text-white hover:bg-[#444444]'
+                  }`}
+                  title="Toggle Kanban Chat"
+                >
+                  <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Chat</span>
+                </button>
               </div>
             </div>
 
@@ -1911,9 +2011,9 @@ export default function Kanban() {
                   className="px-2 sm:px-3 py-1.5 sm:py-2 bg-[#333333] border border-[#444444] rounded-lg text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[120px] sm:min-w-0"
                 >
                   <option value="">All NSR Folders</option>
-                  {NSR_MANDATORY_FOLDERS.map((folder) => (
-                    <option key={folder} value={folder}>
-                      {NSR_FOLDER_DISPLAY_NAMES[folder]}
+                  {nsrFolderOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
                     </option>
                   ))}
                 </select>
@@ -2117,42 +2217,10 @@ export default function Kanban() {
       {viewType === 'kanban' && (
         <div className="flex-1 overflow-hidden pl-2 pr-2 sm:pl-4 lg:pl-6">
         <div className="flex gap-3 sm:gap-4 h-full w-full overflow-x-auto overflow-y-hidden">
-          {filteredColumns.map((column) => {
-            const columnCards = Array.from(cards.values())
-              .filter((c) => c.columnId === column.id)
-              .sort((a, b) => a.order - b.order)
-              .filter((card) => {
-                // Search filter
-                if (searchQuery && !card.title.toLowerCase().includes(searchQuery.toLowerCase())) {
-                  return false;
-                }
-                // Development workflow filter
-                if (selectedDevelopmentWorkflowId && card.metadata?.developmentWorkflowId !== selectedDevelopmentWorkflowId) {
-                  return false;
-                }
-                // Development phase filter
-                if (selectedDevelopmentPhase && card.metadata?.developmentPhase !== selectedDevelopmentPhase) {
-                  return false;
-                }
-                // NSR folder filter
-                if (selectedNSRFolder && card.metadata?.nsrFolder !== selectedNSRFolder) {
-                  return false;
-                }
-                // Workflow track filter
-                if (selectedWorkflowTrack && card.metadata?.workflowTrack !== selectedWorkflowTrack) {
-                  return false;
-                }
-                // Workflow ID filter
-                if (selectedWorkflowId && card.metadata?.workflowId !== selectedWorkflowId) {
-                  return false;
-                }
-                // Note: BMAD sprint week filter removed - BMAD is only for development workflows, not regular workflows
-                // Enterprise Method phase filter
-                if (selectedEnterprisePhase && card.metadata?.enterprisePhase !== selectedEnterprisePhase) {
-                  return false;
-                }
-                return true;
-              });
+          {visibleColumns.map((column) => {
+            const columnCards = filteredCards.filter(
+              (card) => card.columnId === column.id
+            ).sort((a, b) => a.order - b.order);
 
             return (
               <div
@@ -2629,22 +2697,7 @@ export default function Kanban() {
 
             {/* Table Body */}
             <div className="divide-y divide-gray-700">
-              {Array.from(cards.values())
-                .filter((card) => {
-                  // Search filter
-                  if (searchQuery && !card.title.toLowerCase().includes(searchQuery.toLowerCase())) {
-                    return false;
-                  }
-                  // Development workflow filter
-                  if (selectedDevelopmentWorkflowId && card.metadata?.developmentWorkflowId !== selectedDevelopmentWorkflowId) {
-                    return false;
-                  }
-                  // Development phase filter
-                  if (selectedDevelopmentPhase && card.metadata?.developmentPhase !== selectedDevelopmentPhase) {
-                    return false;
-                  }
-                  return true;
-                })
+              {filteredCards
                 .sort((a, b) => {
                   // Sort by column order, then by card order
                   const colA = board.columns.find((c) => c.id === a.columnId);
@@ -3480,6 +3533,12 @@ export default function Kanban() {
         />
       )}
       </div>
+      {board && (
+        <KanbanChatPanel
+          open={kanbanChatOpen}
+          onToggle={() => setKanbanChatOpen(!kanbanChatOpen)}
+        />
+      )}
     </div>
   );
 }
