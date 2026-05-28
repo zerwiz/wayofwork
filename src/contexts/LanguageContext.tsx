@@ -8,7 +8,7 @@ type Translations = typeof sv;
 interface LanguageContextType {
 	language: Language;
 	setLanguage: (lang: Language) => void;
-	t: (key: string) => string;
+	t: (key: string, vars?: Record<string, string | number>) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -62,7 +62,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 		saveLanguageToServer(lang);
 	};
 
-	const t = (keyPath: string): string => {
+	const t = (keyPath: string, vars?: Record<string, string | number>): string => {
 		const keys = keyPath.split(".");
 		let current: any = translations[language];
 		for (const key of keys) {
@@ -70,6 +70,13 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 				return keyPath;
 			}
 			current = current[key];
+		}
+		if (vars && typeof current === "string") {
+			let result = current as string;
+			for (const [k, v] of Object.entries(vars)) {
+				result = result.replaceAll(`{${k}}`, String(v));
+			}
+			return result;
 		}
 		return current;
 	};

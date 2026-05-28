@@ -5,6 +5,7 @@ import App from "./App";
 import { LoginPage, WelcomePage } from "./pages";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { NotificationToast } from "./components/NotificationToast";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import "./index.css";
 import "./claw/clawUserUiModules";
 
@@ -46,8 +47,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 }
 
 function RootRedirect() {
-  const hasToken = !!localStorage.getItem("wop_token");
-  return <Navigate to={hasToken ? "/docs" : "/welcome"} replace />;
+  return <Navigate to="/welcome" replace />;
 }
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -71,6 +71,7 @@ if (!root) {
 root.render(
   <StrictMode>
     <BrowserRouter>
+      <LanguageProvider>
       <ErrorBoundary>
         <Routes>
           <Route path="/welcome" element={<WelcomePage />} />
@@ -79,6 +80,7 @@ root.render(
           <Route path="/*" element={<RequireAuth><NotificationProvider><App /><NotificationToast /></NotificationProvider></RequireAuth>} />
         </Routes>
       </ErrorBoundary>
+      </LanguageProvider>
     </BrowserRouter>
   </StrictMode>,
 );

@@ -57,6 +57,28 @@ db.run(`
 `);
 
 db.run(`
+  CREATE TABLE IF NOT EXISTS resource_permissions (
+    resource_id TEXT PRIMARY KEY,
+    resource_type TEXT NOT NULL,
+    owner_id TEXT NOT NULL REFERENCES users(id),
+    visibility TEXT NOT NULL DEFAULT 'private',
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS resource_shares (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    resource_id TEXT NOT NULL REFERENCES resource_permissions(resource_id) ON DELETE CASCADE,
+    shared_with_id TEXT NOT NULL REFERENCES users(id),
+    permission TEXT NOT NULL DEFAULT 'read',
+    created_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(resource_id, shared_with_id)
+  )
+`);
+
+db.run(`
   CREATE TABLE IF NOT EXISTS projects (
     id TEXT PRIMARY KEY,
     tenant_id TEXT NOT NULL,
@@ -64,8 +86,8 @@ db.run(`
     description TEXT,
     status TEXT DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    resource_permission_id TEXT REFERENCES resource_permissions(resource_id) ON DELETE CASCADE
+    resource_permission_id TEXT,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id)
   )
 `);
 
@@ -95,31 +117,9 @@ db.run(`
     deadline DATE,
     estimated_hours REAL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    resource_permission_id TEXT,
     FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    FOREIGN KEY (project_id) REFERENCES projects(id),
-    resource_permission_id TEXT REFERENCES resource_permissions(resource_id) ON DELETE CASCADE
-  )
-`);
-
-db.run(`
-  CREATE TABLE IF NOT EXISTS resource_permissions (
-    resource_id TEXT PRIMARY KEY,        -- e.g., "board_123", "file_abc"
-    resource_type TEXT NOT NULL,         -- 'kanban_board', 'workspace_file', 'document', 'task'
-    owner_id TEXT NOT NULL REFERENCES users(id),
-    visibility TEXT NOT NULL DEFAULT 'private', -- 'private', 'shared', 'tenant'
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
-  )
-`);
-
-db.run(`
-  CREATE TABLE IF NOT EXISTS resource_shares (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    resource_id TEXT NOT NULL REFERENCES resource_permissions(resource_id) ON DELETE CASCADE,
-    shared_with_id TEXT NOT NULL REFERENCES users(id),
-    permission TEXT NOT NULL DEFAULT 'read', -- 'read', 'write'
-    created_at TEXT DEFAULT (datetime('now')),
-    UNIQUE(resource_id, shared_with_id)
+    FOREIGN KEY (project_id) REFERENCES projects(id)
   )
 `);
 
@@ -257,10 +257,10 @@ db.run(`
     download_count INTEGER DEFAULT 0,
     created_by TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    resource_permission_id TEXT,
     FOREIGN KEY (tenant_id) REFERENCES tenants(id),
     FOREIGN KEY (project_id) REFERENCES projects(id),
-    FOREIGN KEY (created_by) REFERENCES users(id),
-    resource_permission_id TEXT REFERENCES resource_permissions(resource_id) ON DELETE CASCADE
+    FOREIGN KEY (created_by) REFERENCES users(id)
   )
 `);
 
@@ -274,9 +274,9 @@ db.run(`
     created_by TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    resource_permission_id TEXT,
     FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    FOREIGN KEY (project_id) REFERENCES projects(id),
-    resource_permission_id TEXT REFERENCES resource_permissions(resource_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(id)
   )
 `);
 

@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { X, Users, Globe, Lock, UserPlus, Trash2, Check, ExternalLink, HelpCircle } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { projectsService } from '../../services/projectsService'; // For fetching project members
-import { AuthInfo } from '../../../server/router'; // Assuming AuthInfo is available or defined
-import { getAuth } from '../../utils/auth'; // Assuming a utility to get auth info
 
 // Define a type for the resource permission
 interface ResourcePermission {
@@ -74,7 +72,7 @@ export function BoardShareModal({ boardId, currentUserId, isOpen, onClose, onUpd
             // Need to directly fetch resource permission via a new API if projectsService.getBoard doesn't return it
             // For now, assume projectsService.getBoard provides it or we'll make a new API
             // For this implementation, I will call the new API endpoint directly.
-            const token = getAuth()?.token;
+            const token = localStorage.getItem("wop_token");
             const res = await fetch(`/api/access/${boardId}/permissions`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -91,7 +89,7 @@ export function BoardShareModal({ boardId, currentUserId, isOpen, onClose, onUpd
 
     const loadShares = async () => {
         try {
-            const token = getAuth()?.token;
+            const token = localStorage.getItem("wop_token");
             const res = await fetch(`/api/access/${boardId}/shares`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -108,11 +106,8 @@ export function BoardShareModal({ boardId, currentUserId, isOpen, onClose, onUpd
 
     const loadAllUsers = async () => {
         try {
-            const users = await projectsService.getProjectMembers(boardId); // This might be project-specific, need a more general user endpoint
-            // For simplicity, let's assume we can get all users in the tenant via a new endpoint /api/users
-            // Or use the existing /api/admin/users if the current user is admin
-            const token = getAuth()?.token;
-            const res = await fetch(`/api/admin/users`, { // Assuming /api/admin/users returns all users in tenant for admin
+            const token = localStorage.getItem("wop_token");
+            const res = await fetch(`/api/admin/users`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!res.ok) {
@@ -128,7 +123,7 @@ export function BoardShareModal({ boardId, currentUserId, isOpen, onClose, onUpd
 
     const handleChangeVisibility = async (newVisibility: 'private' | 'shared' | 'tenant') => {
         try {
-            const token = getAuth()?.token;
+            const token = localStorage.getItem("wop_token");
             const res = await fetch(`/api/access/${boardId}/visibility`, {
                 method: 'PUT',
                 headers: {
@@ -155,7 +150,7 @@ export function BoardShareModal({ boardId, currentUserId, isOpen, onClose, onUpd
             return;
         }
         try {
-            const token = getAuth()?.token;
+            const token = localStorage.getItem("wop_token");
             const res = await fetch(`/api/access/${boardId}/share`, {
                 method: 'POST',
                 headers: {
@@ -180,7 +175,7 @@ export function BoardShareModal({ boardId, currentUserId, isOpen, onClose, onUpd
 
     const handleRemoveShare = async (sharedWithId: string) => {
         try {
-            const token = getAuth()?.token;
+            const token = localStorage.getItem("wop_token");
             const res = await fetch(`/api/access/${boardId}/share/${sharedWithId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }

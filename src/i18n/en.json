@@ -35,7 +35,9 @@
     "generating": "Generating...",
     "ready": "Ready",
     "stop": "Stop",
-    "send": "Send"
+    "send": "Send",
+    "wayOfWork": "Way of Work",
+    "allRightsReserved": "All rights reserved"
   },
   "nav": {
     "admin": "Admin",
@@ -60,7 +62,12 @@
     "login_subtitle": "Log in with your account",
     "invalid_credentials": "Invalid username or password",
     "session_expired": "Session expired",
-    "logging_in": "Logging in..."
+    "logging_in": "Logging in...",
+    "userIdAndPinRequired": "User ID and PIN required",
+    "loginFailed": "Login failed. Check your ID and PIN.",
+    "failedToConnectToServer": "Could not connect to server. Is the backend running?",
+    "enterYourId": "Enter your ID",
+    "pinPlaceholder": "••••"
   },
   "chat": {
     "placeholder": "Type a message...",

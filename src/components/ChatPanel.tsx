@@ -899,7 +899,6 @@ ${t}` : t));
 							) : null}
 							<div ref={endRef} />
 						</div>
-					</div>
 				)}
 				{teamPaneOpen && !agentsLoading && teamNames.length > 0 && pulseTeam && pulseMembers.length > 0 ? (
 					<div

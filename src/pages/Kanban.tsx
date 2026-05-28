@@ -34,7 +34,14 @@ import { BoardShareModal } from '../components/common/ResourceShareModal';
 import type { Board, BoardCard } from '../types/kanban';
 import type { Project } from '../services/projectsService';
 import type { DriveFile } from '../types/drive';
-import { getAuth } from '../utils/auth';
+function getUserIdFromToken(): string | null {
+  try {
+    const token = localStorage.getItem("wop_token");
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.sub || payload.id || null;
+  } catch { return null; }
+}
 import {
   Plus,
   MoreHorizontal,
@@ -131,7 +138,7 @@ export default function Kanban() {
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [kanbanChatOpen, setKanbanChatOpen] = useState(false);
   const [showBoardShareModal, setShowBoardShareModal] = useState(false);
-  const currentUserId = useMemo(() => getAuth()?.userId, []);
+  const currentUserId = useMemo(() => getUserIdFromToken(), []);
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -1691,11 +1698,11 @@ export default function Kanban() {
                 <GripVertical className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
               </div>
               <span className="truncate">{board.name}</span>
-              {board.resourcePermission && (
-                <span className="ml-2 flex items-center gap-1 text-sm text-[#858585]" title={`Visibility: ${board.resourcePermission.visibility}`}>
-                  {board.resourcePermission.visibility === 'private' && <Lock className="w-4 h-4" />}
-                  {board.resourcePermission.visibility === 'shared' && <Share className="w-4 h-4" />}
-                  {board.resourcePermission.visibility === 'tenant' && <Globe className="w-4 h-4" />}
+              {board.visibility && (
+                <span className="ml-2 flex items-center gap-1 text-sm text-[#858585]" title={`Visibility: ${board.visibility}`}>
+                  {board.visibility === 'private' && <Lock className="w-4 h-4" />}
+                  {board.visibility === 'company' && <Share className="w-4 h-4" />}
+                  {board.visibility === 'public' && <Globe className="w-4 h-4" />}
                 </span>
               )}
             </h1>

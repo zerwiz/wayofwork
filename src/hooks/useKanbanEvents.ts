@@ -20,7 +20,7 @@ export const useKanbanEvents = (onBoardChanged: () => void, onCardChanged?: (boa
     };
 
     return () => {
-      ws.close();
+      if (ws.readyState === WebSocket.OPEN) ws.close();
     };
   }, [onBoardChanged, onCardChanged]);
 };

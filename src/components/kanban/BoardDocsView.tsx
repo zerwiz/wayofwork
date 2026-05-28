@@ -9,8 +9,7 @@ import { FileText, Link2, Search, Plus, X, Globe, Lock, Share } from 'lucide-rea
 import type { Board, BoardCard } from '../../types/kanban';
 import { notesService } from '../../services/notesService';
 import type { Note } from '../../types/notes';
-import { ResourceShareModal } from '../../components/common/ResourceShareModal';
-import { getAuth } from '../../utils/auth';
+import { BoardShareModal } from '../../components/common/ResourceShareModal';
 
 interface BoardDocsViewProps {
   board: Board;
@@ -32,7 +31,7 @@ export const BoardDocsView: React.FC<BoardDocsViewProps> = ({
   const [showNoteShareModal, setShowNoteShareModal] = useState(false);
   const [selectedNoteForSharing, setSelectedNoteForSharing] = useState<Note | null>(null);
 
-  const currentUserId = getAuth()?.userId || '';
+  const currentUserId = '';
 
   useEffect(() => {
     loadDocuments();
@@ -309,9 +308,8 @@ export const BoardDocsView: React.FC<BoardDocsViewProps> = ({
       </div>
 
       {selectedNoteForSharing && (
-        <ResourceShareModal
-          resourceId={selectedNoteForSharing.id}
-          resourceType="document"
+        <BoardShareModal
+          boardId={selectedNoteForSharing.id}
           currentUserId={currentUserId}
           isOpen={showNoteShareModal}
           onClose={() => setShowNoteShareModal(false)}

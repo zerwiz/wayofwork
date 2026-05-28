@@ -200,7 +200,7 @@ function VersionStorageConnectModal({
 	);
 }
 
-function VersionHistoryModal({
+export function VersionHistoryModal({
 	open,
 	onDismiss,
 	history,

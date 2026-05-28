@@ -75,7 +75,7 @@ export function SimpleSettingsView({
 	onColorMode: (m: SimpleColorMode) => void;
 	approvalQueue: boolean;
 	onApprovalQueue: (next: boolean) => void;
-	onSwitchToTechnical: () => void;
+	onSwitchToTechnical?: () => void;
 	/** Settings menu parity: codebase index + docs (server). */
 	onOpenIndexingDocs?: () => void;
 	/** `/api/config` — terminal enable flag and shell hints. */

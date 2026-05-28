@@ -9,8 +9,7 @@ import { Folder, File, Link2, Search, X, HardDrive, ChevronRight, Globe, Lock, S
 import type { Board, BoardCard } from '../../types/kanban';
 import { driveService } from '../../services/driveService';
 import type { DriveFile } from '../../types/drive';
-import { ResourceShareModal } from '../../components/common/ResourceShareModal';
-import { getAuth } from '../../utils/auth';
+import { BoardShareModal } from '../../components/common/ResourceShareModal';
 
 interface BoardDriveViewProps {
   board: Board;
@@ -38,7 +37,7 @@ export const BoardDriveView: React.FC<BoardDriveViewProps> = ({
   const [showFileShareModal, setShowFileShareModal] = useState(false);
   const [selectedFileForSharing, setSelectedFileForSharing] = useState<DriveFile | null>(null);
 
-  const currentUserId = getAuth()?.userId || '';
+  const currentUserId = '';
 
   useEffect(() => {
     loadFiles();
@@ -437,9 +436,8 @@ export const BoardDriveView: React.FC<BoardDriveViewProps> = ({
       </div>
 
       {selectedFileForSharing && (
-        <ResourceShareModal
-          resourceId={selectedFileForSharing.id}
-          resourceType="workspace_file"
+        <BoardShareModal
+          boardId={selectedFileForSharing.id}
           currentUserId={currentUserId}
           isOpen={showFileShareModal}
           onClose={() => setShowFileShareModal(false)}

@@ -9,7 +9,6 @@ import { RefactorProvider, useRefactor } from "./context/RefactorContext";
 import { MenuBar } from "./components/MenuBar";
 import { PageHeaderProvider, usePageHeader } from "./context/PageHeaderContext";
 import { ToastProvider } from "./contexts/ToastContext";
-import { LanguageProvider } from "./contexts/LanguageContext";
 
 const uiModeRouteMap: Record<string, string> = {
   simple: "/simple",
@@ -151,7 +150,6 @@ const defaultMenuStubs = {
 export default function App() {
   return (
     <RefactorProvider>
-      <LanguageProvider>
         <RouteSync />
         <UiModeWatcher />
         <PageHeaderProvider value={defaultMenuStubs}>
@@ -180,7 +178,6 @@ export default function App() {
           </div>
           </ToastProvider>
         </PageHeaderProvider>
-      </LanguageProvider>
     </RefactorProvider>
   );
 }

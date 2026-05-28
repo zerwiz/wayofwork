@@ -434,3 +434,16 @@ export async function getGitConfig(tenantId: string): Promise<{ name: string | n
 		return { name: null, email: null };
 	}
 }
+
+export async function gitCheckout(absPath: string, commitHash: string): Promise<GitStageResult> {
+	const proc = Bun.spawn(["git", "-C", absPath, "checkout", commitHash], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const err = await new Response(proc.stderr).text();
+	const code = await proc.exited;
+	if (code !== 0) {
+		return { ok: false, error: err.trim() || `git checkout exited with code ${code}` };
+	}
+	return { ok: true };
+}

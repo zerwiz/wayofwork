@@ -189,7 +189,9 @@ export function useWayOfWorkSession(surfaceId: string): UseWayOfWorkSessionRetur
 				wsRef.current.onclose = null;
 				wsRef.current.onerror = null;
 				wsRef.current.onmessage = null;
-				wsRef.current.close();
+				if (wsRef.current.readyState === WebSocket.OPEN) {
+					wsRef.current.close();
+				}
 			} catch (e) {
 				console.warn("Error closing old WS:", e);
 			}
@@ -316,35 +318,27 @@ export function useWayOfWorkSession(surfaceId: string): UseWayOfWorkSessionRetur
 		};
 	}, []);
 
-	// @description Reconnect WebSocket on mount or error
+	// @description Connect WebSocket on mount only. Does NOT re-run on error to avoid reconnect loops.
 	React.useEffect(() => {
 		let isMounted = true;
-		const reconnect = async () => {
-			if (!isMounted) return;
-			try {
-				setError(null);
-				await initSession();
-			} catch (e) {
-				if (isMounted) {
-					console.error("Session init failed:", e);
-				}
-			}
-		};
 
-		// Always try connect on mount
 		if (!ws && !connectingRef.current) {
-			reconnect();
-		}
-
-		// Reconnect on error
-		if (error && !connectingRef.current) {
-			reconnect();
+			initSession().catch((e) => {
+				if (isMounted) console.error("Session init failed:", e);
+			});
 		}
 
 		return () => {
 			isMounted = false;
+			const current = wsRef.current;
+			if (current && current.readyState === WebSocket.CONNECTING) {
+				current.onclose = null;
+				current.onerror = null;
+				current.onmessage = null;
+				current.close();
+			}
 		};
-	}, [ws, error, initSession]);
+	}, [ws, initSession]);
 
 	// @description Send chat message to server
 	const sendChat: UseWayOfWorkSessionReturn["sendChat"] = async (

@@ -1990,11 +1990,7 @@ export const CardView: React.FC<CardViewProps> = ({
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-orange-400" />
                         <span className="text-sm text-white">
-                          {!isCreateMode && card?.metadata?.calendarEventId
-                            ? calendarService.getEvent(card.metadata.calendarEventId)?.title || 'Linked Calendar Event'
-                            : isCreateMode && editedCard.metadata?.calendarEventId
-                            ? calendarService.getEvent(editedCard.metadata.calendarEventId)?.title || 'Linked Calendar Event'
-                            : 'Linked Calendar Event'}
+                          {'Linked Calendar Event'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">

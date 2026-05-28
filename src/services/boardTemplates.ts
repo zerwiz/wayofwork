@@ -59,7 +59,7 @@ export const BOARD_TEMPLATES: BoardTemplate[] = [
     description: 'Lightweight rapid-development workflow for fast-moving teams.',
     icon: '⚡',
     tags: ['rapid', 'lightweight'],
-    columns: ['Queue', 'Working', 'Done'],
+    columns: ['Backlog', 'Ready', 'In Progress', 'Review', 'Done'],
   },
 
   // ── Project Management ──
@@ -133,7 +133,7 @@ export const BOARD_TEMPLATES: BoardTemplate[] = [
     description: 'Simple personal task management.',
     icon: '✅',
     tags: ['personal', 'tasks'],
-    columns: ['To Do', 'Doing', 'Done'],
+    columns: ['Inbox', 'Today', 'In Progress', 'Waiting', 'Done'],
   },
   {
     id: 'goal-tracker',
@@ -142,7 +142,7 @@ export const BOARD_TEMPLATES: BoardTemplate[] = [
     description: 'Track personal goals and habits.',
     icon: '⭐',
     tags: ['goals', 'habits'],
-    columns: ['Goals', 'In Progress', 'Achieved'],
+    columns: ['Vision', 'Yearly Goals', 'Quarterly OKRs', 'In Progress', 'Review', 'Achieved'],
   },
 
   // ── Construction ──

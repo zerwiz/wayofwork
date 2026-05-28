@@ -216,7 +216,7 @@ export function registerPortalRoutes(router: Router) {
 			}
 
 			const fullQuery = `${baseQuery} WHERE ${whereClauses.join(" AND ")} ORDER BY f.created_at DESC`;
-			let files = db.query(fullQuery).all(...queryParams) as any[];
+			files = db.query(fullQuery).all(...queryParams) as any[];
 
 			// Map results to include resourcePermission object
 			const formattedFiles = files.map(file => {
